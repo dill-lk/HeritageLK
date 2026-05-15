@@ -1,8 +1,32 @@
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
+
+const GlobeIcon = () => (
+  <svg width="18" height="14" viewBox="0 0 18 14" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <path d="M0 3.5C0 2.53477 0.784766 1.75 1.75 1.75H7H8.3125H8.75H15.75C16.7152 1.75 17.5 2.53477 17.5 3.5V10.5C17.5 11.4652 16.7152 12.25 15.75 12.25H8.75H8.3125H7H1.75C0.784766 12.25 0 11.4652 0 10.5V3.5ZM8.75 3.5V10.5H15.75V3.5H8.75ZM4.87539 4.80977C4.78789 4.61289 4.59102 4.48438 4.375 4.48438C4.15898 4.48438 3.96211 4.61289 3.87461 4.80977L2.12461 8.74727C2.00156 9.02344 2.12734 9.34609 2.40352 9.46914C2.67969 9.59219 3.00234 9.46641 3.12539 9.19023L3.36875 8.64062H5.38125L5.62461 9.19023C5.74766 9.46641 6.07031 9.58945 6.34648 9.46914C6.62266 9.34883 6.7457 9.02344 6.62539 8.74727L4.87539 4.80977ZM4.375 6.37656L4.89453 7.54688H3.85547L4.375 6.37656ZM12.25 4.48438C12.5508 4.48438 12.7969 4.73047 12.7969 5.03125V5.14062H14H14.4375C14.7383 5.14062 14.9844 5.38672 14.9844 5.6875C14.9844 5.98828 14.7383 6.23438 14.4375 6.23438H14.3828L14.3391 6.35742C14.0957 7.02461 13.7266 7.63164 13.2562 8.1457C13.2809 8.16211 13.3055 8.17578 13.3301 8.18945L13.8469 8.49844C14.1066 8.6543 14.1887 8.99063 14.0355 9.24766C13.8824 9.50469 13.5434 9.58945 13.2863 9.43633L12.7695 9.12734C12.6465 9.05352 12.5289 8.97695 12.4113 8.89492C12.1215 9.1 11.8125 9.27773 11.4816 9.42539L11.3832 9.46914C11.107 9.59219 10.7844 9.46641 10.6613 9.19023C10.5383 8.91406 10.6641 8.59141 10.9402 8.46836L11.0387 8.42461C11.2137 8.34531 11.3832 8.25781 11.5445 8.15664L11.2109 7.82305C10.9977 7.60977 10.9977 7.2625 11.2109 7.04922C11.4242 6.83594 11.7715 6.83594 11.9848 7.04922L12.384 7.44844L12.3977 7.46211C12.7367 7.10391 13.0129 6.68828 13.2125 6.23164H12.25H10.2812C9.98047 6.23164 9.73438 5.98555 9.73438 5.68477C9.73438 5.38398 9.98047 5.13789 10.2812 5.13789H11.7031V5.02852C11.7031 4.72773 11.9492 4.48164 12.25 4.48164V4.48438Z" fill="#FFB880"/>
+  </svg>
+);
+
+const languages = [
+  { code: "en", label: "English", font: "Inter, sans-serif", weight: "600", size: "12px" },
+  { code: "si", label: "සිංහල", font: "'Abhaya Libre', serif", weight: "700", size: "14px" },
+  { code: "ta", label: "தமிழ்", font: "Inter, sans-serif", weight: "600", size: "12px" },
+];
 
 export default function Index() {
   const [showPassword, setShowPassword] = useState(false);
   const [langOpen, setLangOpen] = useState(false);
+  const [selectedLang, setSelectedLang] = useState(languages[0]);
+  const langRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (langRef.current && !langRef.current.contains(e.target as Node)) {
+        setLangOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
 
   return (
     <div className="min-h-screen w-full bg-[#100E0A] flex items-center justify-center font-['Plus_Jakarta_Sans',sans-serif]">
@@ -18,7 +42,7 @@ export default function Index() {
         {/* Hero Image Section */}
         <div className="relative w-full h-[300px] sm:h-[340px] overflow-hidden flex-shrink-0">
           <img
-            src="https://api.builder.io/api/v1/image/assets/TEMP/4ec87cd73d917c7f7f04e8ea52fdce696daca5d7?width=880"
+            src="https://api.builder.io/api/v1/image/assets/TEMP/47289e9080e6b5ce0ff17dc9efea467aa2e8770b?width=880"
             alt="Heritage"
             className="w-full h-full object-cover opacity-60"
           />
@@ -26,17 +50,61 @@ export default function Index() {
           <div className="absolute inset-0 bg-gradient-to-t from-[#100E0A] via-[#100E0A]/0 to-transparent" />
 
           {/* Top bar */}
-          <div className="absolute top-0 left-0 right-0 flex items-center justify-between px-6 pt-12 sm:pt-14">
-            {/* Language selector */}
-            <div className="relative">
+          <div className="absolute top-0 left-0 right-0 flex items-start justify-between px-6 pt-12 sm:pt-14">
+
+            {/* Language selector with dropdown */}
+            <div className="relative" ref={langRef}>
+              {/* Dropdown panel — shown open, stacks rows vertically */}
+              <div
+                className={`absolute left-0 top-0 transition-all duration-200 origin-top-left ${
+                  langOpen
+                    ? "opacity-80 scale-100 pointer-events-auto"
+                    : "opacity-0 scale-95 pointer-events-none"
+                }`}
+              >
+                <div className="flex flex-col gap-[5px] px-4 py-[9px] rounded-[25px] border border-[#F4A261]/25 bg-black/[0.58]" style={{ minWidth: "132px" }}>
+                  {languages.map((lang) => (
+                    <button
+                      key={lang.code}
+                      onClick={() => {
+                        setSelectedLang(lang);
+                        setLangOpen(false);
+                      }}
+                      className="flex items-center gap-[8px] text-left hover:opacity-100 transition-opacity"
+                    >
+                      <GlobeIcon />
+                      <span
+                        className="text-[#CA895B] leading-4"
+                        style={{
+                          fontFamily: lang.font,
+                          fontWeight: lang.weight,
+                          fontSize: lang.size,
+                          letterSpacing: lang.code === "en" ? "0.105px" : lang.code === "ta" ? "0.105px" : "0.123px",
+                        }}
+                      >
+                        {lang.label}
+                      </span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Collapsed pill button */}
               <button
                 onClick={() => setLangOpen(!langOpen)}
-                className="flex items-center gap-2 h-8 px-4 rounded-full border border-[#F4A261]/20 bg-[#8B5E3C]/15 text-[#F4A261] text-xs font-semibold tracking-wide"
+                className={`flex items-center gap-2 h-8 px-4 rounded-full border border-[#F4A261]/20 bg-[#8B5E3C]/15 text-[#F4A261] text-xs font-semibold tracking-wide transition-opacity duration-150 ${langOpen ? "opacity-0 pointer-events-none" : "opacity-100"}`}
               >
-                <svg width="18" height="14" viewBox="0 0 18 14" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <path d="M0 3.5C0 2.53477 0.784766 1.75 1.75 1.75H7H8.3125H8.75H15.75C16.7152 1.75 17.5 2.53477 17.5 3.5V10.5C17.5 11.4652 16.7152 12.25 15.75 12.25H8.75H8.3125H7H1.75C0.784766 12.25 0 11.4652 0 10.5V3.5ZM8.75 3.5V10.5H15.75V3.5H8.75ZM4.87539 4.80977C4.78789 4.61289 4.59102 4.48438 4.375 4.48438C4.15898 4.48438 3.96211 4.61289 3.87461 4.80977L2.12461 8.74727C2.00156 9.02344 2.12734 9.34609 2.40352 9.46914C2.67969 9.59219 3.00234 9.46641 3.12539 9.19023L3.36875 8.64062H5.38125L5.62461 9.19023C5.74766 9.46641 6.07031 9.58945 6.34648 9.46914C6.62266 9.34883 6.7457 9.02344 6.62539 8.74727L4.87539 4.80977ZM4.375 6.37656L4.89453 7.54688H3.85547L4.375 6.37656ZM12.25 4.48438C12.5508 4.48438 12.7969 4.73047 12.7969 5.03125V5.14062H14H14.4375C14.7383 5.14062 14.9844 5.38672 14.9844 5.6875C14.9844 5.98828 14.7383 6.23438 14.4375 6.23438H14.3828L14.3391 6.35742C14.0957 7.02461 13.7266 7.63164 13.2562 8.1457C13.2809 8.16211 13.3055 8.17578 13.3301 8.18945L13.8469 8.49844C14.1066 8.6543 14.1887 8.99063 14.0355 9.24766C13.8824 9.50469 13.5434 9.58945 13.2863 9.43633L12.7695 9.12734C12.6465 9.05352 12.5289 8.97695 12.4113 8.89492C12.1215 9.1 11.8125 9.27773 11.4816 9.42539L11.3832 9.46914C11.107 9.59219 10.7844 9.46641 10.6613 9.19023C10.5383 8.91406 10.6641 8.59141 10.9402 8.46836L11.0387 8.42461C11.2137 8.34531 11.3832 8.25781 11.5445 8.15664L11.2109 7.82305C10.9977 7.60977 10.9977 7.2625 11.2109 7.04922C11.4242 6.83594 11.7715 6.83594 11.9848 7.04922L12.384 7.44844L12.3977 7.46211C12.7367 7.10391 13.0129 6.68828 13.2125 6.23164H12.25H10.2812C9.98047 6.23164 9.73438 5.98555 9.73438 5.68477C9.73438 5.38398 9.98047 5.13789 10.2812 5.13789H11.7031V5.02852C11.7031 4.72773 11.9492 4.48164 12.25 4.48164V4.48438Z" fill="#F4A261"/>
-                </svg>
-                English
+                <GlobeIcon />
+                <span
+                  style={{
+                    fontFamily: selectedLang.font,
+                    fontWeight: selectedLang.weight,
+                    fontSize: selectedLang.size,
+                    color: "#F4A261",
+                  }}
+                >
+                  {selectedLang.label}
+                </span>
                 <svg width="10" height="10" viewBox="0 0 10 10" fill="none" xmlns="http://www.w3.org/2000/svg">
                   <path d="M4.55859 7.94141C4.80273 8.18555 5.19922 8.18555 5.44336 7.94141L9.19336 4.19141C9.4375 3.94727 9.4375 3.55078 9.19336 3.30664C8.94922 3.0625 8.55273 3.0625 8.30859 3.30664L5 6.61523L1.69141 3.30859C1.44727 3.06445 1.05078 3.06445 0.806641 3.30859C0.5625 3.55273 0.5625 3.94922 0.806641 4.19336L4.55664 7.94336L4.55859 7.94141Z" fill="#F4A261"/>
                 </svg>
@@ -44,14 +112,14 @@ export default function Index() {
             </div>
 
             {/* Info button */}
-            <button className="w-10 h-10 flex items-center justify-center rounded-full border border-[#F4A261]/10 bg-[#8B5E3C]/15">
+            <button className="w-10 h-10 flex items-center justify-center rounded-full border border-[#F4A261]/10 bg-[#8B5E3C]/15 flex-shrink-0">
               <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
                 <path d="M8 16C10.1217 16 12.1566 15.1571 13.6569 13.6569C15.1571 12.1566 16 10.1217 16 8C16 5.87827 15.1571 3.84344 13.6569 2.34315C12.1566 0.842855 10.1217 0 8 0C5.87827 0 3.84344 0.842855 2.34315 2.34315C0.842855 3.84344 0 5.87827 0 8C0 10.1217 0.842855 12.1566 2.34315 13.6569C3.84344 15.1571 5.87827 16 8 16ZM6.75 10.5H7.5V8.5H6.75C6.33437 8.5 6 8.16562 6 7.75C6 7.33437 6.33437 7 6.75 7H8.25C8.66562 7 9 7.33437 9 7.75V10.5H9.25C9.66562 10.5 10 10.8344 10 11.25C10 11.6656 9.66562 12 9.25 12H6.75C6.33437 12 6 11.6656 6 11.25C6 10.8344 6.33437 10.5 6.75 10.5ZM8 4C8.26522 4 8.51957 4.10536 8.70711 4.29289C8.89464 4.48043 9 4.73478 9 5C9 5.26522 8.89464 5.51957 8.70711 5.70711C8.51957 5.89464 8.26522 6 8 6C7.73478 6 7.48043 5.89464 7.29289 5.70711C7.10536 5.51957 7 5.26522 7 5C7 4.73478 7.10536 4.48043 7.29289 4.29289C7.48043 4.10536 7.73478 4 8 4Z" fill="#F4A261"/>
               </svg>
             </button>
           </div>
 
-          {/* Brand name & tagline — overlaid at bottom-left of hero */}
+          {/* Brand name & tagline */}
           <div className="absolute bottom-6 left-6">
             <p className="text-[#F4A261] italic font-['Inter',sans-serif] text-[32px] font-normal leading-[1.4]">
               HeritageLK
@@ -90,20 +158,6 @@ export default function Index() {
               />
             </div>
 
-            {/* Email Address */}
-            <div className="relative">
-              <div className="absolute left-4 top-1/2 -translate-y-1/2">
-                <svg width="12" height="12" viewBox="0 0 12 12" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <path d="M1.125 1.5C0.503906 1.5 0 2.00391 0 2.625C0 2.97891 0.166406 3.31172 0.45 3.525L5.55 7.35C5.81719 7.54922 6.18281 7.54922 6.45 7.35L11.55 3.525C11.8336 3.31172 12 2.97891 12 2.625C12 2.00391 11.4961 1.5 10.875 1.5H1.125ZM0 4.125V9C0 9.82734 0.672656 10.5 1.5 10.5H10.5C11.3273 10.5 12 9.82734 12 9V4.125L6.9 7.95C6.36562 8.35078 5.63438 8.35078 5.1 7.95L0 4.125Z" fill="#8B5E3C"/>
-                </svg>
-              </div>
-              <input
-                type="email"
-                placeholder="Email Address"
-                className="w-full h-14 pl-12 pr-4 rounded-2xl border border-[#8B5E3C]/30 bg-[#8B5E3C]/10 text-[#FEFAE0] placeholder-[#8B5E3C]/50 text-base font-normal outline-none focus:border-[#F4A261]/50 focus:bg-[#8B5E3C]/15 transition-colors"
-              />
-            </div>
-
             {/* Create Password */}
             <div className="relative">
               <div className="absolute left-4 top-1/2 -translate-y-1/2">
@@ -117,6 +171,7 @@ export default function Index() {
                 className="w-full h-14 pl-12 pr-12 rounded-2xl border border-[#8B5E3C]/30 bg-[#8B5E3C]/10 text-[#FEFAE0] placeholder-[#8B5E3C]/50 text-base font-normal outline-none focus:border-[#F4A261]/50 focus:bg-[#8B5E3C]/15 transition-colors"
               />
               <button
+                type="button"
                 onClick={() => setShowPassword(!showPassword)}
                 className="absolute right-4 top-1/2 -translate-y-1/2 text-[#8B5E3C]/50 hover:text-[#8B5E3C] transition-colors"
               >
@@ -130,6 +185,20 @@ export default function Index() {
                   </svg>
                 )}
               </button>
+            </div>
+
+            {/* Email Address */}
+            <div className="relative">
+              <div className="absolute left-4 top-1/2 -translate-y-1/2">
+                <svg width="12" height="12" viewBox="0 0 12 12" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M1.125 1.5C0.503906 1.5 0 2.00391 0 2.625C0 2.97891 0.166406 3.31172 0.45 3.525L5.55 7.35C5.81719 7.54922 6.18281 7.54922 6.45 7.35L11.55 3.525C11.8336 3.31172 12 2.97891 12 2.625C12 2.00391 11.4961 1.5 10.875 1.5H1.125ZM0 4.125V9C0 9.82734 0.672656 10.5 1.5 10.5H10.5C11.3273 10.5 12 9.82734 12 9V4.125L6.9 7.95C6.36562 8.35078 5.63438 8.35078 5.1 7.95L0 4.125Z" fill="#8B5E3C"/>
+                </svg>
+              </div>
+              <input
+                type="email"
+                placeholder="Email Address"
+                className="w-full h-14 pl-12 pr-4 rounded-2xl border border-[#8B5E3C]/30 bg-[#8B5E3C]/10 text-[#FEFAE0] placeholder-[#8B5E3C]/50 text-base font-normal outline-none focus:border-[#F4A261]/50 focus:bg-[#8B5E3C]/15 transition-colors"
+              />
             </div>
           </div>
 
