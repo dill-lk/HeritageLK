@@ -1,5 +1,5 @@
 /** @import must precede all other statements */
-@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Inter:ital,wght@0,400;0,600;0,700;0,800;1,400;1,700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap");
 
 @tailwind base;
 @tailwind components;
@@ -12,6 +12,11 @@
    * A different format will require also updating the theme in tailwind.config.ts.
   */
   :root {
+    --heritage-bg: 30 23% 5%;
+    --heritage-orange: 28 87% 67%;
+    --heritage-brown: 27 40% 39%;
+    --heritage-cream: 52 94% 93%;
+
     --background: 0 0% 100%;
     --foreground: 222.2 84% 4.9%;
 
@@ -105,6 +110,7 @@
 
   body {
     @apply bg-background text-foreground;
+    background-color: #100E0A;
   }
 
   :where(p, span, li, h1, h2, h3, h4, h5, h6, a, button, label, td, th) {
