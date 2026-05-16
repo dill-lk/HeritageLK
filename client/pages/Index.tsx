@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from "react";
+import { Link } from "react-router-dom";
 
 const GlobeIcon = () => (
   <svg width="18" height="14" viewBox="0 0 18 14" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -240,9 +241,9 @@ export default function Index() {
             <span className="text-[#8B5E3C] text-sm font-normal leading-5">
               Already have an account?
             </span>
-            <a href="/login" className="text-[#F4A261] text-sm font-bold leading-5 border-b border-[#F4A261]/20 hover:border-[#F4A261]/60 transition-colors pb-px">
+            <Link to="/login" className="text-[#F4A261] text-sm font-bold leading-5 border-b border-[#F4A261]/20 hover:border-[#F4A261]/60 transition-colors pb-px">
               Log in
-            </a>
+            </Link>
           </div>
 
           {/* Decorative glow */}

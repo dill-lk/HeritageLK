@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from "react";
+import { Link } from "react-router-dom";
 
 const GlobeIcon = () => (
   <svg width="17" height="10" viewBox="0 0 17 10" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -239,9 +240,9 @@ export default function Login() {
             <span className="text-[#8B5E3C] text-sm font-normal leading-[21px]">
               Don't have an account?
             </span>
-            <a href="/" className="text-[#F4A261] text-sm font-bold leading-[21px] hover:opacity-80 transition-opacity">
+            <Link to="/" className="text-[#F4A261] text-sm font-bold leading-[21px] hover:opacity-80 transition-opacity">
               Sign up
-            </a>
+            </Link>
           </div>
 
           <div className="absolute -bottom-12 -right-12 w-48 h-48 rounded-full bg-[#8B5E3C] opacity-5 blur-[50px] pointer-events-none" />
