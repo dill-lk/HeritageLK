@@ -203,12 +203,12 @@ export default function Login() {
           </div>
 
           {/* Sign In Button */}
-          <button className="w-full h-14 flex items-center justify-center gap-2 rounded-2xl bg-[#F4A261] text-[#100E0A] text-base font-bold tracking-wide hover:bg-[#f0985a] active:scale-[0.98] transition-all mb-6">
+          <Link to="/home" className="w-full h-14 flex items-center justify-center gap-2 rounded-2xl bg-[#F4A261] text-[#100E0A] text-base font-bold tracking-wide hover:bg-[#f0985a] active:scale-[0.98] transition-all mb-6">
             Sign In
             <svg width="11" height="9" viewBox="0 0 11 9" fill="none" xmlns="http://www.w3.org/2000/svg">
               <path d="M9.36642 4.78903C9.63337 4.52208 9.63337 4.08858 9.36642 3.82164L5.94958 0.404795C5.68263 0.137855 5.24912 0.137855 4.98218 0.404795C4.71523 0.671736 4.71523 1.10525 4.98218 1.37219L7.23515 3.62304H0.683368C0.30538 3.62304 0 3.92841 0 4.3064C0 4.68439 0.30538 4.98976 0.683368 4.98976H7.23302L4.98431 7.24061C4.71737 7.50755 4.71737 7.94106 4.98431 8.208C5.25125 8.47494 5.68477 8.47494 5.9517 8.208L9.36852 4.79116L9.36642 4.78903Z" fill="#100E0A"/>
             </svg>
-          </button>
+          </Link>
 
           {/* Divider */}
           <div className="flex items-center gap-4 mb-6">

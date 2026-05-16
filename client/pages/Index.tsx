@@ -204,12 +204,12 @@ export default function Index() {
           </div>
 
           {/* CTA Button */}
-          <button className="w-full h-14 flex items-center justify-center gap-2 rounded-2xl bg-[#F4A261] text-[#100E0A] text-base font-bold tracking-wide hover:bg-[#f0985a] active:scale-[0.98] transition-all mb-6">
+          <Link to="/home" className="w-full h-14 flex items-center justify-center gap-2 rounded-2xl bg-[#F4A261] text-[#100E0A] text-base font-bold tracking-wide hover:bg-[#f0985a] active:scale-[0.98] transition-all mb-6">
             Begin Journey
             <svg width="11" height="12" viewBox="0 0 11 12" fill="none" xmlns="http://www.w3.org/2000/svg">
               <path d="M10.2797 6.52974C10.5727 6.23677 10.5727 5.76099 10.2797 5.46802L6.52969 1.71802C6.23672 1.42505 5.76094 1.42505 5.46797 1.71802C5.175 2.01099 5.175 2.48677 5.46797 2.77974L7.94062 5.25005H0.75C0.335156 5.25005 0 5.58521 0 6.00005C0 6.41489 0.335156 6.75005 0.75 6.75005H7.93828L5.47031 9.22036C5.17734 9.51333 5.17734 9.98911 5.47031 10.2821C5.76328 10.575 6.23906 10.575 6.53203 10.2821L10.282 6.53208L10.2797 6.52974Z" fill="#100E0A"/>
             </svg>
-          </button>
+          </Link>
 
           {/* Divider */}
           <div className="flex items-center gap-4 mb-6">
