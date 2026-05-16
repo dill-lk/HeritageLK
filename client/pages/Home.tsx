@@ -1,3 +1,5 @@
+import { Link } from "react-router-dom";
+
 export default function Home() {
   return (
     <div className="min-h-screen w-full bg-[#100E0A] flex justify-center font-['Plus_Jakarta_Sans',sans-serif]">
@@ -168,7 +170,7 @@ export default function Home() {
           </div>
 
           {/* Quests Banner */}
-          <div className="mt-4 rounded-[28px] border border-[#B752B7]/30 bg-white/5 overflow-hidden relative">
+          <Link to="/quests" className="mt-4 rounded-[28px] border border-[#B752B7]/30 bg-white/5 overflow-hidden relative block">
             <div className="absolute -left-4 top-0 w-24 h-24 rounded-full bg-[#B752B7]/10 blur-[20px] pointer-events-none" />
             <div className="flex items-center p-5 gap-3 relative z-10">
               <span className="text-4xl leading-10 flex-shrink-0">🎮</span>
@@ -185,7 +187,7 @@ export default function Home() {
                 </svg>
               </div>
             </div>
-          </div>
+          </Link>
         </div>
 
         {/* Nearby Heritage */}
@@ -234,7 +236,7 @@ export default function Home() {
 
         {/* Bottom Navigation */}
         <div className="fixed bottom-0 left-0 right-0 z-[100] flex justify-center pb-4 pointer-events-none">
-          <div className="pointer-events-auto w-[343px] h-[84px] rounded-[42px] border border-white/5 bg-[#231B12] shadow-2xl flex items-center px-2">
+          <div className="pointer-events-auto w-[343px] h-[84px] rounded-[42px] border border-[#F4A261]/20 bg-[#231B12]/60 backdrop-blur-xl shadow-[0_24px_48px_rgba(0,0,0,0.55)] flex items-center px-2">
 
             {/* Home */}
             <div className="flex-1 flex flex-col items-center justify-center gap-1">
