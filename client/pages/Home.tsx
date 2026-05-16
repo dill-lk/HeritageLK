@@ -233,7 +233,7 @@ export default function Home() {
         </div>
 
         {/* Bottom Navigation */}
-        <div className="fixed bottom-0 left-0 right-0 flex justify-center pb-4 pointer-events-none">
+        <div className="fixed bottom-0 left-0 right-0 z-[100] flex justify-center pb-4 pointer-events-none">
           <div className="pointer-events-auto w-[343px] h-[84px] rounded-[42px] border border-white/5 bg-[#231B12] shadow-2xl flex items-center px-2">
 
             {/* Home */}
