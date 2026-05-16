@@ -10,9 +10,19 @@
     "start": "node dist/server/node-build.mjs",
     "test": "vitest --run",
     "format.fix": "prettier --write .",
-    "typecheck": "tsc"
+    "typecheck": "tsc",
+    "tauri": "tauri",
+    "tauri:dev": "tauri dev",
+    "tauri:build": "tauri build",
+    "tauri:android:init": "tauri android init --ci",
+    "tauri:android:dev": "tauri android dev",
+    "tauri:android:build": "tauri android build",
+    "tauri:ios:targets": "rustup target add aarch64-apple-ios aarch64-apple-ios-sim x86_64-apple-ios",
+    "tauri:ios:build": "cargo build --manifest-path src-tauri/Cargo.toml --target aarch64-apple-ios",
+    "tauri:ios:build-sim": "cargo build --manifest-path src-tauri/Cargo.toml --target aarch64-apple-ios-sim"
   },
   "dependencies": {
+    "@tauri-apps/api": "2.11.0",
     "dotenv": "^17.2.1",
     "express": "^5.1.0",
     "zod": "^3.25.76"
@@ -51,6 +61,7 @@
     "@swc/core": "^1.13.3",
     "@tailwindcss/typography": "^0.5.16",
     "@tanstack/react-query": "^5.84.2",
+    "@tauri-apps/cli": "2.11.1",
     "@types/cors": "^2.8.19",
     "@types/express": "^5.0.3",
     "@types/node": "^24.2.1",

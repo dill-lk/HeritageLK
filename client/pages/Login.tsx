@@ -240,7 +240,7 @@ export default function Login() {
             <span className="text-[#8B5E3C] text-sm font-normal leading-[21px]">
               Don't have an account?
             </span>
-            <Link to="/" className="text-[#F4A261] text-sm font-bold leading-[21px] hover:opacity-80 transition-opacity">
+            <Link to="/signup" className="text-[#F4A261] text-sm font-bold leading-[21px] hover:opacity-80 transition-opacity">
               Sign up
             </Link>
           </div>
