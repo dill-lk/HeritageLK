@@ -109,7 +109,7 @@ export default function Home() {
         <div className="px-6 pt-10">
           <div className="flex gap-4">
             {/* Scanner — tall left card */}
-            <div className="w-[156px] rounded-[32px] border border-[#52B788]/20 bg-white/5 overflow-hidden flex flex-col justify-end p-5 relative min-h-[280px]">
+            <Link to="/scanner" className="w-[156px] rounded-[32px] border border-[#52B788]/20 bg-white/5 overflow-hidden flex flex-col justify-end p-5 relative min-h-[280px]">
               <div className="absolute bottom-20 left-6 w-24 h-24 rounded-full bg-[#52B788]/10 blur-[20px] pointer-events-none" />
               <div className="relative z-10 flex flex-col gap-2">
                 <span className="text-4xl leading-10">📸</span>
@@ -126,7 +126,7 @@ export default function Home() {
                   </svg>
                 </div>
               </div>
-            </div>
+            </Link>
 
             {/* Right column */}
             <div className="flex-1 flex flex-col gap-4">
