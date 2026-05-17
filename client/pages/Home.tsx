@@ -1,7 +1,63 @@
+import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import BottomNav from "@/components/BottomNav";
+import { supabase } from "@/lib/supabase";
+
+const getDisplayName = (metadata: Record<string, unknown> | undefined, email?: string) => {
+  const fullName = typeof metadata?.full_name === "string" ? metadata.full_name : "";
+  if (fullName.trim()) {
+    return fullName.trim();
+  }
+
+  if (email) {
+    return email.split("@")[0];
+  }
+
+  return "Explorer";
+};
 
 export default function Home() {
+  const [displayName, setDisplayName] = useState("Explorer");
+  const [birthDate, setBirthDate] = useState("");
+
+  useEffect(() => {
+    if (!supabase) {
+      return;
+    }
+
+    const loadUserProfile = async () => {
+      const { data } = await supabase.auth.getUser();
+      const user = data.user;
+      if (!user) {
+        return;
+      }
+
+      setDisplayName(getDisplayName(user.user_metadata, user.email));
+      const dateFromMetadata =
+        typeof user.user_metadata?.birth_date === "string" ? user.user_metadata.birth_date : "";
+      setBirthDate(dateFromMetadata);
+    };
+
+    void loadUserProfile();
+  }, []);
+
+  const formattedBirthDate = useMemo(() => {
+    if (!birthDate) {
+      return "Not set";
+    }
+
+    const parsed = new Date(birthDate);
+    if (Number.isNaN(parsed.getTime())) {
+      return birthDate;
+    }
+
+    return parsed.toLocaleDateString(undefined, {
+      year: "numeric",
+      month: "short",
+      day: "numeric",
+    });
+  }, [birthDate]);
+
   return (
     <div className="min-h-screen w-full bg-[#100E0A] flex justify-center font-['Plus_Jakarta_Sans',sans-serif]">
       <div className="relative w-full max-w-[440px] bg-[#100E0A] pb-32">
@@ -16,7 +72,7 @@ export default function Home() {
             />
             <div className="flex flex-col">
               <span className="text-[#FEFAE0]/60 text-xs font-medium tracking-[0.6px] uppercase leading-4">Explorer</span>
-              <span className="text-[#FEFBE0] text-lg font-bold leading-7">Hello Disara!</span>
+              <span className="text-[#FEFBE0] text-lg font-bold leading-7">Hello {displayName}!</span>
             </div>
           </div>
           <div className="relative">
@@ -32,7 +88,7 @@ export default function Home() {
         {/* Hero Section */}
         <div className="px-6">
           <p className="text-[#52B788] text-sm font-semibold tracking-[2px] uppercase leading-5 mb-[7px]">
-            Welcome Disara!
+            Welcome {displayName}!
           </p>
           <div className="mb-6">
             <p className="text-[#FEFBE0] text-[42px] font-extrabold leading-[46.2px] tracking-[-1.05px]">
@@ -67,7 +123,7 @@ export default function Home() {
               <svg width="14" height="14" viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg">
                 <path d="M9.375 1H4.125C3.50391 1 2.99766 1.51094 3.02109 2.12969C3.02578 2.25391 3.03047 2.37812 3.0375 2.5H0.5625C0.250781 2.5 0 2.75078 0 3.0625C0 5.23281 0.785156 6.74219 1.83984 7.76641C2.87812 8.77656 4.14375 9.28516 5.07656 9.54297C5.625 9.69531 6 10.1523 6 10.6117C6 11.1016 5.60156 11.5 5.11172 11.5H4.5C4.08516 11.5 3.75 11.8352 3.75 12.25C3.75 12.6648 4.08516 13 4.5 13H9C9.41484 13 9.75 12.6648 9.75 12.25C9.75 11.8352 9.41484 11.5 9 11.5H8.38828C7.89844 11.5 7.5 11.1016 7.5 10.6117C7.5 10.1523 7.87266 9.69297 8.42344 9.54297C9.35859 9.28516 10.6242 8.77656 11.6625 7.76641C12.7148 6.74219 13.5 5.23281 13.5 3.0625C13.5 2.75078 13.2492 2.5 12.9375 2.5H10.4625C10.4695 2.37812 10.4742 2.25625 10.4789 2.12969C10.5023 1.51094 9.99609 1 9.375 1ZM1.14609 3.625H3.12422C3.3375 5.73672 3.80859 7.14766 4.34062 8.09219C3.75703 7.83438 3.15 7.47109 2.625 6.96016C1.875 6.23125 1.26562 5.17891 1.14844 3.625H1.14609ZM10.8773 6.96016C10.3523 7.47109 9.74531 7.83438 9.16172 8.09219C9.69375 7.14766 10.1648 5.73672 10.3781 3.625H12.3563C12.2367 5.17891 11.6273 6.23125 10.8797 6.96016H10.8773Z" fill="#52B788"/>
               </svg>
-              <span className="text-[#FEFBE0] text-sm font-medium">Rank #4</span>
+              <span className="text-[#FEFBE0] text-sm font-medium">Born {formattedBirthDate}</span>
             </div>
           </div>
 
