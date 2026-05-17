@@ -40,7 +40,9 @@ jobs:
         run: corepack pnpm install --frozen-lockfile
 
       - name: Initialize Android project
-        run: corepack pnpm tauri:android:init
+        run: |
+          rm -rf src-tauri/gen/android
+          corepack pnpm tauri:android:init
 
       - name: Build APK
         run: corepack pnpm tauri:android:build
