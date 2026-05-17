@@ -6,6 +6,7 @@ export default function BottomNav() {
   const isHome = pathname === "/home";
   const isExplore = pathname === "/explore";
   const isScanner = pathname === "/scanner";
+  const isProfile = pathname === "/profile";
 
   return (
     <div className="fixed bottom-0 left-0 right-0 z-[100] flex justify-center pb-4 pointer-events-none">
@@ -53,12 +54,15 @@ export default function BottomNav() {
         </button>
 
         {/* Profile */}
-        <button className="flex-1 flex flex-col items-center justify-center gap-1 opacity-40">
+        <Link
+          to="/profile"
+          className={`flex-1 flex flex-col items-center justify-center gap-1 ${isProfile ? "" : "opacity-40"}`}
+        >
           <svg width="25" height="20" viewBox="0 0 25 20" fill="none" xmlns="http://www.w3.org/2000/svg">
             <path d="M8.75 10C10.0761 10 11.3479 9.47322 12.2855 8.53553C13.2232 7.59785 13.75 6.32608 13.75 5C13.75 3.67392 13.2232 2.40215 12.2855 1.46447C11.3479 0.526784 10.0761 0 8.75 0C7.42392 0 6.15215 0.526784 5.21447 1.46447C4.27678 2.40215 3.75 3.67392 3.75 5C3.75 6.32608 4.27678 7.59785 5.21447 8.53553C6.15215 9.47322 7.42392 10 8.75 10ZM6.96484 11.875C3.11719 11.875 0 14.9922 0 18.8398C0 19.4805 0.519531 20 1.16016 20H16.3398C16.4102 20 16.4766 19.9922 16.5469 19.9805C13.5664 17.8281 12.6484 14.4727 12.5195 12.1602C11.8906 11.9727 11.2266 11.875 10.5391 11.875H6.96484ZM19.0273 8.81641L14.3398 10.6914C13.9844 10.8359 13.75 11.1797 13.75 11.5625C13.75 14.0352 14.7617 18.1562 19.0156 19.9297C19.2461 20.0273 19.5078 20.0273 19.7383 19.9297C23.9883 18.1562 25 14.0352 25 11.5625C25 11.1797 24.7656 10.8359 24.4102 10.6914L19.7227 8.81641C19.5 8.72656 19.25 8.72656 19.0273 8.81641ZM23.1016 12.1875C22.9492 14.168 22.0391 16.7461 19.375 18.0352V10.6953L23.1016 12.1875Z" fill="white"/>
           </svg>
           <span className="text-white text-[10px] font-medium uppercase leading-[15px]">Profile</span>
-        </button>
+        </Link>
 
       </div>
     </div>

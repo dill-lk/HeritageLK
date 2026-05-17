@@ -10,3 +10,15 @@
 export interface DemoResponse {
   message: string;
 }
+
+export interface HeritagePlaceDetail {
+  placeName: string;
+  shortDescription: string;
+  ticketPriceLkr: string;
+  ticketPriceForeignUsd: string;
+  sourceNote: string;
+}
+
+export interface HeritageDetailsResponse {
+  places: HeritagePlaceDetail[];
+}
