@@ -1,5 +1,6 @@
-import { useState, useRef, useEffect } from "react";
-import { Link } from "react-router-dom";
+import { useState, useRef, useEffect, type FormEvent } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { supabase } from "@/lib/supabase";
 
 const GlobeIcon = () => (
   <svg width="17" height="10" viewBox="0 0 17 10" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -26,9 +27,14 @@ const languages = [
 ];
 
 export default function Login() {
+  const navigate = useNavigate();
   const [showPassword, setShowPassword] = useState(false);
   const [langOpen, setLangOpen] = useState(false);
   const [selectedLang, setSelectedLang] = useState(languages[0]);
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [authMessage, setAuthMessage] = useState("");
   const langRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -40,6 +46,27 @@ export default function Login() {
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
+
+  const handleSignIn = async (e: FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    setAuthMessage("");
+
+    if (!supabase) {
+      setAuthMessage("Supabase is not configured. Add VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY.");
+      return;
+    }
+
+    setIsSubmitting(true);
+    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    setIsSubmitting(false);
+
+    if (error) {
+      setAuthMessage(error.message);
+      return;
+    }
+
+    navigate("/home");
+  };
 
   return (
     <div className="min-h-screen w-full bg-[#100E0A] flex items-center justify-center font-['Inter',sans-serif]">
@@ -153,16 +180,20 @@ export default function Login() {
             </p>
           </div>
 
-          {/* Form fields */}
-          <div className="flex flex-col gap-4 mb-3">
+          <form onSubmit={handleSignIn}>
+            {/* Form fields */}
+            <div className="flex flex-col gap-4 mb-3">
             {/* Username */}
             <div className="relative">
               <div className="absolute left-4 top-1/2 -translate-y-1/2 pointer-events-none">
                 <UserIcon />
               </div>
               <input
-                type="text"
-                placeholder="Enter Username"
+                type="email"
+                placeholder="Enter Email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
                 className="w-full h-14 pl-12 pr-4 rounded-2xl border border-[#8B5E3C]/30 bg-[#8B5E3C]/10 text-[#FEFAE0] placeholder-[#8B5E3C]/50 text-base font-normal outline-none focus:border-[#F4A261]/50 focus:bg-[#8B5E3C]/15 transition-colors font-['Plus_Jakarta_Sans',sans-serif]"
               />
             </div>
@@ -175,6 +206,9 @@ export default function Login() {
               <input
                 type={showPassword ? "text" : "password"}
                 placeholder="Enter Password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
                 className="w-full h-14 pl-12 pr-12 rounded-2xl border border-[#8B5E3C]/30 bg-[#8B5E3C]/10 text-[#FEFAE0] placeholder-[#8B5E3C]/50 text-base font-normal outline-none focus:border-[#F4A261]/50 focus:bg-[#8B5E3C]/15 transition-colors font-['Plus_Jakarta_Sans',sans-serif]"
               />
               <button
@@ -193,22 +227,31 @@ export default function Login() {
                 )}
               </button>
             </div>
-          </div>
+            </div>
 
-          {/* Forgot Password */}
-          <div className="flex justify-end mb-6">
-            <button className="text-[#F4A261] text-sm font-semibold leading-[21px] tracking-[0.027px] hover:opacity-80 transition-opacity">
-              Forgot Password?
+            {authMessage ? (
+              <p className="mb-4 text-sm text-[#F4A261]">{authMessage}</p>
+            ) : null}
+
+            {/* Forgot Password */}
+            <div className="flex justify-end mb-6">
+              <button type="button" className="text-[#F4A261] text-sm font-semibold leading-[21px] tracking-[0.027px] hover:opacity-80 transition-opacity">
+                Forgot Password?
+              </button>
+            </div>
+
+            {/* Sign In Button */}
+            <button
+              type="submit"
+              disabled={isSubmitting}
+              className="w-full h-14 flex items-center justify-center gap-2 rounded-2xl bg-[#F4A261] text-[#100E0A] text-base font-bold tracking-wide hover:bg-[#f0985a] active:scale-[0.98] transition-all mb-6 disabled:opacity-60 disabled:cursor-not-allowed"
+            >
+              {isSubmitting ? "Signing In..." : "Sign In"}
+              <svg width="11" height="9" viewBox="0 0 11 9" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M9.36642 4.78903C9.63337 4.52208 9.63337 4.08858 9.36642 3.82164L5.94958 0.404795C5.68263 0.137855 5.24912 0.137855 4.98218 0.404795C4.71523 0.671736 4.71523 1.10525 4.98218 1.37219L7.23515 3.62304H0.683368C0.30538 3.62304 0 3.92841 0 4.3064C0 4.68439 0.30538 4.98976 0.683368 4.98976H7.23302L4.98431 7.24061C4.71737 7.50755 4.71737 7.94106 4.98431 8.208C5.25125 8.47494 5.68477 8.47494 5.9517 8.208L9.36852 4.79116L9.36642 4.78903Z" fill="#100E0A"/>
+              </svg>
             </button>
-          </div>
-
-          {/* Sign In Button */}
-          <Link to="/home" className="w-full h-14 flex items-center justify-center gap-2 rounded-2xl bg-[#F4A261] text-[#100E0A] text-base font-bold tracking-wide hover:bg-[#f0985a] active:scale-[0.98] transition-all mb-6">
-            Sign In
-            <svg width="11" height="9" viewBox="0 0 11 9" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M9.36642 4.78903C9.63337 4.52208 9.63337 4.08858 9.36642 3.82164L5.94958 0.404795C5.68263 0.137855 5.24912 0.137855 4.98218 0.404795C4.71523 0.671736 4.71523 1.10525 4.98218 1.37219L7.23515 3.62304H0.683368C0.30538 3.62304 0 3.92841 0 4.3064C0 4.68439 0.30538 4.98976 0.683368 4.98976H7.23302L4.98431 7.24061C4.71737 7.50755 4.71737 7.94106 4.98431 8.208C5.25125 8.47494 5.68477 8.47494 5.9517 8.208L9.36852 4.79116L9.36642 4.78903Z" fill="#100E0A"/>
-            </svg>
-          </Link>
+          </form>
 
           {/* Divider */}
           <div className="flex items-center gap-4 mb-6">
