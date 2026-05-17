@@ -1,7 +1,63 @@
+import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import BottomNav from "@/components/BottomNav";
+import { supabase } from "@/lib/supabase";
+
+const getDisplayName = (metadata: Record<string, unknown> | undefined, email?: string) => {
+  const fullName = typeof metadata?.full_name === "string" ? metadata.full_name : "";
+  if (fullName.trim()) {
+    return fullName.trim();
+  }
+
+  if (email) {
+    return email.split("@")[0];
+  }
+
+  return "Explorer";
+};
 
 export default function Home() {
+  const [displayName, setDisplayName] = useState("Explorer");
+  const [birthDate, setBirthDate] = useState("");
+
+  useEffect(() => {
+    if (!supabase) {
+      return;
+    }
+
+    const loadUserProfile = async () => {
+      const { data } = await supabase.auth.getUser();
+      const user = data.user;
+      if (!user) {
+        return;
+      }
+
+      setDisplayName(getDisplayName(user.user_metadata, user.email));
+      const dateFromMetadata =
+        typeof user.user_metadata?.birth_date === "string" ? user.user_metadata.birth_date : "";
+      setBirthDate(dateFromMetadata);
+    };
+
+    void loadUserProfile();
+  }, []);
+
+  const formattedBirthDate = useMemo(() => {
+    if (!birthDate) {
+      return "Not set";
+    }
+
+    const parsed = new Date(birthDate);
+    if (Number.isNaN(parsed.getTime())) {
+      return birthDate;
+    }
+
+    return parsed.toLocaleDateString(undefined, {
+      year: "numeric",
+      month: "short",
+      day: "numeric",
+    });
+  }, [birthDate]);
+
   return (
     <div className="min-h-screen w-full bg-[#100E0A] flex justify-center font-['Plus_Jakarta_Sans',sans-serif]">
       <div className="relative w-full max-w-[440px] bg-[#100E0A] pb-32">
@@ -16,7 +72,7 @@ export default function Home() {
             />
             <div className="flex flex-col">
               <span className="text-[#FEFAE0]/60 text-xs font-medium tracking-[0.6px] uppercase leading-4">Explorer</span>
-              <span className="text-[#FEFBE0] text-lg font-bold leading-7">Hello Disara!</span>
+              <span className="text-[#FEFBE0] text-lg font-bold leading-7">Hello {displayName}!</span>
             </div>
           </div>
           <div className="relative">
@@ -32,7 +88,7 @@ export default function Home() {
         {/* Hero Section */}
         <div className="px-6">
           <p className="text-[#52B788] text-sm font-semibold tracking-[2px] uppercase leading-5 mb-[7px]">
-            Welcome Disara!
+            Welcome {displayName}!
           </p>
           <div className="mb-6">
             <p className="text-[#FEFBE0] text-[42px] font-extrabold leading-[46.2px] tracking-[-1.05px]">
@@ -67,7 +123,7 @@ export default function Home() {
               <svg width="14" height="14" viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg">
                 <path d="M9.375 1H4.125C3.50391 1 2.99766 1.51094 3.02109 2.12969C3.02578 2.25391 3.03047 2.37812 3.0375 2.5H0.5625C0.250781 2.5 0 2.75078 0 3.0625C0 5.23281 0.785156 6.74219 1.83984 7.76641C2.87812 8.77656 4.14375 9.28516 5.07656 9.54297C5.625 9.69531 6 10.1523 6 10.6117C6 11.1016 5.60156 11.5 5.11172 11.5H4.5C4.08516 11.5 3.75 11.8352 3.75 12.25C3.75 12.6648 4.08516 13 4.5 13H9C9.41484 13 9.75 12.6648 9.75 12.25C9.75 11.8352 9.41484 11.5 9 11.5H8.38828C7.89844 11.5 7.5 11.1016 7.5 10.6117C7.5 10.1523 7.87266 9.69297 8.42344 9.54297C9.35859 9.28516 10.6242 8.77656 11.6625 7.76641C12.7148 6.74219 13.5 5.23281 13.5 3.0625C13.5 2.75078 13.2492 2.5 12.9375 2.5H10.4625C10.4695 2.37812 10.4742 2.25625 10.4789 2.12969C10.5023 1.51094 9.99609 1 9.375 1ZM1.14609 3.625H3.12422C3.3375 5.73672 3.80859 7.14766 4.34062 8.09219C3.75703 7.83438 3.15 7.47109 2.625 6.96016C1.875 6.23125 1.26562 5.17891 1.14844 3.625H1.14609ZM10.8773 6.96016C10.3523 7.47109 9.74531 7.83438 9.16172 8.09219C9.69375 7.14766 10.1648 5.73672 10.3781 3.625H12.3563C12.2367 5.17891 11.6273 6.23125 10.8797 6.96016H10.8773Z" fill="#52B788"/>
               </svg>
-              <span className="text-[#FEFBE0] text-sm font-medium">Rank #4</span>
+              <span className="text-[#FEFBE0] text-sm font-medium">Born {formattedBirthDate}</span>
             </div>
           </div>
 
@@ -235,53 +291,7 @@ export default function Home() {
           </div>
         </div>
 
-        {/* Bottom Navigation */}
-        <div className="fixed bottom-0 left-0 right-0 z-[100] flex justify-center pb-4 pointer-events-none">
-          <div className="pointer-events-auto w-[343px] h-[84px] rounded-[42px] border border-[#F4A261]/20 bg-[#231B12]/60 backdrop-blur-xl shadow-[0_24px_48px_rgba(0,0,0,0.55)] flex items-center px-2">
-
-            {/* Home */}
-            <div className="flex-1 flex flex-col items-center justify-center gap-1">
-              <svg width="23" height="20" viewBox="0 0 23 20" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M22.4922 9.98047C22.4922 10.6836 21.9062 11.2344 21.2422 11.2344H19.9922L20.0195 17.4922C20.0195 17.5977 20.0117 17.7031 20 17.8086V18.4375C20 19.3008 19.3008 20 18.4375 20H17.8125C17.7695 20 17.7266 20 17.6836 19.9961C17.6289 20 17.5742 20 17.5195 20H16.25H15.3125C14.4492 20 13.75 19.3008 13.75 18.4375V17.5V15C13.75 14.3086 13.1914 13.75 12.5 13.75H10C9.30859 13.75 8.75 14.3086 8.75 15V17.5V18.4375C8.75 19.3008 8.05078 20 7.1875 20H6.25H5.00391C4.94531 20 4.88672 19.9961 4.82812 19.9922C4.78125 19.9961 4.73438 20 4.6875 20H4.0625C3.19922 20 2.5 19.3008 2.5 18.4375V14.0625C2.5 14.0273 2.5 13.9883 2.50391 13.9531V11.2344H1.25C0.546875 11.2344 0 10.6875 0 9.98047C0 9.62891 0.117188 9.31641 0.390625 9.04297L10.4062 0.3125C10.6797 0.0390625 10.9922 0 11.2656 0C11.5391 0 11.8516 0.078125 12.0859 0.273438L22.0625 9.04297C22.375 9.31641 22.5312 9.62891 22.4922 9.98047Z" fill="#FEFBE0"/>
-              </svg>
-              <span className="text-[#FEFBE0] text-[10px] font-bold uppercase leading-[15px]">Home</span>
-            </div>
-
-            {/* Explore */}
-            <Link to="/quests" className="flex-1 flex flex-col items-center justify-center gap-1 opacity-40">
-              <svg width="23" height="20" viewBox="0 0 23 20" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M15.9375 4.6875C15.9375 6.82031 13.082 10.6211 11.8281 12.1875C11.5273 12.5625 10.9688 12.5625 10.6719 12.1875C9.41797 10.6211 6.5625 6.82031 6.5625 4.6875C6.5625 2.09766 8.66016 0 11.25 0C13.8398 0 15.9375 2.09766 15.9375 4.6875ZM16.25 7.82812C16.3867 7.55859 16.5117 7.28906 16.625 7.02344C16.6445 6.97656 16.6641 6.92578 16.6836 6.87891L21.2148 5.06641C21.832 4.82031 22.5 5.27344 22.5 5.9375V16.5156C22.5 16.8984 22.2656 17.2422 21.9102 17.3867L16.25 19.6484V7.82812ZM5.375 5.40234C5.46875 5.95312 5.65625 6.50781 5.875 7.02344C5.98828 7.28906 6.11328 7.55859 6.25 7.82812V17.6484L1.28516 19.6367C0.667969 19.8828 0 19.4297 0 18.7656V8.1875C0 7.80469 0.234375 7.46094 0.589844 7.31641L5.37891 5.40234H5.375ZM12.8047 12.9688C13.3477 12.2891 14.1992 11.1836 15 9.96094V19.6992L7.5 17.5547V9.96094C8.30078 11.1836 9.15234 12.2891 9.69531 12.9688C10.4961 13.9688 12.0039 13.9688 12.8047 12.9688ZM11.25 5.9375C11.6644 5.9375 12.0618 5.77288 12.3549 5.47985C12.6479 5.18683 12.8125 4.7894 12.8125 4.375C12.8125 3.9606 12.6479 3.56317 12.3549 3.27015C12.0618 2.97712 11.6644 2.8125 11.25 2.8125C10.8356 2.8125 10.4382 2.97712 10.1451 3.27015C9.85212 3.56317 9.6875 3.9606 9.6875 4.375C9.6875 4.7894 9.85212 5.18683 10.1451 5.47985C10.4382 5.77288 10.8356 5.9375 11.25 5.9375Z" fill="white"/>
-              </svg>
-              <span className="text-white text-[10px] font-medium uppercase leading-[15px]">Explore</span>
-            </Link>
-
-            {/* Camera (center) */}
-            <div className="flex-none h-full flex items-center justify-center px-3">
-              <button className="w-14 h-14 flex items-center justify-center rounded-full border-4 border-[#241B13] bg-[#F4A261] shadow-[0_0_20px_0_rgba(244,162,97,0.40)]">
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <path d="M6.98906 3.0375L6.50156 4.5H3C1.34531 4.5 0 5.84531 0 7.5V19.5C0 21.1547 1.34531 22.5 3 22.5H21C22.6547 22.5 24 21.1547 24 19.5V7.5C24 5.84531 22.6547 4.5 21 4.5H17.4984L17.0109 3.0375C16.7062 2.11875 15.8484 1.5 14.8781 1.5H9.12188C8.15156 1.5 7.29375 2.11875 6.98906 3.0375ZM12 9C13.1935 9 14.3381 9.47411 15.182 10.318C16.0259 11.1619 16.5 12.3065 16.5 13.5C16.5 14.6935 16.0259 15.8381 15.182 16.682C14.3381 17.5259 13.1935 18 12 18C10.8065 18 9.66193 17.5259 8.81802 16.682C7.97411 15.8381 7.5 14.6935 7.5 13.5C7.5 12.3065 7.97411 11.1619 8.81802 10.318C9.66193 9.47411 10.8065 9 12 9Z" fill="#241B13"/>
-                </svg>
-              </button>
-            </div>
-
-            {/* Archive */}
-            <div className="flex-1 flex flex-col items-center justify-center gap-1 opacity-40">
-              <svg width="23" height="20" viewBox="0 0 23 20" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M9.75 18.418C10.1719 18.5664 10.625 18.2578 10.625 17.8125V3.07031C10.625 2.90625 10.5625 2.74219 10.4297 2.64062C9.66406 2.03125 7.90625 1.25 5.625 1.25C3.65234 1.25 1.80859 1.76953 0.707031 2.19141C0.265625 2.36328 0 2.80078 0 3.27344V17.7383C0 18.2031 0.5 18.5273 0.941406 18.3828C2.17188 17.9727 4.12109 17.5 5.625 17.5C6.94922 17.5 8.71094 18.0469 9.75 18.418ZM12.75 18.418C13.7891 18.0469 15.5508 17.5 16.875 17.5C18.3789 17.5 20.3281 17.9727 21.5586 18.3828C22 18.5312 22.5 18.2031 22.5 17.7383V3.27344C22.5 2.80078 22.2344 2.36328 21.793 2.19531C20.6914 1.76953 18.8477 1.25 16.875 1.25C14.5938 1.25 12.8359 2.03125 12.0703 2.64062C11.9414 2.74219 11.875 2.90625 11.875 3.07031V17.8125C11.875 18.2578 12.332 18.5664 12.75 18.418Z" fill="white"/>
-              </svg>
-              <span className="text-white text-[10px] font-medium uppercase leading-[15px]">Archive</span>
-            </div>
-
-            {/* Profile */}
-            <div className="flex-1 flex flex-col items-center justify-center gap-1 opacity-40">
-              <svg width="25" height="20" viewBox="0 0 25 20" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M8.75 10C10.0761 10 11.3479 9.47322 12.2855 8.53553C13.2232 7.59785 13.75 6.32608 13.75 5C13.75 3.67392 13.2232 2.40215 12.2855 1.46447C11.3479 0.526784 10.0761 0 8.75 0C7.42392 0 6.15215 0.526784 5.21447 1.46447C4.27678 2.40215 3.75 3.67392 3.75 5C3.75 6.32608 4.27678 7.59785 5.21447 8.53553C6.15215 9.47322 7.42392 10 8.75 10ZM6.96484 11.875C3.11719 11.875 0 14.9922 0 18.8398C0 19.4805 0.519531 20 1.16016 20H16.3398C16.4102 20 16.4766 19.9922 16.5469 19.9805C13.5664 17.8281 12.6484 14.4727 12.5195 12.1602C11.8906 11.9727 11.2266 11.875 10.5391 11.875H6.96484ZM19.0273 8.81641L14.3398 10.6914C13.9844 10.8359 13.75 11.1797 13.75 11.5625C13.75 14.0352 14.7617 18.1562 19.0156 19.9297C19.2461 20.0273 19.5078 20.0273 19.7383 19.9297C23.9883 18.1562 25 14.0352 25 11.5625C25 11.1797 24.7656 10.8359 24.4102 10.6914L19.7227 8.81641C19.5 8.72656 19.25 8.72656 19.0273 8.81641ZM23.1016 12.1875C22.9492 14.168 22.0391 16.7461 19.375 18.0352V10.6953L23.1016 12.1875Z" fill="white"/>
-              </svg>
-              <span className="text-white text-[10px] font-medium uppercase leading-[15px]">Profile</span>
-            </div>
-
-          </div>
-        </div>
+        <BottomNav />
       </div>
     </div>
   );

@@ -4,7 +4,9 @@ export default function BottomNav() {
   const { pathname } = useLocation();
 
   const isHome = pathname === "/home";
+  const isExplore = pathname === "/explore";
   const isScanner = pathname === "/scanner";
+  const isProfile = pathname === "/profile";
 
   return (
     <div className="fixed bottom-0 left-0 right-0 z-[100] flex justify-center pb-4 pointer-events-none">
@@ -19,12 +21,15 @@ export default function BottomNav() {
         </Link>
 
         {/* Explore */}
-        <button className="flex-1 flex flex-col items-center justify-center gap-1 opacity-40">
+        <Link
+          to="/explore"
+          className={`flex-1 flex flex-col items-center justify-center gap-1 ${isExplore ? "" : "opacity-40"}`}
+        >
           <svg width="23" height="20" viewBox="0 0 23 20" fill="none" xmlns="http://www.w3.org/2000/svg">
             <path d="M15.9375 4.6875C15.9375 6.82031 13.082 10.6211 11.8281 12.1875C11.5273 12.5625 10.9688 12.5625 10.6719 12.1875C9.41797 10.6211 6.5625 6.82031 6.5625 4.6875C6.5625 2.09766 8.66016 0 11.25 0C13.8398 0 15.9375 2.09766 15.9375 4.6875ZM16.25 7.82812C16.3867 7.55859 16.5117 7.28906 16.625 7.02344C16.6445 6.97656 16.6641 6.92578 16.6836 6.87891L21.2148 5.06641C21.832 4.82031 22.5 5.27344 22.5 5.9375V16.5156C22.5 16.8984 22.2656 17.2422 21.9102 17.3867L16.25 19.6484V7.82812ZM5.375 5.40234C5.46875 5.95312 5.65625 6.50781 5.875 7.02344C5.98828 7.28906 6.11328 7.55859 6.25 7.82812V17.6484L1.28516 19.6367C0.667969 19.8828 0 19.4297 0 18.7656V8.1875C0 7.80469 0.234375 7.46094 0.589844 7.31641L5.37891 5.40234H5.375ZM12.8047 12.9688C13.3477 12.2891 14.1992 11.1836 15 9.96094V19.6992L7.5 17.5547V9.96094C8.30078 11.1836 9.15234 12.2891 9.69531 12.9688C10.4961 13.9688 12.0039 13.9688 12.8047 12.9688ZM11.25 5.9375C11.6644 5.9375 12.0618 5.77288 12.3549 5.47985C12.6479 5.18683 12.8125 4.7894 12.8125 4.375C12.8125 3.9606 12.6479 3.56317 12.3549 3.27015C12.0618 2.97712 11.6644 2.8125 11.25 2.8125C10.8356 2.8125 10.4382 2.97712 10.1451 3.27015C9.85212 3.56317 9.6875 3.9606 9.6875 4.375C9.6875 4.7894 9.85212 5.18683 10.1451 5.47985C10.4382 5.77288 10.8356 5.9375 11.25 5.9375Z" fill="white"/>
           </svg>
           <span className="text-white text-[10px] font-medium uppercase leading-[15px]">Explore</span>
-        </button>
+        </Link>
 
         {/* Camera — centered in nav height */}
         <div className="flex-none flex items-center justify-center px-3">
@@ -49,12 +54,15 @@ export default function BottomNav() {
         </button>
 
         {/* Profile */}
-        <button className="flex-1 flex flex-col items-center justify-center gap-1 opacity-40">
+        <Link
+          to="/profile"
+          className={`flex-1 flex flex-col items-center justify-center gap-1 ${isProfile ? "" : "opacity-40"}`}
+        >
           <svg width="25" height="20" viewBox="0 0 25 20" fill="none" xmlns="http://www.w3.org/2000/svg">
             <path d="M8.75 10C10.0761 10 11.3479 9.47322 12.2855 8.53553C13.2232 7.59785 13.75 6.32608 13.75 5C13.75 3.67392 13.2232 2.40215 12.2855 1.46447C11.3479 0.526784 10.0761 0 8.75 0C7.42392 0 6.15215 0.526784 5.21447 1.46447C4.27678 2.40215 3.75 3.67392 3.75 5C3.75 6.32608 4.27678 7.59785 5.21447 8.53553C6.15215 9.47322 7.42392 10 8.75 10ZM6.96484 11.875C3.11719 11.875 0 14.9922 0 18.8398C0 19.4805 0.519531 20 1.16016 20H16.3398C16.4102 20 16.4766 19.9922 16.5469 19.9805C13.5664 17.8281 12.6484 14.4727 12.5195 12.1602C11.8906 11.9727 11.2266 11.875 10.5391 11.875H6.96484ZM19.0273 8.81641L14.3398 10.6914C13.9844 10.8359 13.75 11.1797 13.75 11.5625C13.75 14.0352 14.7617 18.1562 19.0156 19.9297C19.2461 20.0273 19.5078 20.0273 19.7383 19.9297C23.9883 18.1562 25 14.0352 25 11.5625C25 11.1797 24.7656 10.8359 24.4102 10.6914L19.7227 8.81641C19.5 8.72656 19.25 8.72656 19.0273 8.81641ZM23.1016 12.1875C22.9492 14.168 22.0391 16.7461 19.375 18.0352V10.6953L23.1016 12.1875Z" fill="white"/>
           </svg>
           <span className="text-white text-[10px] font-medium uppercase leading-[15px]">Profile</span>
-        </button>
+        </Link>
 
       </div>
     </div>

@@ -20,6 +20,7 @@ export default function Index() {
   const [langOpen, setLangOpen] = useState(false);
   const [selectedLang, setSelectedLang] = useState(languages[0]);
   const [fullName, setFullName] = useState("");
+  const [birthDate, setBirthDate] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -50,7 +51,10 @@ export default function Index() {
       email,
       password,
       options: {
-        data: { full_name: fullName },
+        data: {
+          full_name: fullName,
+          birth_date: birthDate,
+        },
         emailRedirectTo: getSupabaseEmailRedirectUrl(),
       },
     });
@@ -248,6 +252,22 @@ export default function Index() {
                 placeholder="Email Address"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
+                required
+                className="w-full h-14 pl-12 pr-4 rounded-2xl border border-[#8B5E3C]/30 bg-[#8B5E3C]/10 text-[#FEFAE0] placeholder-[#8B5E3C]/50 text-base font-normal outline-none focus:border-[#F4A261]/50 focus:bg-[#8B5E3C]/15 transition-colors"
+              />
+            </div>
+
+            {/* Birth Date */}
+            <div className="relative">
+              <div className="absolute left-4 top-1/2 -translate-y-1/2">
+                <svg width="12" height="12" viewBox="0 0 12 12" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M3 0.75C3 0.335156 2.66484 0 2.25 0C1.83516 0 1.5 0.335156 1.5 0.75V1.5H1.125C0.503906 1.5 0 2.00391 0 2.625V10.5C0 11.1211 0.503906 11.625 1.125 11.625H10.875C11.4961 11.625 12 11.1211 12 10.5V2.625C12 2.00391 11.4961 1.5 10.875 1.5H10.5V0.75C10.5 0.335156 10.1648 0 9.75 0C9.33516 0 9 0.335156 9 0.75V1.5H3V0.75ZM10.5 4.5V10.125H1.5V4.5H10.5Z" fill="#8B5E3C"/>
+                </svg>
+              </div>
+              <input
+                type="date"
+                value={birthDate}
+                onChange={(e) => setBirthDate(e.target.value)}
                 required
                 className="w-full h-14 pl-12 pr-4 rounded-2xl border border-[#8B5E3C]/30 bg-[#8B5E3C]/10 text-[#FEFAE0] placeholder-[#8B5E3C]/50 text-base font-normal outline-none focus:border-[#F4A261]/50 focus:bg-[#8B5E3C]/15 transition-colors"
               />
