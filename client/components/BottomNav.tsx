@@ -4,6 +4,7 @@ export default function BottomNav() {
   const { pathname } = useLocation();
 
   const isHome = pathname === "/home";
+  const isExplore = pathname === "/explore";
   const isScanner = pathname === "/scanner";
 
   return (
@@ -19,12 +20,15 @@ export default function BottomNav() {
         </Link>
 
         {/* Explore */}
-        <button className="flex-1 flex flex-col items-center justify-center gap-1 opacity-40">
+        <Link
+          to="/explore"
+          className={`flex-1 flex flex-col items-center justify-center gap-1 ${isExplore ? "" : "opacity-40"}`}
+        >
           <svg width="23" height="20" viewBox="0 0 23 20" fill="none" xmlns="http://www.w3.org/2000/svg">
             <path d="M15.9375 4.6875C15.9375 6.82031 13.082 10.6211 11.8281 12.1875C11.5273 12.5625 10.9688 12.5625 10.6719 12.1875C9.41797 10.6211 6.5625 6.82031 6.5625 4.6875C6.5625 2.09766 8.66016 0 11.25 0C13.8398 0 15.9375 2.09766 15.9375 4.6875ZM16.25 7.82812C16.3867 7.55859 16.5117 7.28906 16.625 7.02344C16.6445 6.97656 16.6641 6.92578 16.6836 6.87891L21.2148 5.06641C21.832 4.82031 22.5 5.27344 22.5 5.9375V16.5156C22.5 16.8984 22.2656 17.2422 21.9102 17.3867L16.25 19.6484V7.82812ZM5.375 5.40234C5.46875 5.95312 5.65625 6.50781 5.875 7.02344C5.98828 7.28906 6.11328 7.55859 6.25 7.82812V17.6484L1.28516 19.6367C0.667969 19.8828 0 19.4297 0 18.7656V8.1875C0 7.80469 0.234375 7.46094 0.589844 7.31641L5.37891 5.40234H5.375ZM12.8047 12.9688C13.3477 12.2891 14.1992 11.1836 15 9.96094V19.6992L7.5 17.5547V9.96094C8.30078 11.1836 9.15234 12.2891 9.69531 12.9688C10.4961 13.9688 12.0039 13.9688 12.8047 12.9688ZM11.25 5.9375C11.6644 5.9375 12.0618 5.77288 12.3549 5.47985C12.6479 5.18683 12.8125 4.7894 12.8125 4.375C12.8125 3.9606 12.6479 3.56317 12.3549 3.27015C12.0618 2.97712 11.6644 2.8125 11.25 2.8125C10.8356 2.8125 10.4382 2.97712 10.1451 3.27015C9.85212 3.56317 9.6875 3.9606 9.6875 4.375C9.6875 4.7894 9.85212 5.18683 10.1451 5.47985C10.4382 5.77288 10.8356 5.9375 11.25 5.9375Z" fill="white"/>
           </svg>
           <span className="text-white text-[10px] font-medium uppercase leading-[15px]">Explore</span>
-        </button>
+        </Link>
 
         {/* Camera — centered in nav height */}
         <div className="flex-none flex items-center justify-center px-3">
