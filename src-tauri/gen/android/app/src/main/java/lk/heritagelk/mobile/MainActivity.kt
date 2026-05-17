@@ -1,4 +1,4 @@
-package com.tauri.dev
+package lk.heritagelk.mobile
 
 import android.os.Bundle
 import androidx.activity.enableEdgeToEdge

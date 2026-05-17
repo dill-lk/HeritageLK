@@ -107,13 +107,12 @@ export default function Quests() {
                 </div>
               ))}
             </div>
-          </div>
-
-          {/* Active Quests */}
-          <div className="flex flex-col gap-4">
-            <div className="flex justify-between items-center px-2">
-              <h2 className="text-[#FEFBE0] text-xl font-bold leading-7">Active Quests</h2>
-              <button className="text-[#52B788] text-[10px] font-bold tracking-[1.5px] uppercase leading-[15px]">Explore All</button>
+            <div className="flex-none h-full flex items-center justify-center px-3">
+              <button className="w-14 h-14 flex items-center justify-center rounded-full border-4 border-[#241B13] bg-[#F4A261] shadow-[0_0_20px_0_rgba(244,162,97,0.40)]">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M6.98906 3.0375L6.50156 4.5H3C1.34531 4.5 0 5.84531 0 7.5V19.5C0 21.1547 1.34531 22.5 3 22.5H21C22.6547 22.5 24 21.1547 24 19.5V7.5C24 5.84531 22.6547 4.5 21 4.5H17.4984L17.0109 3.0375C16.7062 2.11875 15.8484 1.5 14.8781 1.5H9.12188C8.15156 1.5 7.29375 2.11875 6.98906 3.0375ZM12 9C13.1935 9 14.3381 9.47411 15.182 10.318C16.0259 11.1619 16.5 12.3065 16.5 13.5C16.5 14.6935 16.0259 15.8381 15.182 16.682C14.3381 17.5259 13.1935 18 12 18C10.8065 18 9.66193 17.5259 8.81802 16.682C7.97411 15.8381 7.5 14.6935 7.5 13.5C7.5 12.3065 7.97411 11.1619 8.81802 10.318C9.66193 9.47411 10.8065 9 12 9Z" fill="#241B13"/>
+                </svg>
+              </button>
             </div>
 
             <div className="flex flex-col gap-3">
