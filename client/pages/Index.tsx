@@ -1,5 +1,6 @@
-import { useState, useRef, useEffect } from "react";
-import { Link } from "react-router-dom";
+import { useState, useRef, useEffect, type FormEvent } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { supabase } from "@/lib/supabase";
 
 const GlobeIcon = () => (
   <svg width="18" height="14" viewBox="0 0 18 14" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -14,9 +15,15 @@ const languages = [
 ];
 
 export default function Index() {
+  const navigate = useNavigate();
   const [showPassword, setShowPassword] = useState(false);
   const [langOpen, setLangOpen] = useState(false);
   const [selectedLang, setSelectedLang] = useState(languages[0]);
+  const [fullName, setFullName] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [authMessage, setAuthMessage] = useState("");
   const langRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -28,6 +35,38 @@ export default function Index() {
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
+
+  const handleSignUp = async (e: FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    setAuthMessage("");
+
+    if (!supabase) {
+      setAuthMessage("Supabase is not configured. Add VITE_SUPABASE_URL and VITE_SUPABASE_PUBLISHABLE_KEY.");
+      return;
+    }
+
+    setIsSubmitting(true);
+    const { data, error } = await supabase.auth.signUp({
+      email,
+      password,
+      options: {
+        data: { full_name: fullName },
+      },
+    });
+    setIsSubmitting(false);
+
+    if (error) {
+      setAuthMessage(error.message);
+      return;
+    }
+
+    if (data.session) {
+      navigate("/home");
+      return;
+    }
+
+    setAuthMessage("Account created. Please check your email to confirm your account.");
+  };
 
   return (
     <div className="min-h-screen w-full bg-[#100E0A] flex items-center justify-center font-['Plus_Jakarta_Sans',sans-serif]">
@@ -143,8 +182,9 @@ export default function Index() {
             </p>
           </div>
 
-          {/* Form fields */}
-          <div className="flex flex-col gap-4 mb-6">
+          <form onSubmit={handleSignUp}>
+            {/* Form fields */}
+            <div className="flex flex-col gap-4 mb-6">
             {/* Full Name */}
             <div className="relative">
               <div className="absolute left-4 top-1/2 -translate-y-1/2">
@@ -155,6 +195,9 @@ export default function Index() {
               <input
                 type="text"
                 placeholder="Full Name"
+                value={fullName}
+                onChange={(e) => setFullName(e.target.value)}
+                required
                 className="w-full h-14 pl-12 pr-4 rounded-2xl border border-[#8B5E3C]/30 bg-[#8B5E3C]/10 text-[#FEFAE0] placeholder-[#8B5E3C]/50 text-base font-bold outline-none focus:border-[#F4A261]/50 focus:bg-[#8B5E3C]/15 transition-colors"
               />
             </div>
@@ -169,6 +212,10 @@ export default function Index() {
               <input
                 type={showPassword ? "text" : "password"}
                 placeholder="Create Password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+                minLength={6}
                 className="w-full h-14 pl-12 pr-12 rounded-2xl border border-[#8B5E3C]/30 bg-[#8B5E3C]/10 text-[#FEFAE0] placeholder-[#8B5E3C]/50 text-base font-normal outline-none focus:border-[#F4A261]/50 focus:bg-[#8B5E3C]/15 transition-colors"
               />
               <button
@@ -198,18 +245,30 @@ export default function Index() {
               <input
                 type="email"
                 placeholder="Email Address"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
                 className="w-full h-14 pl-12 pr-4 rounded-2xl border border-[#8B5E3C]/30 bg-[#8B5E3C]/10 text-[#FEFAE0] placeholder-[#8B5E3C]/50 text-base font-normal outline-none focus:border-[#F4A261]/50 focus:bg-[#8B5E3C]/15 transition-colors"
               />
             </div>
-          </div>
+            </div>
 
-          {/* CTA Button */}
-          <Link to="/home" className="w-full h-14 flex items-center justify-center gap-2 rounded-2xl bg-[#F4A261] text-[#100E0A] text-base font-bold tracking-wide hover:bg-[#f0985a] active:scale-[0.98] transition-all mb-6">
-            Begin Journey
-            <svg width="11" height="12" viewBox="0 0 11 12" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M10.2797 6.52974C10.5727 6.23677 10.5727 5.76099 10.2797 5.46802L6.52969 1.71802C6.23672 1.42505 5.76094 1.42505 5.46797 1.71802C5.175 2.01099 5.175 2.48677 5.46797 2.77974L7.94062 5.25005H0.75C0.335156 5.25005 0 5.58521 0 6.00005C0 6.41489 0.335156 6.75005 0.75 6.75005H7.93828L5.47031 9.22036C5.17734 9.51333 5.17734 9.98911 5.47031 10.2821C5.76328 10.575 6.23906 10.575 6.53203 10.2821L10.282 6.53208L10.2797 6.52974Z" fill="#100E0A"/>
-            </svg>
-          </Link>
+            {authMessage ? (
+              <p className="mb-4 text-sm text-[#F4A261]">{authMessage}</p>
+            ) : null}
+
+            {/* CTA Button */}
+            <button
+              type="submit"
+              disabled={isSubmitting}
+              className="w-full h-14 flex items-center justify-center gap-2 rounded-2xl bg-[#F4A261] text-[#100E0A] text-base font-bold tracking-wide hover:bg-[#f0985a] active:scale-[0.98] transition-all mb-6 disabled:opacity-60 disabled:cursor-not-allowed"
+            >
+              {isSubmitting ? "Creating..." : "Begin Journey"}
+              <svg width="11" height="12" viewBox="0 0 11 12" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M10.2797 6.52974C10.5727 6.23677 10.5727 5.76099 10.2797 5.46802L6.52969 1.71802C6.23672 1.42505 5.76094 1.42505 5.46797 1.71802C5.175 2.01099 5.175 2.48677 5.46797 2.77974L7.94062 5.25005H0.75C0.335156 5.25005 0 5.58521 0 6.00005C0 6.41489 0.335156 6.75005 0.75 6.75005H7.93828L5.47031 9.22036C5.17734 9.51333 5.17734 9.98911 5.47031 10.2821C5.76328 10.575 6.23906 10.575 6.53203 10.2821L10.282 6.53208L10.2797 6.52974Z" fill="#100E0A"/>
+              </svg>
+            </button>
+          </form>
 
           {/* Divider */}
           <div className="flex items-center gap-4 mb-6">
