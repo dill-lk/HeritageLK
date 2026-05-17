@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect, type FormEvent } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { supabase } from "@/lib/supabase";
+import { getSupabaseEmailRedirectUrl, supabase } from "@/lib/supabase";
 
 const GlobeIcon = () => (
   <svg width="18" height="14" viewBox="0 0 18 14" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -51,6 +51,7 @@ export default function Index() {
       password,
       options: {
         data: { full_name: fullName },
+        emailRedirectTo: getSupabaseEmailRedirectUrl(),
       },
     });
     setIsSubmitting(false);
