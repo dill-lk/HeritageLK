@@ -58,7 +58,8 @@ class _ExploreScreenState extends State<ExploreScreen> {
     });
     try {
       final details = await _api.siteDetails(site.title);
-      if (mounted) setState(() => _aiDetails = details);
+      final aiText = details['details']?.toString() ?? details['summary']?.toString() ?? site.summary;
+      if (mounted) setState(() => _aiDetails = aiText);
     } catch (_) {
       if (mounted) setState(() => _aiDetails = site.summary);
     }

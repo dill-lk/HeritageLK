@@ -51,7 +51,56 @@ class _ReportAdminScreenState extends State<ReportAdminScreen> {
   @override
   Widget build(BuildContext context) {
     final reports = _reports.where((report) => _filter == 'all' || report.status == _filter).toList();
-    return Scaffold(body: SafeArea(child: ListView(padding: const EdgeInsets.fromLTRB(24, 16, 24, 32), children: [Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [_round(Icons.arrow_back, () => Navigator.of(context).pushReplacementNamed('/home')), const Text('Damage Reports', style: TextStyle(color: HeritageColors.cream, fontFamily: 'Playfair Display', fontSize: 20, fontWeight: FontWeight.bold)), _round(Icons.notifications_none, () {})]), const SizedBox(height: 24), Row(children: [_stat('${_reports.length}', 'TOTAL', HeritageColors.cream), _stat('${_count('pending')}', 'PENDING', HeritageColors.orange), _stat('${_count('in_review')}', 'IN REVIEW', const Color(0xFF52B788)), _stat('${_count('resolved')}', 'RESOLVED', const Color(0xFFA8DADC))]), if (_loading) const Padding(padding: EdgeInsets.only(top: 16), child: LinearProgressIndicator(color: HeritageColors.orange, backgroundColor: Color(0x1AFFFFFF))), const SizedBox(height: 24), SingleChildScrollView(scrollDirection: Axis.horizontal, child: Row(children: ['all', 'pending', 'in_review', 'resolved', 'rejected'].map((status) => Padding(padding: const EdgeInsets.only(right: 8), child: ChoiceChip(label: Text(status.toUpperCase().replaceAll('_', ' ')), selected: _filter == status, selectedColor: HeritageColors.orange, backgroundColor: Colors.white.withOpacity(0.05), labelStyle: TextStyle(color: _filter == status ? HeritageColors.background : const Color(0x99FFFFFF), fontSize: 10, fontWeight: FontWeight.bold), onSelected: (_) => setState(() => _filter = status))).toList())), const SizedBox(height: 20), ...reports.map(_reportCard)])));
+    return Scaffold(
+      body: SafeArea(
+        child: ListView(
+          padding: const EdgeInsets.fromLTRB(24, 16, 24, 32),
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                _round(Icons.arrow_back, () => Navigator.of(context).pushReplacementNamed('/home')),
+                const Text('Damage Reports', style: TextStyle(color: HeritageColors.cream, fontFamily: 'Playfair Display', fontSize: 20, fontWeight: FontWeight.bold)),
+                _round(Icons.notifications_none, () {}),
+              ],
+            ),
+            const SizedBox(height: 24),
+            Row(
+              children: [
+                _stat('${_reports.length}', 'TOTAL', HeritageColors.cream),
+                _stat('${_count('pending')}', 'PENDING', HeritageColors.orange),
+                _stat('${_count('in_review')}', 'IN REVIEW', const Color(0xFF52B788)),
+                _stat('${_count('resolved')}', 'RESOLVED', const Color(0xFFA8DADC)),
+              ],
+            ),
+            if (_loading) const Padding(padding: EdgeInsets.only(top: 16), child: LinearProgressIndicator(color: HeritageColors.orange, backgroundColor: Color(0x1AFFFFFF))),
+            const SizedBox(height: 24),
+            SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: Row(
+                children: ['all', 'pending', 'in_review', 'resolved', 'rejected']
+                    .map(
+                      (status) => Padding(
+                        padding: const EdgeInsets.only(right: 8),
+                        child: ChoiceChip(
+                          label: Text(status.toUpperCase().replaceAll('_', ' ')),
+                          selected: _filter == status,
+                          selectedColor: HeritageColors.orange,
+                          backgroundColor: Colors.white.withOpacity(0.05),
+                          labelStyle: TextStyle(color: _filter == status ? HeritageColors.background : const Color(0x99FFFFFF), fontSize: 10, fontWeight: FontWeight.bold),
+                          onSelected: (_) => setState(() => _filter = status),
+                        ),
+                      ),
+                    )
+                    .toList(),
+              ),
+            ),
+            const SizedBox(height: 20),
+            ...reports.map(_reportCard),
+          ],
+        ),
+      ),
+    );
   }
 
   int _count(String status) => _reports.where((report) => report.status == status).length;
