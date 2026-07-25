@@ -18,6 +18,7 @@ class _LoginScreenState extends State<LoginScreen> {
   bool _submitting = false;
   String _language = 'English';
   String _authMessage = '';
+  bool _resetSent = false;
 
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
@@ -46,6 +47,21 @@ class _LoginScreenState extends State<LoginScreen> {
       if (mounted) setState(() => _authMessage = '$error');
     } finally {
       if (mounted) setState(() => _submitting = false);
+    }
+  }
+
+  Future<void> _forgotPassword() async {
+    if (!AppConfig.hasSupabase || _emailController.text.trim().isEmpty) {
+      setState(() => _authMessage = 'Enter your email above, then tap Forgot Password.');
+      return;
+    }
+    try {
+      await Supabase.instance.client.auth.resetPasswordForEmail(_emailController.text.trim());
+      if (mounted) setState(() { _resetSent = true; _authMessage = ''; });
+    } on AuthException catch (error) {
+      if (mounted) setState(() => _authMessage = error.message);
+    } catch (error) {
+      if (mounted) setState(() => _authMessage = '$error');
     }
   }
 
@@ -261,7 +277,8 @@ class _LoginScreenState extends State<LoginScreen> {
         ),
         const SizedBox(height: 12),
         if (_authMessage.isNotEmpty) Padding(padding: const EdgeInsets.only(bottom: 8), child: Text(_authMessage, style: const TextStyle(color: HeritageColors.orange, fontSize: 13))),
-        Align(alignment: Alignment.centerRight, child: TextButton(onPressed: () {}, child: const Text('Forgot Password?', style: TextStyle(color: HeritageColors.orange, fontSize: 14, fontWeight: FontWeight.w600)))),
+        if (_resetSent) Padding(padding: const EdgeInsets.only(bottom: 8), child: Text('Password reset email sent. Check your inbox.', style: TextStyle(color: const Color(0xFF52B788), fontSize: 13))),
+        Align(alignment: Alignment.centerRight, child: TextButton(onPressed: _forgotPassword, child: const Text('Forgot Password?', style: TextStyle(color: HeritageColors.orange, fontSize: 14, fontWeight: FontWeight.w600)))),
         const SizedBox(height: 10),
         SizedBox(
           height: 56,

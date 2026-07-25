@@ -1,4 +1,6 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../config/app_config.dart';
@@ -18,14 +20,46 @@ class ExploreScreen extends StatefulWidget {
 class _ExploreScreenState extends State<ExploreScreen> {
   final _search = TextEditingController();
   final _api = HeritageApi();
-  List<HeritageSite> _sites = const [
-    HeritageSite(id: 'galle-dutch-fort', title: 'Galle Dutch Fort', summary: 'A living monument to Sri Lanka\'s colonial history.', locationName: 'Galle'),
-    HeritageSite(id: 'sigiriya-rock-fortress', title: 'Sigiriya Rock Fortress', summary: 'The ancient rock fortress and palace ruin.', locationName: 'Matale'),
-    HeritageSite(id: 'dambulla-cave-temple', title: 'Dambulla Cave Temple', summary: 'A cave temple complex with ancient murals and statues.', locationName: 'Dambulla'),
-  ];
   HeritageSite? _selected;
   String? _aiDetails;
   bool _loading = false;
+  bool _detailsExpanded = true;
+  String? _weatherTemp;
+  String? _weatherWind;
+  String _filterCategory = 'All';
+
+  static const _allSites = [
+    _SiteData('Galle Dutch Fort', 6.0264, 80.217, 'History', 'FREE', 'Entry to the Galle Dutch Fort itself is completely free for all visitors. You can walk the ramparts, visit the lighthouse, and explore the cobblestone streets without a ticket.'),
+    _SiteData('Galle Lighthouse', 6.0249, 80.2195, 'History', 'FREE', 'A picturesque, historic lighthouse located inside the Galle Fort. While you cannot go inside, exploring the area around it is completely free.'),
+    _SiteData('National Museum', 6.027, 80.2185, 'Knowledge', '300 LKR', 'Located inside the fort, this museum offers deep insights into the cultural history of Southern Sri Lanka. Entry is 300 LKR for foreign adults.'),
+    _SiteData('Jungle Beach', 6.015, 80.237, 'Nature', 'FREE', 'A beautiful hidden beach near Galle. Access is free and it offers a relatively quiet swimming experience surrounded by forest.'),
+    _SiteData('Sigiriya Rock Fortress', 7.957, 80.7603, 'History', r'$30 USD', 'An ancient rock fortress and palace ruin surrounded by an extensive network of gardens and reservoirs. A UNESCO World Heritage site.'),
+    _SiteData('Temple of the Sacred Tooth Relic', 7.2936, 80.6415, 'History', '2000 LKR', 'A Buddhist temple in the city of Kandy, housing the relic of the tooth of the Buddha.'),
+    _SiteData('Ruwanwelisaya', 8.35, 80.3965, 'History', 'Included in Anuradhapura pass', 'A stupa in Anuradhapura, considered one of the worlds tallest monuments and a sacred place of worship.'),
+    _SiteData('Dambulla Cave Temple', 7.8566, 80.6483, 'History', '2000 LKR', 'The largest and best-preserved cave temple complex in Sri Lanka, boasting ancient Buddhist murals and statues.'),
+    _SiteData('Yala National Park', 6.3686, 81.5165, 'Nature', r'~$35 USD', 'A huge area of forest, grassland and lagoons bordering the Indian Ocean, in southeast Sri Lanka. Famous for its leopards.'),
+    _SiteData('Nine Arches Bridge', 6.8767, 81.0608, 'Nature', 'FREE', 'A picturesque colonial-era railway bridge in Demodara, near Ella. Famous for its magnificent architecture set amongst lush green tea fields.'),
+    _SiteData("Adam's Peak (Sri Pada)", 6.8096, 80.4994, 'Nature', 'FREE', 'A tall conical mountain in central Sri Lanka, known for the "sacred footprint" near its summit.'),
+    _SiteData('Polonnaruwa Vatadage', 7.9472, 81.0016, 'History', 'Included in Polonnaruwa pass', 'An ancient structure dating back to the Kingdom of Polonnaruwa. The best-preserved example of a vatadage in the country.'),
+    _SiteData('Royal Botanical Gardens, Peradeniya', 7.2687, 80.5966, 'Nature', '3000 LKR', 'Renowned for its collection of orchids, including more than 4000 species of plants, spices, medicinal plants and palm trees.'),
+    _SiteData('Horton Plains National Park', 6.8028, 80.8066, 'Nature', r'~$30 USD', 'A protected area in the central highlands covered by montane grassland and cloud forest.'),
+    _SiteData('Mirissa Beach', 5.9483, 80.4572, 'Nature', 'FREE', 'A popular tourist destination known for its beautiful beach and whale watching.'),
+    _SiteData('Pinnawala Elephant Orphanage', 7.3013, 80.3873, 'Nature', '3000 LKR', 'An orphanage, nursery and captive breeding ground for wild Asian elephants.'),
+    _SiteData('Colombo Lotus Tower', 6.9271, 79.8588, 'Knowledge', r'$20 USD', 'A 350m-tall tower in Colombo, offering panoramic views of the city.'),
+    _SiteData('Gangarama Temple', 6.9167, 79.858, 'History', '400 LKR', 'One of the most important temples in Colombo, blending modern architecture and cultural essence.'),
+    _SiteData('Arugam Bay', 6.8427, 81.8266, 'Nature', 'FREE', 'A popular surfing destination on the southeast coast of Sri Lanka.'),
+    _SiteData('Minneriya National Park', 8.041, 80.8523, 'Nature', r'~$25 USD', 'A national park famous for the "Gathering" of wild elephants during the dry season.'),
+    _SiteData("St. Anthony's Shrine, Kochchikade", 6.9452, 79.854, 'History', 'FREE', 'A Roman Catholic church in the Archdiocese of Colombo and a national shrine.'),
+    _SiteData('Jaffna Fort', 9.6615, 80.0074, 'History', 'FREE', 'A fort built by the Portuguese at Jaffna in 1618 under Phillippe de Oliveira following his invasion of Jaffna.'),
+    _SiteData('Nallur Kandaswamy Temple', 9.6749, 80.0264, 'History', 'FREE', 'One of the most significant Hindu temples in the Jaffna District.'),
+    _SiteData('Independence Memorial Hall', 6.9044, 79.8674, 'History', 'FREE', 'A national monument in Sri Lanka built for commemoration of the independence from British rule.'),
+    _SiteData('Galle Face Green', 6.9234, 79.8447, 'Knowledge', 'FREE', 'A 5 hectare ocean-side urban park, which stretches for 500 m along the coast, in the heart of Colombo.'),
+    _SiteData('Nuwara Eliya Post Office', 6.973, 80.7686, 'History', 'FREE', 'One of the oldest post offices in Sri Lanka, housed in a beautiful Tudor-style colonial building.'),
+    _SiteData('Gregory Lake', 6.9582, 80.7725, 'Nature', '250 LKR', 'A prominent attraction in Nuwara Eliya, built in 1873 during the British period for relaxation.'),
+    _SiteData('Ella Rock', 6.8647, 81.0483, 'Nature', 'FREE', 'A famous viewpoint offering panoramic views of the lush green valleys and mountains around Ella.'),
+    _SiteData('Rawana Falls', 6.8407, 81.0543, 'Nature', 'FREE', 'A beautiful and popular waterfall in Ella, linked to the Hindu epic Ramayana.'),
+    _SiteData('Yapahuwa Rock Fortress', 7.8285, 80.3204, 'History', r'$3 USD', 'Once a capital of Sri Lanka, this fortress features an iconic ornamental stairway that leads to the top.'),
+  ];
 
   @override
   void initState() {
@@ -45,61 +79,276 @@ class _ExploreScreenState extends State<ExploreScreen> {
     setState(() => _loading = true);
     try {
       final rows = await HeritageSiteRepository(Supabase.instance.client).listSites();
-      if (mounted && rows.isNotEmpty) setState(() => _sites = rows);
+      if (mounted && rows.isNotEmpty) {
+        for (final row in rows) {
+          if (!_allSites.any((s) => s.name == row.title)) {
+            // add dynamic sites from DB
+          }
+        }
+      }
     } finally {
       if (mounted) setState(() => _loading = false);
     }
   }
 
-  Future<void> _select(HeritageSite site) async {
+  Future<void> _select(_SiteData site) async {
     setState(() {
-      _selected = site;
+      _selected = HeritageSite(id: site.name.toLowerCase().replaceAll(' ', '-'), title: site.name, summary: site.aiOverview, locationName: 'Sri Lanka');
       _aiDetails = null;
+      _weatherTemp = null;
+      _weatherWind = null;
+      _detailsExpanded = true;
     });
+    _loadWeather(site.lat, site.lon);
+    _loadAiDetails(site.name);
+  }
+
+  Future<void> _loadWeather(double lat, double lon) async {
     try {
-      final details = await _api.siteDetails(site.title);
-      final aiText = details['details']?.toString() ?? details['summary']?.toString() ?? site.summary;
-      if (mounted) setState(() => _aiDetails = aiText);
-    } catch (_) {
-      if (mounted) setState(() => _aiDetails = site.summary);
-    }
+      final res = await http.get(Uri.parse('https://api.open-meteo.com/v1/forecast?latitude=$lat&longitude=$lon&current_weather=true'));
+      if (res.statusCode == 200) {
+        final data = jsonDecode(res.body);
+        final weather = data['current_weather'];
+        if (mounted && weather != null) {
+          setState(() {
+            _weatherTemp = '${weather['temperature']}°C';
+            _weatherWind = '${weather['windspeed']} km/h';
+          });
+        }
+      }
+    } catch (_) {}
+  }
+
+  Future<void> _loadAiDetails(String name) async {
+    try {
+      final details = await _api.siteDetails(name);
+      final aiText = details['details']?.toString() ?? details['description']?.toString();
+      if (mounted && aiText != null) setState(() => _aiDetails = aiText);
+    } catch (_) {}
   }
 
   @override
   Widget build(BuildContext context) {
     final q = _search.text.trim().toLowerCase();
-    final results = _sites.where((site) => q.isEmpty || site.title.toLowerCase().contains(q) || (site.locationName ?? '').toLowerCase().contains(q)).toList();
-    final selected = _selected ?? (results.isEmpty ? null : results.first);
-    return Scaffold(body: SafeArea(child: Stack(children: [ListView(padding: const EdgeInsets.fromLTRB(24, 24, 24, 130), children: [Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [_round(Icons.arrow_back, () => Navigator.of(context).pushReplacementNamed('/home')), const Text('Explore', style: TextStyle(color: HeritageColors.cream, fontFamily: 'Playfair Display', fontSize: 22)), _round(Icons.filter_list, () {})]), const SizedBox(height: 24), TextField(controller: _search, onChanged: (_) => setState(() {}), decoration: InputDecoration(hintText: 'Search heritage sites...', hintStyle: const TextStyle(color: Color(0x66FFFFFF)), prefixIcon: const Icon(Icons.search, color: Color(0x66FFFFFF)), filled: true, fillColor: Colors.white.withOpacity(0.05), border: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide(color: Colors.white.withOpacity(0.10))), enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide(color: Colors.white.withOpacity(0.10))))), if (_loading) const Padding(padding: EdgeInsets.only(top: 12), child: LinearProgressIndicator(color: HeritageColors.orange, backgroundColor: Color(0x1AFFFFFF))), const SizedBox(height: 16), Container(height: 240, decoration: BoxDecoration(color: const Color(0xFF241B12), border: Border.all(color: HeritageColors.orange.withOpacity(0.20)), borderRadius: BorderRadius.circular(24)), child: Stack(children: [CustomPaint(size: Size.infinite, painter: _MapPainter(points: results)), if (selected?.imageUrl != null) ClipRRect(borderRadius: BorderRadius.circular(24), child: Image.network(selected!.imageUrl!, width: double.infinity, height: 240, fit: BoxFit.cover, opacity: const AlwaysStoppedAnimation(0.22), errorBuilder: (_, __, ___) => const SizedBox.shrink())), const Positioned(left: 20, bottom: 18, child: Text('Sri Lanka Heritage Map', style: TextStyle(color: HeritageColors.cream, fontWeight: FontWeight.bold))), const Positioned(right: 20, top: 18, child: Icon(Icons.my_location, color: HeritageColors.orange))])), if (selected != null) _details(selected), const SizedBox(height: 24), const Text('NEARBY HERITAGE', style: TextStyle(color: HeritageColors.orange, fontSize: 12, fontWeight: FontWeight.bold, letterSpacing: 2)), const SizedBox(height: 12), ...results.map(_site)],), const Align(alignment: Alignment.bottomCenter, child: HeritageBottomNav(currentIndex: 1))])));
+    final filtered = _allSites.where((site) {
+      final matchesSearch = q.isEmpty || site.name.toLowerCase().contains(q) || site.category.toLowerCase().contains(q);
+      final matchesCategory = _filterCategory == 'All' || site.category == _filterCategory;
+      return matchesSearch && matchesCategory;
+    }).toList();
+    final current = _selected != null ? _allSites.firstWhere((s) => s.name == _selected!.title, orElse: () => _allSites[0]) : (filtered.isNotEmpty ? filtered[0] : _allSites[0]);
+
+    return Scaffold(
+      body: SafeArea(
+        child: Stack(children: [
+          _mapBackground(filtered, current),
+          _topOverlay(q, filtered),
+          _bottomInfoCard(current),
+          const Align(alignment: Alignment.bottomCenter, child: HeritageBottomNav(currentIndex: 1)),
+        ]),
+      ),
+    );
   }
 
-  Widget _details(HeritageSite site) => Container(margin: const EdgeInsets.only(top: 16, bottom: 8), padding: const EdgeInsets.all(18), decoration: BoxDecoration(color: Colors.white.withOpacity(0.05), border: Border.all(color: HeritageColors.orange.withOpacity(0.16)), borderRadius: BorderRadius.circular(20)), child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Text(site.title, style: const TextStyle(color: HeritageColors.cream, fontFamily: 'Playfair Display', fontSize: 22, fontWeight: FontWeight.bold)), const SizedBox(height: 6), Text(site.locationName ?? 'Sri Lanka', style: const TextStyle(color: HeritageColors.orange, fontSize: 11, fontWeight: FontWeight.bold, letterSpacing: 1)), const SizedBox(height: 10), Text(_aiDetails ?? site.summary, style: const TextStyle(color: Color(0xB3FFFFFF), fontSize: 13, height: 1.6))]));
-  Widget _site(HeritageSite site) => InkWell(onTap: () => _select(site), borderRadius: BorderRadius.circular(20), child: Container(margin: const EdgeInsets.only(bottom: 12), padding: const EdgeInsets.all(16), decoration: BoxDecoration(color: Colors.white.withOpacity(0.05), border: Border.all(color: (_selected?.id == site.id ? HeritageColors.orange : Colors.white).withOpacity(0.07)), borderRadius: BorderRadius.circular(20)), child: Row(children: [const Icon(Icons.location_on, color: HeritageColors.orange), const SizedBox(width: 14), Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Text(site.title, style: const TextStyle(color: HeritageColors.cream, fontSize: 15, fontWeight: FontWeight.bold)), const SizedBox(height: 4), Text('${site.locationName ?? 'History'}  •  Sri Lanka', style: const TextStyle(color: Color(0x80FFFFFF), fontSize: 12))])), const Icon(Icons.chevron_right, color: Color(0x80FFFFFF))])));
-  Widget _round(IconData icon, VoidCallback action) => InkWell(onTap: action, borderRadius: BorderRadius.circular(24), child: Container(width: 40, height: 40, decoration: BoxDecoration(color: Colors.white.withOpacity(0.05), border: Border.all(color: Colors.white.withOpacity(0.10)), shape: BoxShape.circle), child: Icon(icon, color: HeritageColors.orange, size: 20)));
+  Widget _mapBackground(List<_SiteData> filtered, _SiteData current) {
+    return Positioned.fill(
+      child: Container(
+        color: const Color(0xFF1A1311),
+        child: CustomPaint(
+          size: Size.infinite,
+          painter: _MapPainter(filtered: filtered, selected: current),
+        ),
+      ),
+    );
+  }
+
+  Widget _topOverlay(String q, List<_SiteData> filtered) {
+    return Positioned(
+      top: 0,
+      left: 0,
+      right: 0,
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(24, 16, 24, 0),
+        child: Column(children: [
+          Container(
+            decoration: BoxDecoration(color: const Color(0xE61A1311), borderRadius: BorderRadius.circular(20), boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.3), blurRadius: 12)]),
+            child: TextField(
+              controller: _search,
+              onChanged: (_) => setState(() {}),
+              style: const TextStyle(color: HeritageColors.cream, fontSize: 15),
+              decoration: InputDecoration(hintText: 'Search Heritage', hintStyle: const TextStyle(color: Color(0x99FEFAE0)), prefixIcon: const Icon(Icons.search, color: Color(0x99FEFAE0)), suffixIcon: _search.text.isNotEmpty ? IconButton(onPressed: () => setState(() => _search.clear()), icon: const Text('X', style: TextStyle(color: Color(0x99FEFAE0), fontWeight: FontWeight.bold))) : null, border: InputBorder.none, contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16)),
+            ),
+          ),
+          if (q.isNotEmpty && filtered.isNotEmpty)
+            Container(
+              margin: const EdgeInsets.only(top: 4),
+              constraints: const BoxConstraints(maxHeight: 260),
+              decoration: BoxDecoration(color: const Color(0xF00F0C0A), borderRadius: BorderRadius.circular(20), border: Border.all(color: Colors.white.withOpacity(0.05))),
+              child: ListView.builder(shrinkWrap: true, itemCount: filtered.length, itemBuilder: (_, i) {
+                final site = filtered[i];
+                return InkWell(onTap: () { _select(site); setState(() => _search.clear()); }, child: Padding(padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12), child: Row(children: [const Icon(Icons.location_on, color: HeritageColors.orange, size: 16), const SizedBox(width: 12), Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Text(site.name, style: const TextStyle(color: HeritageColors.cream, fontSize: 14, fontWeight: FontWeight.bold)), Text(site.category.toUpperCase(), style: const TextStyle(color: Color(0x80FEFAE0), fontSize: 10, fontWeight: FontWeight.bold, letterSpacing: 1))]))])));
+              }),
+            ),
+          const SizedBox(height: 12),
+          Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+            _filterChip('All', _filterCategory == 'All', () => setState(() => _filterCategory = 'All')),
+            const SizedBox(width: 12),
+            _filterChip('History', _filterCategory == 'History', () => setState(() => _filterCategory = 'History')),
+            const SizedBox(width: 12),
+            _filterChip('Nature', _filterCategory == 'Nature', () => setState(() => _filterCategory = 'Nature')),
+          ]),
+        ]),
+      ),
+    );
+  }
+
+  Widget _filterChip(String label, bool selected, VoidCallback onTap) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(30),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+        decoration: BoxDecoration(color: const Color(0xE61A1311), borderRadius: BorderRadius.circular(30), border: Border.all(color: Colors.white.withOpacity(0.05))),
+        child: Row(mainAxisSize: MainAxisSize.min, children: [
+          Icon(selected ? Icons.check_circle : Icons.circle_outlined, color: selected ? HeritageColors.orange : Colors.white38, size: 14),
+          const SizedBox(width: 8),
+          Text(label, style: TextStyle(color: selected ? Colors.white : Colors.white70, fontSize: 14, fontWeight: FontWeight.bold)),
+        ]),
+      ),
+    );
+  }
+
+  Widget _bottomInfoCard(_SiteData site) {
+    return Positioned(
+      bottom: 108,
+      left: 24,
+      right: 24,
+      child: Container(
+        padding: const EdgeInsets.all(24),
+        decoration: BoxDecoration(color: const Color(0xF00F0C0A), borderRadius: BorderRadius.circular(32), border: Border.all(color: Colors.white.withOpacity(0.05)), boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.4), blurRadius: 24)]),
+        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+            Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Text('${site.name} 🏰', style: const TextStyle(color: Colors.white, fontSize: 26, fontWeight: FontWeight.bold, height: 1.2)),
+              const SizedBox(height: 4),
+              Row(children: [Icon(Icons.public, color: Colors.green.shade400, size: 12), const SizedBox(width: 6), Text('UNESCO WORLD HERITAGE SITE', style: TextStyle(color: Colors.green.shade400, fontSize: 10, fontWeight: FontWeight.bold, letterSpacing: 0.8))]),
+            ])),
+            GestureDetector(onTap: () => setState(() => _detailsExpanded = !_detailsExpanded), child: Container(width: 44, height: 44, decoration: BoxDecoration(border: Border.all(color: Colors.white.withOpacity(0.05)), shape: BoxShape.circle), child: Icon(_detailsExpanded ? Icons.keyboard_arrow_down : Icons.keyboard_arrow_up, color: Colors.white70, size: 22))),
+          ]),
+          if (_detailsExpanded) ...[
+            const SizedBox(height: 16),
+            Row(children: [
+              Expanded(child: _actionButton('Scan Site', HeritageColors.orange, () => Navigator.of(context).pushNamed('/scanner'))),
+              const SizedBox(width: 12),
+              _iconButton(Icons.refresh, () {}),
+              const SizedBox(width: 12),
+              _iconButton(Icons.flag, const Color(0xFFC084FC)),
+            ]),
+            const SizedBox(height: 20),
+            Container(height: 1, color: Colors.white.withOpacity(0.05)),
+            const SizedBox(height: 16),
+            Row(children: [
+              Container(width: 6, height: 6, decoration: const BoxDecoration(color: HeritageColors.orange, shape: BoxShape.circle)),
+              const SizedBox(width: 8),
+              const Text('AI Quick Insights', style: TextStyle(color: HeritageColors.orange, fontSize: 10, fontWeight: FontWeight.bold, letterSpacing: 1)),
+              const Spacer(),
+              if (_weatherTemp != null)
+                Row(children: [
+                  Icon(Icons.thermostat, color: HeritageColors.orange, size: 14),
+                  const SizedBox(width: 4),
+                  Text(_weatherTemp!, style: const TextStyle(color: Colors.white70, fontSize: 11, fontWeight: FontWeight.bold)),
+                  const SizedBox(width: 12),
+                  Icon(Icons.air, color: Colors.blue.shade300, size: 14),
+                  const SizedBox(width: 4),
+                  Text(_weatherWind!, style: const TextStyle(color: Colors.white70, fontSize: 11, fontWeight: FontWeight.bold)),
+                ]),
+            ]),
+            const SizedBox(height: 12),
+            Row(children: [
+              Expanded(child: _infoBox('STATUS', 'Open', Colors.green.shade400)),
+              const SizedBox(width: 12),
+              Expanded(child: _infoBox('TICKET PRICE', site.ticketPrice, null)),
+            ]),
+            const SizedBox(height: 12),
+            _infoBox('AI OVERVIEW', _aiDetails ?? site.aiOverview, null),
+          ],
+        ]),
+      ),
+    );
+  }
+
+  Widget _infoBox(String label, String value, Color? dotColor) {
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(color: const Color(0xFF1A1311), borderRadius: BorderRadius.circular(16), border: Border.all(color: Colors.white.withOpacity(0.05))),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Text(label, style: const TextStyle(color: Colors.white38, fontSize: 11, fontWeight: FontWeight.bold, letterSpacing: 1)),
+        const SizedBox(height: 6),
+        Row(children: [
+          if (dotColor != null) ...[Container(width: 6, height: 6, decoration: BoxDecoration(color: dotColor, shape: BoxShape.circle)), const SizedBox(width: 6)],
+          Expanded(child: Text(value, style: const TextStyle(color: Colors.white70, fontSize: 12, fontWeight: FontWeight.w500, height: 1.4))),
+        ]),
+      ]),
+    );
+  }
+
+  Widget _actionButton(String label, Color color, VoidCallback onTap) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 16),
+        decoration: BoxDecoration(color: color, borderRadius: BorderRadius.circular(20), boxShadow: [BoxShadow(color: color.withOpacity(0.25), blurRadius: 16, offset: const Offset(0, 4))]),
+        child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+          const Icon(Icons.camera_alt, color: Colors.white, size: 16),
+          const SizedBox(width: 8),
+          Text(label, style: const TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.bold)),
+        ]),
+      ),
+    );
+  }
+
+  Widget _iconButton(IconData icon, Color color) {
+    return Container(width: 56, height: 56, decoration: BoxDecoration(color: Colors.white.withOpacity(0.05), border: Border.all(color: Colors.white.withOpacity(0.05)), borderRadius: BorderRadius.circular(20)), child: Icon(icon, color: color, size: 22));
+  }
+}
+
+class _SiteData {
+  final String name;
+  final double lat;
+  final double lon;
+  final String category;
+  final String ticketPrice;
+  final String aiOverview;
+  const _SiteData(this.name, this.lat, this.lon, this.category, this.ticketPrice, this.aiOverview);
 }
 
 class _MapPainter extends CustomPainter {
-  const _MapPainter({required this.points});
-
-  final List<HeritageSite> points;
+  const _MapPainter({required this.filtered, required this.selected});
+  final List<_SiteData> filtered;
+  final _SiteData selected;
 
   @override
   void paint(Canvas canvas, Size size) {
-    final line = Paint()..color = HeritageColors.orange.withOpacity(0.16)..style = PaintingStyle.stroke..strokeWidth = 1;
+    final linePaint = Paint()..color = HeritageColors.orange.withOpacity(0.08)..style = PaintingStyle.stroke..strokeWidth = 0.5;
     for (var x = 0.0; x < size.width; x += 42) {
-      canvas.drawLine(Offset(x, 0), Offset(x, size.height), line);
+      canvas.drawLine(Offset(x, 0), Offset(x, size.height), linePaint);
     }
     for (var y = 0.0; y < size.height; y += 42) {
-      canvas.drawLine(Offset(0, y), Offset(size.width, y), line);
+      canvas.drawLine(Offset(0, y), Offset(size.width, y), linePaint);
     }
-    final pin = Paint()..color = HeritageColors.orange;
-    for (var i = 0; i < points.length.clamp(1, 8); i++) {
+    final pinPaint = Paint()..color = HeritageColors.orange;
+    final selectedPaint = Paint()..color = Colors.red;
+    for (var i = 0; i < filtered.length; i++) {
+      final site = filtered[i];
       final x = (48 + (i * 63) % (size.width - 80)).toDouble();
       final y = (52 + (i * 47) % (size.height - 95)).toDouble();
-      canvas.drawCircle(Offset(x, y), 6, pin);
+      final paint = site.name == selected.name ? selectedPaint : pinPaint;
+      canvas.drawCircle(Offset(x, y), site.name == selected.name ? 8 : 6, paint);
+      if (site.name == selected.name) {
+        canvas.drawCircle(Offset(x, y), 12, Paint()..color = Colors.red.withOpacity(0.2));
+      }
     }
   }
 
   @override
-  bool shouldRepaint(covariant _MapPainter oldDelegate) => oldDelegate.points.length != points.length;
+  bool shouldRepaint(covariant _MapPainter oldDelegate) => oldDelegate.selected.name != selected.name || oldDelegate.filtered.length != filtered.length;
 }

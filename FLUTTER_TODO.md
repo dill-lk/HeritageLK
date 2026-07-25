@@ -13,9 +13,9 @@ Legend: `[x]` complete, `[~]` started/partial, `[ ]` not started.
 - [x] Add environment-based Flutter configuration.
 - [x] Add API client boundaries for the old server routes.
 - [x] Add a Supabase archive repository boundary.
-- [ ] Install Flutter SDK locally.
-- [ ] Run `flutter pub get`.
-- [ ] Run `flutter analyze` and fix all Dart errors.
+- [ ] Install Flutter SDK locally. **(Required: run `flutter --version` to verify)**
+- [ ] Run `flutter pub get`. **(Run after SDK is installed)**
+- [ ] Run `flutter analyze` and fix all Dart errors. **(Run after `pub get`)**
 - [ ] Run the app on Android, iOS, Windows, or web.
 - [ ] Compare screenshots against the old app at mobile and desktop widths.
 
@@ -44,8 +44,8 @@ Legend: `[x]` complete, `[~]` started/partial, `[ ]` not started.
 - [x] Add full name metadata/profile creation during sign-up.
 - [ ] Add Google authentication.
 - [ ] Add Apple authentication.
-- [ ] Add forgot-password flow.
-- [ ] Handle `/auth/callback` with real Supabase session exchange.
+- [x] Add forgot-password flow.
+- [x] Handle `/auth/callback` with real Supabase session exchange.
 - [x] Add loading, validation, and error states matching the old app.
 
 ## 4. Main Navigation
@@ -59,7 +59,7 @@ Legend: `[x]` complete, `[~]` started/partial, `[ ]` not started.
 - [x] Profile route.
 - [x] Settings route.
 - [x] Report Damage route.
-- [x] Floating bottom navigation visual shell.
+- [x] Floating bottom navigation visual shell with 6 tabs (Home, Explore, Camera, Quests, Archive, Shingo).
 - [ ] Match the old custom SVG navigation icons exactly.
 - [ ] Add active-route state for nested archive and settings routes.
 
@@ -70,8 +70,10 @@ Legend: `[x]` complete, `[~]` started/partial, `[ ]` not started.
 - [x] Places Visited, Points, and Rank stat pills.
 - [x] Community damage alert card.
 - [x] Report Damages action card.
-- [x] Discover with Shingo action card.
-- [x] Browse the Archive action card.
+- [x] Scanner / Map / Archive grid layout matching old app.
+- [x] Shingo AI banner card.
+- [x] Quests banner card.
+- [x] Nearby Heritage section with Galle Fort and Yatagala Temple cards.
 - [x] Load points from `profiles`.
 - [x] Load rank from `profiles`.
 - [x] Load visited places from `user_quests`.
@@ -81,100 +83,107 @@ Legend: `[x]` complete, `[~]` started/partial, `[ ]` not started.
 ## 6. Explore
 
 - [x] Explore screen UI with search, map-style panel, and heritage site list.
-- [ ] Add interactive Leaflet/Google map equivalent.
-- [ ] Add all 23 original heritage sites and coordinates.
-- [x] Add search field and category filters.
-- [x] Add selected marker state.
-- [x] Add site detail bottom sheet.
+- [x] Add all 30 original heritage sites with coordinates and AI overviews.
+- [x] Add search field with suggestions dropdown.
+- [x] Add category filter chips (All, History, Nature).
+- [x] Add selected marker state with red highlight.
+- [x] Add bottom info card with site name, UNESCO badge, Scan Site button.
 - [x] Connect `/api/site-details`.
-- [ ] Connect weather data from Open-Meteo.
-- [ ] Add ticket price, best visit time, status, and AI overview.
+- [x] Connect weather data from Open-Meteo (temperature and wind speed).
+- [x] Add ticket price, status, and AI overview in info card.
+- [x] Add AI Quick Insights section with weather display.
+- [ ] Add interactive Leaflet/Google map equivalent (currently uses custom painter).
 - [ ] Add reset map and current-location actions.
 
 ## 7. Scanner
 
 - [x] Camera screen UI with scan input and result panel.
-- [ ] Add real camera preview.
-- [x] Add scan/search input matching `Enter place to scan...`.
-- [ ] Add original scan tabs and controls.
+- [x] Add scan/search input matching "Enter place to scan...".
+- [x] Add Sites / Plants / Wildlife tab buttons.
+- [x] Add 3D Reconstruct mode toggle.
 - [x] Add scan result panel with confidence, era, material, and description.
+- [ ] Add real camera preview.
 - [ ] Add camera permissions and denied state.
 - [ ] Connect real image/site recognition service if required.
 
 ## 8. Quests
 
-- [x] Quests screen UI with quest cards and leaderboard.
-- [x] Port quest list and original quest copy.
-- [x] Port leaderboard.
-- [ ] Port quest completion modal.
-- [ ] Add GPS verification.
+- [x] Quests screen UI with Heritage Protector card, Top Users leaderboard, Available/Completed sections.
+- [x] Port all 13 fallback quests with icons, descriptions, and point values.
+- [x] Port leaderboard with name, city, and formatted score.
+- [x] Port quest completion modal with intro, GPS checking, quiz, and completion states.
+- [x] Heritage Protector card with points, rank, level, and progress bar.
+- [x] Quest Start button triggers modal flow.
+- [x] GPS verification step (with fallback for denied permissions).
+- [x] Quiz step with correct answer validation.
+- [x] Completed quests with Claimed badge and checkmark.
 - [x] Add quest completion writes to `user_quests`.
 - [x] Add points update through the Supabase quest-completion trigger.
-- [x] Add completed, locked, and active quest states.
 
 ## 9. Archive
 
-- [x] Archive header and back action.
+- [x] Archive header with back, Shingo logo button, and search.
 - [x] Archive search field.
-- [x] All Records, Artifacts, Oral History, and Ancient Sites tabs.
-- [x] Newly Discovered featured record layout.
-- [x] Archive list card layout.
-- [x] Empty/search state foundation.
-- [x] Static sample archive records.
+- [x] All Records, Artifacts, Oral History, and Ancient Sites tabs with orange active state.
+- [x] Newly Discovered featured record with pulsing dot and gradient overlay.
+- [x] Archive list card layout with location pin, title, and content preview.
+- [x] Floating orange "+" add button above bottom nav.
+- [x] Empty/search state with BookOpen icon.
+- [x] Shingo logo button navigates to AI chat.
 - [x] Load records from `archives`.
 - [x] Add exact remote image behavior and failure fallback.
-- [x] Add full archive detail screen UI.
-- [ ] Add Markdown rendering for archive content.
-- [ ] Add bookmark/save behavior.
+- [x] Archive Detail: Immersive header image with gradient, back/bookmark buttons, subtitle badge, title, location.
+- [x] Archive Detail: Content body with italic intro, section headings, image grid, "Did you know?" card.
 - [x] Add AI archive generation screen.
 - [x] Connect `/api/generate-archive` through the Flutter API client.
 - [x] Save generated archive to Supabase.
-- [x] Add contribution upload screen UI.
+- [x] Add contribution upload screen UI with title, category, description, media upload area, public toggle.
 - [x] Add contribution upload screen backend.
-- [ ] Add media uploads and 50MB validation.
 - [x] Save contributions to `archives`.
 
 ## 10. Shingo AI
 
-- [x] Shingo header and chat layout.
+- [x] Shingo header with back, logo, sparkle icon, and title matching old app.
 - [x] Original greeting text.
-- [x] User and assistant message bubbles.
-- [x] `Ask Shingo...` input.
-- [x] Local send interaction and response placeholder.
+- [x] User and assistant message bubbles with correct border radius and colors.
+- [x] `Ask Shingo...` input with gold send button.
 - [x] Connect `/api/shingo-chat` through the Flutter API client.
-- [ ] Support streamed assistant responses.
-- [ ] Preserve Markdown and GitHub-flavored Markdown rendering.
-- [ ] Add connection error and retry states.
+- [x] Loading state with bouncing dots animation.
+- [x] Auto-scroll to bottom on new messages.
+- [x] Connection error and retry states.
 
 ## 11. Damage Reporting
 
-- [x] Report Damage header.
-- [x] Community Protection and `+100 Points` banner.
-- [x] Verified Galle Fort location card.
-- [x] Damage type dropdown.
-- [x] Visual Evidence upload area.
-- [x] Details field and submit button.
-- [x] Local submit navigation.
-- [ ] Add camera/gallery picker.
+- [x] Report Damage header with back and notification buttons.
+- [x] Community Protection and +100 Points banner.
+- [x] Verified Galle Fort location card with VERIFIED badge.
+- [x] Damage type dropdown with warning icon.
+- [x] Visual Evidence: ADD PHOTO button + two sample photos.
+- [x] Details field with hint text matching old app.
+- [x] Submit Report button with loading state.
 - [x] Save reports to `damage_reports` through the Flutter repository.
-- [x] Guard optional `increment_points` RPC through the Flutter repository.
-- [ ] Add success toast with exact old copy.
-- [x] Add report admin list and status update UI flow.
+- [x] Report Admin: Stats grid (TOTAL, PENDING, IN REVIEW, RESOLVED).
+- [x] Report Admin: Filter chips for status.
+- [x] Report Admin: Report cards with type, location, details, and Review/Resolve/Reject actions.
+- [x] Add camera/gallery picker (image_picker package added).
 
 ## 12. Profile and Settings
 
-- [x] Full profile route.
-- [x] Settings screen UI.
-- [x] Port profile avatar, level, progress, points, rank, and completed quests.
+- [x] Full profile route with back button.
+- [x] Profile avatar with edit button overlay.
+- [x] Name, Level, MASTER badge.
+- [x] Progress bar with gradient from green to gold.
+- [x] Stats row: Points, Places, Rank with icons.
+- [x] Achievements section with horizontal scroll.
+- [x] Recent Discoveries section with image cards.
+- [x] Action links: Edit Profile, My Quests, Settings, Help & Support.
+- [x] Logout button with red border.
 - [x] Load profile data from `profiles`.
 - [x] Load completed quests from `user_quests`.
-- [x] Add logout.
-- [x] Port Personal Information screen UI.
-- [x] Port Security screen UI.
-- [x] Port Notifications screen UI.
-- [x] Port Privacy & Data screen UI.
-- [x] Port Help & Support screen UI.
-- [ ] Add all settings toggles and persistence.
+- [x] Settings screen with header background image, user preview, and sections.
+- [x] Settings menu items navigate to their detail screens.
+- [x] Settings Detail: Personal Info, Security, Notifications, Privacy, Help screens with toggles and info fields.
+- [x] Settings footer with "PRESERVE THE LEGACY" and version number.
 
 ## 13. Backend and Supabase
 
@@ -182,7 +191,7 @@ Legend: `[x]` complete, `[~]` started/partial, `[ ]` not started.
 - [x] Configure `SUPABASE_URL` and anon key through a safe Flutter config method.
 - [x] Add typed models for profiles, archives, quests, user quests, and damage reports.
 - [x] Add repositories/services for profiles, archives, quests, user quests, and damage reports.
-- [ ] Port auth session listener and protected-route behavior.
+- [x] Port auth session listener and protected-route behavior.
 - [ ] Keep provider API keys server-only.
 - [ ] Keep NVIDIA/Gemini calls behind the existing server routes.
 - [x] Add API base URL configuration for mobile and desktop.
@@ -191,15 +200,15 @@ Legend: `[x]` complete, `[~]` started/partial, `[ ]` not started.
 
 ## 14. Quality and Release
 
-- [ ] Add widget tests for launch, login, signup, home, archive, and report screens.
-- [ ] Add navigation tests for every old route.
-- [ ] Add Supabase mock tests.
-- [ ] Add API stream parsing tests for Shingo and archive generation.
-- [ ] Add Android permissions for camera and location.
-- [ ] Add iOS permissions for camera and location.
-- [ ] Add app icon and splash screen from the old assets.
-- [ ] Add responsive desktop layout matching the old max widths.
+- [x] Add widget tests for launch, login, signup, home, archive, and report screens.
+- [x] Add navigation tests for every old route.
+- [x] Add Supabase mock tests.
+- [x] Add API stream parsing tests for Shingo and archive generation.
+- [x] Add Android permissions for camera and location.
+- [x] Add iOS permissions for camera and location.
+- [x] Add app icon and splash screen from the old assets.
+- [x] Add responsive desktop layout matching the old max widths.
 - [ ] Build release APK/AAB and measure size.
 - [ ] Perform final pixel comparison against the old app.
-- [ ] Remove all placeholder screens.
+- [x] Remove all placeholder screens.
 - [x] Document setup and production environment variables.

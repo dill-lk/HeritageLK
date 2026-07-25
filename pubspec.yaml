@@ -14,11 +14,18 @@ dependencies:
   go_router: ^14.2.7
   http: ^1.2.2
   supabase_flutter: ^2.8.0
+  image_picker: ^1.1.2
+  geolocator: ^13.0.1
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
   flutter_lints: ^4.0.0
+  mockito: ^5.4.4
+  build_runner: ^2.4.13
 
 flutter:
   uses-material-design: true
+  assets:
+    - assets/app-icon.svg
+    - assets/favicon.png

@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -18,9 +19,11 @@ import 'screens/quests_screen.dart';
 import 'screens/settings_detail_screen.dart';
 import 'screens/generate_archive_screen.dart';
 import 'screens/report_admin_screen.dart';
-import 'screens/placeholder_screen.dart';
 import 'screens/profile_screen.dart';
+import 'screens/auth_callback_screen.dart';
 import 'theme/heritage_theme.dart';
+
+final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -30,20 +33,49 @@ Future<void> main() async {
   runApp(const HeritageLkApp());
 }
 
-class HeritageLkApp extends StatelessWidget {
+class HeritageLkApp extends StatefulWidget {
   const HeritageLkApp({super.key});
+
+  @override
+  State<HeritageLkApp> createState() => _HeritageLkAppState();
+}
+
+class _HeritageLkAppState extends State<HeritageLkApp> {
+  late final StreamSubscription<AuthState> _authSubscription;
+
+  @override
+  void initState() {
+    super.initState();
+    if (AppConfig.hasSupabase) {
+      _authSubscription = Supabase.instance.client.auth.onAuthStateChange.listen((data) {
+        final session = data.session;
+        final event = data.event;
+        if (event == AuthChangeEvent.passwordRecovery && session != null) {
+          navigatorKey.currentState?.pushReplacementNamed('/home');
+        }
+      });
+    }
+  }
+
+  @override
+  void dispose() {
+    if (AppConfig.hasSupabase) _authSubscription.cancel();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'HeritageLK',
       debugShowCheckedModeBanner: false,
+      navigatorKey: navigatorKey,
       theme: buildHeritageTheme(),
       initialRoute: '/',
       routes: {
         '/': (_) => const MainHomeScreen(),
         '/login': (_) => const LoginScreen(),
         '/signup': (_) => const SignupScreen(),
+        '/auth/callback': (_) => const AuthCallbackScreen(),
         '/home': (_) => const HomeScreen(),
         '/explore': (_) => const ExploreScreen(),
         '/scanner': (_) => const ScannerScreen(),
@@ -68,10 +100,18 @@ class HeritageLkApp extends StatelessWidget {
           final archiveId = settings.name!.split('/').last;
           return MaterialPageRoute<void>(builder: (_) => ArchiveDetailScreen(archiveId: archiveId), settings: settings);
         }
-        if (settings.name == '/auth/callback') {
-          return MaterialPageRoute<void>(builder: (_) => const LoginScreen(), settings: settings);
-        }
-        return MaterialPageRoute<void>(builder: (_) => const PlaceholderScreen(title: 'Not Found'), settings: settings);
+        return MaterialPageRoute<void>(
+          builder: (_) => Scaffold(body: SafeArea(child: Center(child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
+            const Icon(Icons.location_off, color: Color(0xFFE76F51), size: 64),
+            const SizedBox(height: 24),
+            const Text('Page Not Found', style: TextStyle(color: Color(0xFFFEFAE0), fontSize: 24, fontWeight: FontWeight.bold)),
+            const SizedBox(height: 8),
+            const Text('The page you are looking for does not exist.', style: TextStyle(color: Color(0x80FEFAE0), fontSize: 14)),
+            const SizedBox(height: 32),
+            FilledButton(onPressed: () => Navigator.of(context).pushReplacementNamed('/home'), style: FilledButton.styleFrom(backgroundColor: const Color(0xFFF4A261), foregroundColor: const Color(0xFF100E0A), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16))), child: const Text('Go Home')),
+          ])))),
+          settings: settings,
+        );
       },
     );
   }

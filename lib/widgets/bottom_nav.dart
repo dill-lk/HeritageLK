@@ -13,6 +13,7 @@ class HeritageBottomNav extends StatelessWidget {
     (Icons.camera_alt_outlined, 'Camera', '/scanner'),
     (Icons.explore_outlined, 'Quests', '/quests'),
     (Icons.menu_book_outlined, 'Archive', '/archive'),
+    (Icons.auto_awesome, 'Shingo', '/archive/shingo'),
   ];
 
   @override
