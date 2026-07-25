@@ -171,7 +171,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 ),
               ],
             ),
-            const Align(alignment: Alignment.bottomCenter, child: HeritageBottomNav(currentIndex: 0)),
+            const Align(alignment: Alignment.bottomCenter, child: HeritageBottomNav()),
           ],
         ),
       ),

@@ -4,10 +4,9 @@ import '../theme/heritage_colors.dart';
 import '../widgets/bottom_nav.dart';
 
 class DestinationScreen extends StatelessWidget {
-  const DestinationScreen({super.key, required this.title, required this.currentIndex, required this.subtitle, required this.icon});
+  const DestinationScreen({super.key, required this.title, required this.subtitle, required this.icon});
 
   final String title;
-  final int currentIndex;
   final String subtitle;
   final IconData icon;
 
@@ -31,7 +30,7 @@ class DestinationScreen extends StatelessWidget {
             const SizedBox(height: 28),
             ...['Galle Dutch Fort', 'Sigiriya Rock Fortress', 'Temple of the Sacred Tooth Relic'].map((name) => Container(margin: const EdgeInsets.only(bottom: 12), padding: const EdgeInsets.all(18), decoration: BoxDecoration(color: Colors.white.withOpacity(0.05), border: Border.all(color: Colors.white.withOpacity(0.07)), borderRadius: BorderRadius.circular(20)), child: Row(children: [Icon(icon, color: HeritageColors.orange), const SizedBox(width: 14), Expanded(child: Text(name, style: const TextStyle(color: HeritageColors.cream, fontWeight: FontWeight.w600))), const Icon(Icons.chevron_right, color: Color(0x80FFFFFF))])))
           ]),
-          Align(alignment: Alignment.bottomCenter, child: HeritageBottomNav(currentIndex: currentIndex)),
+          const Align(alignment: Alignment.bottomCenter, child: HeritageBottomNav()),
         ]),
       ),
     );

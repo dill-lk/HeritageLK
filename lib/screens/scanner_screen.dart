@@ -152,7 +152,7 @@ class _ScannerScreenState extends State<ScannerScreen> {
               ],
             ],
           ),
-          const Align(alignment: Alignment.bottomCenter, child: HeritageBottomNav(currentIndex: 2)),
+          const Align(alignment: Alignment.bottomCenter, child: HeritageBottomNav()),
         ],
       ),
     ),

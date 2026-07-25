@@ -78,7 +78,7 @@ class _HomeScreenState extends State<HomeScreen> {
             const SizedBox(height: 16),
             _HomeCard(icon: Icons.menu_book_outlined, title: 'Browse the Archive', subtitle: 'Explore stories from our island', color: const Color(0xFF52B788), onTap: () => Navigator.of(context).pushNamed('/archive')),
           ]),
-          const Align(alignment: Alignment.bottomCenter, child: HeritageBottomNav(currentIndex: 0)),
+          const Align(alignment: Alignment.bottomCenter, child: HeritageBottomNav()),
         ]),
       ),
     );
