@@ -16,7 +16,7 @@ class ReportAdminScreen extends StatefulWidget {
 class _ReportAdminScreenState extends State<ReportAdminScreen> {
   String _filter = 'all';
   bool _loading = false;
-  List<DamageReport> _reports = const [
+  List<DamageReport> _reports = [
     DamageReport(id: '1', damageType: 'Structural Cracks', location: 'Galle Fort, Southern Wall', details: 'Report details awaiting review.', status: 'pending', createdAt: DateTime(2026)),
     DamageReport(id: '2', damageType: 'Vandalism', location: 'Sigiriya Rock Fortress', details: 'Report details awaiting review.', status: 'in_review', createdAt: DateTime(2026)),
     DamageReport(id: '3', damageType: 'Water Damage', location: 'Dambulla Cave Temple', details: 'Report details awaiting review.', status: 'resolved', createdAt: DateTime(2026)),
