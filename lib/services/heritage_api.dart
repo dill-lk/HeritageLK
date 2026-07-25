@@ -9,6 +9,10 @@ class HeritageApi {
 
   final http.Client _client;
 
+  void dispose() {
+    _client.close();
+  }
+
   Future<Map<String, dynamic>> siteDetails(String siteName) async {
     final uri = Uri.parse('${AppConfig.apiBaseUrl}/api/site-details').replace(
       queryParameters: {'name': siteName},

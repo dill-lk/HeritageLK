@@ -282,6 +282,20 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   Widget _socialButton(String label, IconData icon) {
-    return Expanded(child: SizedBox(height: 56, child: OutlinedButton.icon(onPressed: () {}, icon: Icon(icon, color: HeritageColors.cream), label: Text(label, style: const TextStyle(color: HeritageColors.cream, fontSize: 14, fontWeight: FontWeight.w600)), style: OutlinedButton.styleFrom(backgroundColor: HeritageColors.brown.withOpacity(0.10), side: BorderSide(color: HeritageColors.brown.withOpacity(0.30)), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)))));
+    return Expanded(
+      child: SizedBox(
+        height: 56,
+        child: OutlinedButton.icon(
+          onPressed: () {},
+          icon: Icon(icon, color: HeritageColors.cream),
+          label: Text(label, style: const TextStyle(color: HeritageColors.cream, fontSize: 14, fontWeight: FontWeight.w600)),
+          style: OutlinedButton.styleFrom(
+            backgroundColor: HeritageColors.brown.withOpacity(0.10),
+            side: BorderSide(color: HeritageColors.brown.withOpacity(0.30)),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          ),
+        ),
+      ),
+    );
   }
 }
