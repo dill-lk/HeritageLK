@@ -239,7 +239,7 @@ class _ExploreScreenState extends State<ExploreScreen> {
             Row(children: [
               Expanded(child: _actionButton('Scan Site', HeritageColors.orange, () => Navigator.of(context).pushNamed('/scanner'))),
               const SizedBox(width: 12),
-              _iconButton(Icons.refresh, () {}),
+              _iconButton(Icons.refresh, HeritageColors.orange, () => setState(() {})),
               const SizedBox(width: 12),
               _iconButton(Icons.flag, const Color(0xFFC084FC)),
             ]),
@@ -306,8 +306,8 @@ class _ExploreScreenState extends State<ExploreScreen> {
     );
   }
 
-  Widget _iconButton(IconData icon, Color color) {
-    return Container(width: 56, height: 56, decoration: BoxDecoration(color: Colors.white.withOpacity(0.05), border: Border.all(color: Colors.white.withOpacity(0.05)), borderRadius: BorderRadius.circular(20)), child: Icon(icon, color: color, size: 22));
+  Widget _iconButton(IconData icon, Color color, [VoidCallback? onTap]) {
+    return GestureDetector(onTap: onTap, child: Container(width: 56, height: 56, decoration: BoxDecoration(color: Colors.white.withOpacity(0.05), border: Border.all(color: Colors.white.withOpacity(0.05)), borderRadius: BorderRadius.circular(20)), child: Icon(icon, color: color, size: 22)));
   }
 }
 

@@ -32,7 +32,7 @@ class _AuthCallbackScreenState extends State<AuthCallbackScreen> {
         final accessToken = params['access_token'];
         final refreshToken = params['refresh_token'];
         if (accessToken != null && refreshToken != null) {
-          await Supabase.instance.client.auth.setSession(RefreshSession(refreshToken));
+          await Supabase.instance.client.auth.setSession(refreshToken);
         }
       }
     } catch (_) {}

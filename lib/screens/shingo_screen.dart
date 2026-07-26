@@ -161,7 +161,7 @@ class _ShingoScreenState extends State<ShingoScreen> {
     builder: (_, __, ___) => AnimatedContainer(
       duration: Duration(milliseconds: 400 + index * 200),
       width: 8, height: 8,
-      decoration: BoxDecoration(color: Colors.white40, shape: BoxShape.circle),
+      decoration: BoxDecoration(color: Colors.white.withOpacity(0.40), shape: BoxShape.circle),
     ),
   );
 

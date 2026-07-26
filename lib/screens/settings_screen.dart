@@ -30,17 +30,17 @@ class SettingsScreen extends StatelessWidget {
             ]),
           ]),
           const SizedBox(height: 40),
-          _section('ACCOUNT', [
+          _section(context, 'ACCOUNT', [
             _NavItem('Personal Information', Icons.person_outline, '/settings/personal'),
             _NavItem('Security', Icons.lock_outline, '/settings/security'),
           ]),
           const SizedBox(height: 32),
-          _section('PREFERENCES & PRIVACY', [
+          _section(context, 'PREFERENCES & PRIVACY', [
             _NavItem('Notifications', Icons.notifications_none, '/settings/notifications'),
             _NavItem('Privacy & Data', Icons.shield_outlined, '/settings/privacy'),
           ]),
           const SizedBox(height: 32),
-          _section('SUPPORT', [
+          _section(context, 'SUPPORT', [
             _NavItem('Help Center', Icons.help_outline, '/settings/help'),
             _NavItem('Give a Feedback', Icons.message_outlined, '/settings/help'),
             _NavItem('About HeritageLK', Icons.info_outline, '/settings/help'),
@@ -57,7 +57,7 @@ class SettingsScreen extends StatelessWidget {
           const SizedBox(height: 48),
           Center(child: Column(children: [
             Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-              Container(width: 16, height: 12, decoration: BoxDecoration(color: HeritageColors.orange, borderRadius: BorderRadius.circular(2), opacity: 0.80)),
+              Container(width: 16, height: 12, decoration: BoxDecoration(color: HeritageColors.orange.withOpacity(0.80), borderRadius: BorderRadius.circular(2))),
               const SizedBox(width: 8),
               const Text('PRESERVE THE LEGACY', style: TextStyle(color: HeritageColors.orange, fontSize: 12, fontWeight: FontWeight.bold, letterSpacing: 2)),
             ]),
@@ -69,7 +69,7 @@ class SettingsScreen extends StatelessWidget {
     ),
   );
 
-  Widget _section(String title, List<_NavItem> items) => Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+  Widget _section(BuildContext context, String title, List<_NavItem> items) => Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
     Text(title, style: const TextStyle(color: Color(0x80F4A261), fontSize: 12, fontWeight: FontWeight.bold, letterSpacing: 2)),
     const SizedBox(height: 12),
     ...items.map((item) => Container(margin: const EdgeInsets.only(bottom: 8), child: InkWell(onTap: () => Navigator.of(context).pushNamed(item.route), borderRadius: BorderRadius.circular(16), child: Container(padding: const EdgeInsets.all(16), decoration: BoxDecoration(color: Colors.white.withOpacity(0.05), border: Border.all(color: Colors.white.withOpacity(0.05)), borderRadius: BorderRadius.circular(16)), child: Row(children: [Icon(item.icon, color: HeritageColors.orange, size: 20), const SizedBox(width: 16), Expanded(child: Text(item.label, style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w500))), Icon(Icons.arrow_back_ios, color: Colors.white.withOpacity(0.40), size: 14, textDirection: TextDirection.rtl)])))))]);
