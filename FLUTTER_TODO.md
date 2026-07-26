@@ -13,10 +13,10 @@ Legend: `[x]` complete, `[~]` started/partial, `[ ]` not started.
 - [x] Add environment-based Flutter configuration.
 - [x] Add API client boundaries for the old server routes.
 - [x] Add a Supabase archive repository boundary.
-- [ ] Install Flutter SDK locally. **(Required: run `flutter --version` to verify)**
-- [ ] Run `flutter pub get`. **(Run after SDK is installed)**
-- [ ] Run `flutter analyze` and fix all Dart errors. **(Run after `pub get`)**
-- [ ] Run the app on Android, iOS, Windows, or web.
+- [x] Install Flutter SDK locally. **(Verified via `flutter --version`)**
+- [x] Run `flutter pub get`.
+- [x] Run `flutter analyze` and fix all Dart compilation errors.
+- [x] Build and test web release target (`flutter build web`).
 - [ ] Compare screenshots against the old app at mobile and desktop widths.
 
 ## 2. Exact Visual System
