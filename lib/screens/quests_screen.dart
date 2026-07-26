@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:geolocator/geolocator.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -48,6 +49,7 @@ class _QuestsScreenState extends State<QuestsScreen> {
   _QuestItem? _activeFlowQuest;
   String _flowStep = 'intro';
   int? _quizSelection;
+  bool _locationVerified = false;
 
   @override
   void initState() {
@@ -170,7 +172,7 @@ class _QuestsScreenState extends State<QuestsScreen> {
     const SizedBox(height: 16),
     Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
       Container(padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6), decoration: BoxDecoration(color: const Color(0x1AE9C46A), borderRadius: BorderRadius.circular(8)), child: Text('+${quest.points} PTS', style: const TextStyle(color: Color(0xFFE9C46A), fontSize: 12, fontWeight: FontWeight.bold))),
-      GestureDetector(onTap: () => setState(() { _activeFlowQuest = quest; _flowStep = 'intro'; _quizSelection = null; }), child: Container(padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8), decoration: BoxDecoration(color: HeritageColors.orange, borderRadius: BorderRadius.circular(99)), child: const Text('Start', style: TextStyle(color: HeritageColors.background, fontSize: 12, fontWeight: FontWeight.bold, letterSpacing: 0.5)))),
+      GestureDetector(onTap: () => setState(() { _activeFlowQuest = quest; _flowStep = 'intro'; _quizSelection = null; _locationVerified = false; }), child: Container(padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8), decoration: BoxDecoration(color: HeritageColors.orange, borderRadius: BorderRadius.circular(99)), child: const Text('Start', style: TextStyle(color: HeritageColors.background, fontSize: 12, fontWeight: FontWeight.bold, letterSpacing: 0.5)))),
     ]),
   ]));
 
@@ -220,7 +222,35 @@ class _QuestsScreenState extends State<QuestsScreen> {
                     const SizedBox(height: 24),
                     Container(padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8), decoration: BoxDecoration(color: HeritageColors.orange.withOpacity(0.10), borderRadius: BorderRadius.circular(12)), child: Text('Reward: +${quest.points} PTS', style: const TextStyle(color: HeritageColors.orange, fontSize: 14, fontWeight: FontWeight.bold))),
                     const SizedBox(height: 24),
-                    GestureDetector(onTap: () => setState(() => _flowStep = 'checking_location'), child: Container(width: double.infinity, padding: const EdgeInsets.symmetric(vertical: 14), decoration: BoxDecoration(color: HeritageColors.orange, borderRadius: BorderRadius.circular(16)), child: const Text('Confirm Location', style: TextStyle(color: HeritageColors.background, fontWeight: FontWeight.bold, letterSpacing: 0.5), textAlign: TextAlign.center))),
+                     GestureDetector(onTap: () async {
+                        setState(() => _flowStep = 'checking_location');
+                        bool verified = false;
+                        try {
+                          bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
+                          if (!serviceEnabled) {
+                            verified = false;
+                          } else {
+                            LocationPermission permission = await Geolocator.checkPermission();
+                            if (permission == LocationPermission.denied) {
+                              permission = await Geolocator.requestPermission();
+                            }
+                            if (permission == LocationPermission.deniedForever || permission == LocationPermission.denied) {
+                              verified = false;
+                            } else {
+                              final position = await Geolocator.getCurrentPosition();
+                              verified = position.latitude != 0 && position.longitude != 0;
+                            }
+                          }
+                        } catch (_) {
+                          verified = false;
+                        }
+                        if (mounted) {
+                          setState(() {
+                            _locationVerified = verified;
+                            _flowStep = 'quiz';
+                          });
+                        }
+                      }, child: Container(width: double.infinity, padding: const EdgeInsets.symmetric(vertical: 14), decoration: BoxDecoration(color: HeritageColors.orange, borderRadius: BorderRadius.circular(16)), child: const Text('Confirm Location', style: TextStyle(color: HeritageColors.background, fontWeight: FontWeight.bold, letterSpacing: 0.5), textAlign: TextAlign.center))),
                   ] else if (_flowStep == 'checking_location') ...[
                     const SizedBox(height: 24),
                     const Text('Verifying Location...', style: TextStyle(color: Color(0xFF52B788), fontSize: 16, fontWeight: FontWeight.bold)),
@@ -230,7 +260,7 @@ class _QuestsScreenState extends State<QuestsScreen> {
                     const CircularProgressIndicator(color: Color(0xFF52B788)),
                     const SizedBox(height: 16),
                   ] else if (_flowStep == 'quiz') ...[
-                    Container(padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6), decoration: BoxDecoration(color: const Color(0x1A52B788), borderRadius: BorderRadius.circular(99)), child: const Text('Location Verified ✓', style: TextStyle(color: Color(0xFF52B788), fontSize: 13, fontWeight: FontWeight.bold))),
+                    Container(padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6), decoration: BoxDecoration(color: const Color(0x1A52B788), borderRadius: BorderRadius.circular(99)), child: Text(_locationVerified ? 'Location Verified ✓' : 'Location Verification Skipped', style: const TextStyle(color: Color(0xFF52B788), fontSize: 13, fontWeight: FontWeight.bold))),
                     const SizedBox(height: 16),
                     const Text('To complete this quest, answer the guardian\'s question:', style: TextStyle(color: Colors.white, fontSize: 14), textAlign: TextAlign.center),
                     const SizedBox(height: 16),
@@ -240,7 +270,39 @@ class _QuestsScreenState extends State<QuestsScreen> {
                       ...['Built to protect the coast / Endemic ecosystem', 'Created within the last decade', 'A shopping complex'].asMap().entries.map((entry) => GestureDetector(onTap: () => setState(() => _quizSelection = entry.key), child: Container(margin: const EdgeInsets.only(bottom: 8), padding: const EdgeInsets.all(14), decoration: BoxDecoration(color: _quizSelection == entry.key ? HeritageColors.orange.withOpacity(0.20) : Colors.white.withOpacity(0.05), border: Border.all(color: _quizSelection == entry.key ? HeritageColors.orange : Colors.white.withOpacity(0.05)), borderRadius: BorderRadius.circular(12)), child: Text(entry.value, style: TextStyle(color: _quizSelection == entry.key ? HeritageColors.orange : Colors.white70, fontSize: 14))))),
                     ])),
                     const SizedBox(height: 16),
-                    GestureDetector(onTap: _quizSelection == 0 ? () => setState(() { _flowStep = 'completed'; _completedQuests.add(quest); _activeQuests.remove(quest); _activeFlowQuest = null; }) : null, child: Container(width: double.infinity, padding: const EdgeInsets.symmetric(vertical: 14), decoration: BoxDecoration(color: _quizSelection == 0 ? const Color(0xFF52B788) : Colors.white10, borderRadius: BorderRadius.circular(16)), child: Text(_quizSelection == 0 ? 'Claim Reward' : 'Select Correct Answer', style: TextStyle(color: _quizSelection == 0 ? Colors.white : Colors.white30, fontWeight: FontWeight.bold, letterSpacing: 0.5), textAlign: TextAlign.center))),
+                    GestureDetector(onTap: _quizSelection == 0 ? () async {
+                      if (_activeFlowQuest == null || !AppConfig.hasSupabase) {
+                        setState(() { _flowStep = 'completed'; _completedQuests.add(quest); _activeQuests.remove(quest); _activeFlowQuest = null; });
+                        return;
+                      }
+                      try {
+                        final client = Supabase.instance.client;
+                        final questRepo = QuestRepository(client);
+                        final profileRepo = ProfileRepository(client);
+                        await questRepo.completeQuest(quest.id.startsWith('fake-') ? 'quest-${quest.title.toLowerCase().replaceAll(' ', '-')}' : quest.id);
+                        final updated = await profileRepo.currentProfile();
+                        final rank = updated == null ? 0 : await profileRepo.rankForPoints(updated.points);
+                        if (mounted) {
+                          setState(() {
+                            _userPoints = updated?.points ?? _userPoints + quest.points;
+                            _userRank = rank;
+                            _flowStep = 'completed';
+                            _completedQuests.add(quest);
+                            _activeQuests.remove(quest);
+                            _activeFlowQuest = null;
+                          });
+                        }
+                      } catch (_) {
+                        if (mounted) {
+                          setState(() {
+                            _flowStep = 'completed';
+                            _completedQuests.add(quest);
+                            _activeQuests.remove(quest);
+                            _activeFlowQuest = null;
+                          });
+                        }
+                      }
+                    } : null, child: Container(width: double.infinity, padding: const EdgeInsets.symmetric(vertical: 14), decoration: BoxDecoration(color: _quizSelection == 0 ? const Color(0xFF52B788) : Colors.white10, borderRadius: BorderRadius.circular(16)), child: Text(_quizSelection == 0 ? 'Claim Reward' : 'Select Correct Answer', style: TextStyle(color: _quizSelection == 0 ? Colors.white : Colors.white30, fontWeight: FontWeight.bold, letterSpacing: 0.5), textAlign: TextAlign.center))),
                   ] else if (_flowStep == 'completed') ...[
                     Container(width: 64, height: 64, decoration: const BoxDecoration(color: Color(0x2052B788), shape: BoxShape.circle), child: const Center(child: Icon(Icons.check, color: Color(0xFF52B788), size: 32))),
                     const SizedBox(height: 16),

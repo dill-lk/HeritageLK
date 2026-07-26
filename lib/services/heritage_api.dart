@@ -32,6 +32,18 @@ class HeritageApi {
       body: jsonEncode({'messages': messages}),
     );
     if (response.statusCode < 200 || response.statusCode >= 300) {
+      String message = 'Failed to connect to Shingo AI.';
+      try {
+        final decoded = jsonDecode(response.body);
+        if (decoded is Map && decoded['error'] is String) {
+          message = decoded['error'];
+        }
+      } catch (_) {}
+      throw Exception(message);
+    }
+    return response.body;
+  }
+    if (response.statusCode < 200 || response.statusCode >= 300) {
       throw Exception('Failed to connect to Shingo AI.');
     }
     return response.body;

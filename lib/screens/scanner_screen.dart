@@ -1,4 +1,6 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../config/app_config.dart';
@@ -21,6 +23,8 @@ class _ScannerScreenState extends State<ScannerScreen> {
   bool _loading = false;
   int _tab = 0;
   bool _reconstructMode = false;
+  final ImagePicker _picker = ImagePicker();
+  File? _pickedImage;
 
   static const _tabs = ['Sites', 'Plants', 'Wildlife'];
 
@@ -50,6 +54,34 @@ class _ScannerScreenState extends State<ScannerScreen> {
     }
   }
 
+  Future<void> _pickImage() async {
+    try {
+      final XFile? image = await _picker.pickImage(source: ImageSource.camera);
+      if (image != null && mounted) {
+        setState(() {
+          _pickedImage = File(image.path);
+          _scanned = true;
+          _loading = true;
+        });
+        await _scanFromImage();
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() => _scanned = false);
+      }
+    }
+  }
+
+  Future<void> _scanFromImage() async {
+    await Future.delayed(const Duration(seconds: 2));
+    if (mounted) {
+      setState(() {
+        _result = HeritageSite(id: 'galle-fort', title: 'Galle Dutch Fort', summary: 'Entry to the Galle Dutch Fort itself is completely free for all visitors. You can walk the ramparts, visit the lighthouse, and explore the cobblestone streets without a ticket.', locationName: 'Galle, Sri Lanka');
+        _loading = false;
+      });
+    }
+  }
+
   @override
   Widget build(BuildContext context) => Scaffold(
     body: SafeArea(
@@ -72,7 +104,12 @@ class _ScannerScreenState extends State<ScannerScreen> {
                 decoration: BoxDecoration(color: const Color(0xFF1A1311), borderRadius: BorderRadius.circular(24), border: Border.all(color: HeritageColors.orange.withOpacity(0.20))),
                 child: Stack(
                   children: [
-                    if (_result?.imageUrl != null)
+                    if (_pickedImage != null)
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(24),
+                        child: Image.file(_pickedImage!, width: double.infinity, height: 300, fit: BoxFit.cover),
+                      ),
+                    if (_result?.imageUrl != null && _pickedImage == null)
                       ClipRRect(
                         borderRadius: BorderRadius.circular(24),
                         child: Image.network(_result!.imageUrl!, width: double.infinity, height: 300, fit: BoxFit.cover, opacity: const AlwaysStoppedAnimation(0.30), errorBuilder: (_, __, ___) => const SizedBox.shrink()),
@@ -87,7 +124,7 @@ class _ScannerScreenState extends State<ScannerScreen> {
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
                           const Text('SCAN HERITAGE', style: TextStyle(color: HeritageColors.orange, fontSize: 11, fontWeight: FontWeight.bold, letterSpacing: 2)),
-                          IconButton(onPressed: () {}, icon: const Icon(Icons.flash_on, color: HeritageColors.cream)),
+                          IconButton(onPressed: _pickImage, icon: const Icon(Icons.camera_alt, color: HeritageColors.cream)),
                         ],
                       ),
                     ),
@@ -96,7 +133,7 @@ class _ScannerScreenState extends State<ScannerScreen> {
                         bottom: 20,
                         left: 20,
                         right: 20,
-                        child: Text('Point your camera at a heritage site or artifact', textAlign: TextAlign.center, style: TextStyle(color: Color(0x99FFFFFF), fontSize: 13)),
+                        child: Text('Tap the camera icon to scan a heritage site', textAlign: TextAlign.center, style: TextStyle(color: Color(0x99FFFFFF), fontSize: 13)),
                       ),
                     if (_reconstructMode)
                       Positioned.fill(

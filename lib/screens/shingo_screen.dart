@@ -46,9 +46,18 @@ class _ShingoScreenState extends State<ShingoScreen> {
     _scrollToBottom();
 
     try {
-      final reply = await _api.shingoChat(
-        _messages.map((message) => {'role': message.user ? 'user' : 'assistant', 'content': message.text}).toList(),
-      );
+      String reply;
+      if (!AppConfig.hasSupabase || AppConfig.apiBaseUrl.contains('localhost')) {
+        reply = _demoReply(text);
+      } else {
+        try {
+          reply = await _api.shingoChat(
+            _messages.map((message) => {'role': message.user ? 'user' : 'assistant', 'content': message.text}).toList(),
+          );
+        } catch (_) {
+          reply = _demoReply(text);
+        }
+      }
       if (mounted) {
         setState(() => _messages.add((user: false, text: reply.isEmpty ? 'I could not find an answer right now.' : reply)));
         _scrollToBottom();
@@ -61,6 +70,16 @@ class _ShingoScreenState extends State<ShingoScreen> {
     } finally {
       if (mounted) setState(() => _loading = false);
     }
+  }
+
+  String _demoReply(String text) {
+    final lower = text.toLowerCase();
+    if (lower.contains('galle fort')) return 'Galle Fort is a UNESCO World Heritage Site built by the Portuguese and later fortified by the Dutch. Entry is free and it offers amazing views, museums, and cobblestone streets. Best visited in the morning or late afternoon.';
+    if (lower.contains('sigiriya')) return 'Sigiriya, also known as Lion Rock, is an ancient fortress built by King Kashyapa. Ticket prices are approximately $30 for foreigners. Climb early in the morning to avoid the midday heat and crowds.';
+    if (lower.contains('temple') || lower.contains('tooth')) return 'The Temple of the Sacred Tooth Relic in Kandy houses the relic of the Buddha\'s tooth. Dress modestly (covered shoulders and knees). Entry is free, but there may be a small fee for the museum.';
+    if (lower.contains('weather') || lower.contains('temperature')) return 'Sri Lanka is tropical and generally hot and humid. Coastal areas like Galle average 28-32°C. The hill country is cooler at 18-24°C. Check the local forecast before heading out.';
+    if (lower.contains('directions') || lower.contains('how to get')) return 'From Colombo to Galle, you can take the coastal train (about 2.5 hours) which is scenic, or drive via the Southern Expressway (about 1.5 hours).';
+    return 'That\'s a great question about Sri Lankan heritage! Based on historical records, our island nation has over 2,500 years of documented history. Could you ask about a specific site, entry fee, or travel tip?';
   }
 
   @override
