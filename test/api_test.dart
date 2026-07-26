@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:typed_data';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 
@@ -26,10 +27,16 @@ class FakeClient implements http.Client {
   Future<http.Response> head(Uri url, {Map<String, String>? headers}) => throw UnimplementedError();
 
   @override
-  Future<http.Response> read(Uri url, {Map<String, String>? headers}) => throw UnimplementedError();
+  Future<String> read(Uri url, {Map<String, String>? headers}) async {
+    final response = await get(url, headers: headers);
+    return response.body;
+  }
 
   @override
-  Future<String> readBytes(Uri url, {Map<String, String>? headers}) => throw UnimplementedError();
+  Future<Uint8List> readBytes(Uri url, {Map<String, String>? headers}) async {
+    final response = await get(url, headers: headers);
+    return Uint8List.fromList(response.bodyBytes);
+  }
 
   @override
   Future<http.StreamedResponse> send(http.BaseRequest request) => throw UnimplementedError();
