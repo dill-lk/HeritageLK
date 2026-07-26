@@ -232,7 +232,7 @@ class _QuestsScreenState extends State<QuestsScreen> {
         const SizedBox(height: 24),
         GestureDetector(onTap: () => setState(() => _activeFlowQuest = null), child: Container(width: double.infinity, padding: const EdgeInsets.symmetric(vertical: 14), decoration: BoxDecoration(color: Colors.white10, borderRadius: BorderRadius.circular(16)), child: const Text('Close', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, letterSpacing: 0.5), textAlign: TextAlign.center))),
       ],
-    ]))));
+    ]))))));
   }
 }
 
