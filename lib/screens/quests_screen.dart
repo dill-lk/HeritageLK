@@ -42,7 +42,6 @@ class _QuestsScreenState extends State<QuestsScreen> {
     Profile(id: '2', fullName: 'Jinuk Chanthusa', points: 11800),
     Profile(id: '3', fullName: 'Disara Bimsilu', points: 10900),
   ];
-  bool _loading = false;
   int _userPoints = 0;
   int _userRank = 0;
 
@@ -60,7 +59,6 @@ class _QuestsScreenState extends State<QuestsScreen> {
 
   Future<void> _loadData() async {
     if (!AppConfig.hasSupabase) return;
-    setState(() => _loading = true);
     try {
       final client = Supabase.instance.client;
       final profileRepo = ProfileRepository(client);
@@ -75,6 +73,18 @@ class _QuestsScreenState extends State<QuestsScreen> {
             _userPoints = profile.points;
             _userRank = rank;
           }
+          final completedIds = completed.map((q) => q.questId).toSet();
+          if (quests.isNotEmpty) {
+            _activeQuests = quests.where((q) => !completedIds.contains(q.id)).map((q) => _QuestItem(q.id, q.icon ?? '🏆', q.title, q.description, q.points, const Color(0x1AB752B7), const Color(0x20B752B7))).toList();
+            _completedQuests = quests.where((q) => completedIds.contains(q.id)).map((q) => _QuestItem(q.id, q.icon ?? '🏆', q.title, q.description, q.points, const Color(0x1A52B788), const Color(0x2052B788))).toList();
+          }
+          if (leaders.isNotEmpty) _leaders = leaders;
+        });
+      }
+    } catch (_) {
+      if (mounted) setState(() {});
+    }
+  }
           final completedIds = completed.map((q) => q.questId).toSet();
           if (quests.isNotEmpty) {
             _activeQuests = quests.where((q) => !completedIds.contains(q.id)).map((q) => _QuestItem(q.id, q.icon ?? '🏆', q.title, q.description, q.points, const Color(0x1AB752B7), const Color(0x20B752B7))).toList();

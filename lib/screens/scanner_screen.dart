@@ -1,13 +1,26 @@
 import 'dart:io';
+import 'dart:typed_data';
 import 'package:flutter/material.dart';
+import 'package:geolocator/geolocator.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:path/path.dart' as path;
 
 import '../config/app_config.dart';
-import '../models/heritage_site.dart';
-import '../services/heritage_site_repository.dart';
 import '../theme/heritage_colors.dart';
 import '../widgets/bottom_nav.dart';
+
+class _Visit {
+  final String id;
+  final String imagePath;
+  final double latitude;
+  final double longitude;
+  final DateTime timestamp;
+  final String? note;
+
+  _Visit({required this.id, required this.imagePath, required this.latitude, required this.longitude, required this.timestamp, this.note});
+}
 
 class ScannerScreen extends StatefulWidget {
   const ScannerScreen({super.key});
@@ -17,248 +30,171 @@ class ScannerScreen extends StatefulWidget {
 }
 
 class _ScannerScreenState extends State<ScannerScreen> {
-  final _site = TextEditingController();
-  HeritageSite? _result;
-  bool _scanned = false;
-  bool _loading = false;
-  int _tab = 0;
-  bool _reconstructMode = false;
   final ImagePicker _picker = ImagePicker();
-  File? _pickedImage;
-
-  static const _tabs = ['Sites', 'Plants', 'Wildlife'];
+  final List<_Visit> _visits = [];
+  bool _saving = false;
 
   @override
   void dispose() {
-    _site.dispose();
     super.dispose();
   }
 
-  Future<void> _scan() async {
-    final query = _site.text.trim();
-    if (query.isEmpty) return;
-    setState(() {
-      _loading = true;
-      _scanned = true;
-    });
+  Future<void> _captureVisit() async {
     try {
-      HeritageSite? site;
+      final XFile? image = await _picker.pickImage(source: ImageSource.camera, imageQuality: 85);
+      if (image == null) return;
+
+      Position? position;
+      try {
+        bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
+        if (serviceEnabled) {
+          LocationPermission permission = await Geolocator.checkPermission();
+          if (permission == LocationPermission.denied) {
+            permission = await Geolocator.requestPermission();
+          }
+          if (permission != LocationPermission.denied && permission != LocationPermission.deniedForever) {
+            position = await Geolocator.getCurrentPosition(desiredAccuracy: LocationAccuracy.high);
+          }
+        }
+      } catch (_) {}
+
+      final directory = await getApplicationDocumentsDirectory();
+      final fileName = 'visit_${DateTime.now().millisecondsSinceEpoch}${path.extension(image.path)}';
+      final savedImage = await File(image.path).copy('${directory.path}/$fileName');
+
+      final visit = _Visit(
+        id: DateTime.now().millisecondsSinceEpoch.toString(),
+        imagePath: savedImage.path,
+        latitude: position?.latitude ?? 0.0,
+        longitude: position?.longitude ?? 0.0,
+        timestamp: DateTime.now(),
+      );
+
+      setState(() => _visits.insert(0, visit));
+
       if (AppConfig.hasSupabase) {
-        site = await HeritageSiteRepository(Supabase.instance.client).findByTitle(query);
+        try {
+          final client = Supabase.instance.client;
+          await client.from('heritage_visits').insert({
+            'user_id': client.auth.currentUser?.id,
+            'image_path': savedImage.path,
+            'latitude': visit.latitude,
+            'longitude': visit.longitude,
+            'visited_at': visit.timestamp.toIso8601String(),
+          });
+        } catch (_) {}
       }
+    } catch (_) {
       if (mounted) {
-        setState(() => _result = site ?? HeritageSite(id: query, title: query, summary: 'Historical heritage site identified in Sri Lanka.', locationName: 'Sri Lanka'));
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Failed to save visit. Please try again.')));
       }
-    } finally {
-      if (mounted) setState(() => _loading = false);
     }
   }
 
-  Future<void> _pickImage() async {
+  Future<void> _uploadToSupabase(_Visit visit) async {
+    if (!AppConfig.hasSupabase) return;
+    setState(() => _saving = true);
     try {
-      final XFile? image = await _picker.pickImage(source: ImageSource.camera);
-      if (image != null && mounted) {
-        setState(() {
-          _pickedImage = File(image.path);
-          _scanned = true;
-          _loading = true;
-        });
-        await _scanFromImage();
-      }
-    } catch (e) {
-      if (mounted) {
-        setState(() => _scanned = false);
-      }
-    }
-  }
-
-  Future<void> _scanFromImage() async {
-    await Future.delayed(const Duration(seconds: 2));
-    if (mounted) {
-      setState(() {
-        _result = HeritageSite(id: 'galle-fort', title: 'Galle Dutch Fort', summary: 'Entry to the Galle Dutch Fort itself is completely free for all visitors. You can walk the ramparts, visit the lighthouse, and explore the cobblestone streets without a ticket.', locationName: 'Galle, Sri Lanka');
-        _loading = false;
+      final client = Supabase.instance.client;
+      final bytes = await File(visit.imagePath).readAsBytes();
+      final fileName = 'heritage_visits/${visit.id}${path.extension(visit.imagePath)}';
+      await client.storage.from('heritage-media').uploadBinary(fileName, bytes);
+      await client.from('heritage_visits').insert({
+        'user_id': client.auth.currentUser?.id,
+        'image_path': fileName,
+        'latitude': visit.latitude,
+        'longitude': visit.longitude,
+        'visited_at': visit.timestamp.toIso8601String(),
       });
+    } catch (_) {
+    } finally {
+      if (mounted) setState(() => _saving = false);
     }
   }
 
   @override
-  Widget build(BuildContext context) => Scaffold(
-    body: SafeArea(
-      child: Stack(
-        children: [
-          ListView(
-            padding: const EdgeInsets.fromLTRB(20, 24, 20, 130),
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  _round(Icons.arrow_back, () => Navigator.of(context).pushReplacementNamed('/home')),
-                  const Text('Scanner', style: TextStyle(color: HeritageColors.cream, fontFamily: 'Playfair Display', fontSize: 22)),
-                  _round(Icons.info_outline, () {}),
-                ],
-              ),
-              const SizedBox(height: 24),
-              Container(
-                height: 300,
-                decoration: BoxDecoration(color: const Color(0xFF1A1311), borderRadius: BorderRadius.circular(24), border: Border.all(color: HeritageColors.orange.withOpacity(0.20))),
-                child: Stack(
+  Widget build(BuildContext context) {
+    return Scaffold(
+      body: SafeArea(
+        child: Stack(
+          children: [
+            ListView(
+              padding: const EdgeInsets.fromLTRB(20, 24, 20, 140),
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    if (_pickedImage != null)
-                      ClipRRect(
-                        borderRadius: BorderRadius.circular(24),
-                        child: Image.file(_pickedImage!, width: double.infinity, height: 300, fit: BoxFit.cover),
-                      ),
-                    if (_result?.imageUrl != null && _pickedImage == null)
-                      ClipRRect(
-                        borderRadius: BorderRadius.circular(24),
-                        child: Image.network(_result!.imageUrl!, width: double.infinity, height: 300, fit: BoxFit.cover, opacity: const AlwaysStoppedAnimation(0.30), errorBuilder: (_, __, ___) => const SizedBox.shrink()),
-                      ),
-                    Center(child: Icon(_scanned ? Icons.account_balance : Icons.camera_alt_outlined, size: 76, color: HeritageColors.orange)),
-                    if (_loading) const Center(child: CircularProgressIndicator(color: HeritageColors.orange)),
-                    Positioned(
-                      top: 20,
-                      left: 20,
-                      right: 20,
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          const Text('SCAN HERITAGE', style: TextStyle(color: HeritageColors.orange, fontSize: 11, fontWeight: FontWeight.bold, letterSpacing: 2)),
-                          IconButton(onPressed: _pickImage, icon: const Icon(Icons.camera_alt, color: HeritageColors.cream)),
-                        ],
-                      ),
-                    ),
-                    if (!_scanned)
-                      const Positioned(
-                        bottom: 20,
-                        left: 20,
-                        right: 20,
-                        child: Text('Tap the camera icon to scan a heritage site', textAlign: TextAlign.center, style: TextStyle(color: Color(0x99FFFFFF), fontSize: 13)),
-                      ),
-                    if (_reconstructMode)
-                      Positioned.fill(
-                        child: Container(
-                          decoration: BoxDecoration(color: HeritageColors.orange.withOpacity(0.08), borderRadius: BorderRadius.circular(24), border: Border.all(color: HeritageColors.orange.withOpacity(0.30), width: 2)),
-                          child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
-                            Icon(Icons.view_in_ar, size: 64, color: HeritageColors.orange),
-                            const SizedBox(height: 12),
-                            const Text('3D RECONSTRUCT', style: TextStyle(color: HeritageColors.orange, fontSize: 12, fontWeight: FontWeight.bold, letterSpacing: 2)),
-                            const SizedBox(height: 4),
-                            const Text('Point camera at a structure to reconstruct', style: TextStyle(color: Colors.white54, fontSize: 12)),
-                          ]),
-                        ),
-                      ),
+                    _round(Icons.arrow_back, () => Navigator.of(context).pushReplacementNamed('/home')),
+                    const Text('Heritage Cam', style: TextStyle(color: HeritageColors.cream, fontFamily: 'Playfair Display', fontSize: 22)),
+                    _round(Icons.info_outline, () {}),
                   ],
                 ),
-              ),
-              const SizedBox(height: 16),
-              Row(children: [
-                Expanded(child: _tabButton(0, Icons.location_on, 'Sites')),
-                const SizedBox(width: 8),
-                Expanded(child: _tabButton(1, Icons.eco, 'Plants')),
-                const SizedBox(width: 8),
-                Expanded(child: _tabButton(2, Icons.pets, 'Wildlife')),
-              ]),
-              const SizedBox(height: 16),
-              Row(
-                children: [
-                  Expanded(
-                    child: TextField(
-                      controller: _site,
-                      onSubmitted: (_) => _scan(),
-                      decoration: InputDecoration(
-                        hintText: 'Enter place to scan...',
-                        hintStyle: const TextStyle(color: Color(0x66FFFFFF)),
-                        prefixIcon: const Icon(Icons.search, color: Color(0x99FFFFFF)),
-                        filled: true,
-                        fillColor: const Color(0xCC1A1311),
-                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide(color: Colors.white.withOpacity(0.10))),
-                        enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide(color: Colors.white.withOpacity(0.10))),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  SizedBox(
-                    height: 56,
-                    width: 56,
-                    child: FilledButton(
-                      onPressed: _loading ? null : _scan,
-                      style: FilledButton.styleFrom(backgroundColor: const Color(0xFF10B981), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16))),
-                      child: const Icon(Icons.document_scanner_outlined),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 16),
-              GestureDetector(
-                onTap: () => setState(() => _reconstructMode = !_reconstructMode),
-                child: Container(
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(color: _reconstructMode ? HeritageColors.orange.withOpacity(0.15) : Colors.white.withOpacity(0.05), border: Border.all(color: _reconstructMode ? HeritageColors.orange.withOpacity(0.40) : Colors.white.withOpacity(0.10)), borderRadius: BorderRadius.circular(16)),
-                  child: Row(children: [
-                    Icon(Icons.view_in_ar, color: _reconstructMode ? HeritageColors.orange : Colors.white54, size: 22),
-                    const SizedBox(width: 14),
-                    Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                      Text('3D Reconstruct', style: TextStyle(color: _reconstructMode ? HeritageColors.cream : Colors.white, fontSize: 15, fontWeight: FontWeight.bold)),
-                      const SizedBox(height: 2),
-                      Text('View heritage sites in augmented reality', style: TextStyle(color: _reconstructMode ? const Color(0x99FEFAE0) : const Color(0x66FFFFFF), fontSize: 12)),
-                    ])),
-                    Icon(_reconstructMode ? Icons.toggle_on : Icons.toggle_off, color: _reconstructMode ? HeritageColors.orange : Colors.white38, size: 32),
-                  ]),
-                ),
-              ),
-              if (_scanned) ...[
                 const SizedBox(height: 24),
                 Container(
-                  padding: const EdgeInsets.all(20),
-                  decoration: BoxDecoration(color: Colors.white.withOpacity(0.05), border: Border.all(color: Colors.white.withOpacity(0.08)), borderRadius: BorderRadius.circular(24)),
+                  height: 260,
+                  decoration: BoxDecoration(color: const Color(0xFF1A1311), borderRadius: BorderRadius.circular(24), border: Border.all(color: HeritageColors.orange.withOpacity(0.20))),
                   child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Row(
-                        children: [
-                          Expanded(child: Text(_result?.title ?? _site.text, style: const TextStyle(color: HeritageColors.cream, fontSize: 24, fontWeight: FontWeight.bold))),
-                          const Text('92%', style: TextStyle(color: HeritageColors.orange, fontWeight: FontWeight.bold)),
-                        ],
-                      ),
-                      const SizedBox(height: 18),
-                      const Text('MATCH', style: TextStyle(color: Color(0x66FFFFFF), fontSize: 10, letterSpacing: 2)),
-                      const SizedBox(height: 4),
-                      Text(_result?.summary ?? 'Historical heritage site identified in Sri Lanka.', style: const TextStyle(color: Color(0xB3FFFFFF), fontSize: 14, height: 1.6)),
+                      Container(width: 80, height: 80, decoration: BoxDecoration(color: HeritageColors.orange.withOpacity(0.10), shape: BoxShape.circle), child: Icon(Icons.camera_alt, color: HeritageColors.orange, size: 36)),
                       const SizedBox(height: 16),
-                      Row(children: [
-                        Expanded(child: _info('ERA', 'Ancient')),
-                        Expanded(child: _info('TYPE', _result?.locationName ?? 'Heritage')),
-                        Expanded(child: _info('MATERIAL', 'Stone')),
-                      ]),
+                      Text(_visits.isEmpty ? 'Capture your heritage journey' : '${_visits.length} visit${_visits.length == 1 ? '' : 's'} captured', style: const TextStyle(color: HeritageColors.cream, fontSize: 16, fontWeight: FontWeight.bold)),
+                      const SizedBox(height: 8),
+                      Text('Tap below to take a photo at a heritage site', style: TextStyle(color: Colors.white.withOpacity(0.60), fontSize: 13)),
+                      const SizedBox(height: 20),
+                      FilledButton.icon(
+                        onPressed: _saving ? null : _captureVisit,
+                        style: FilledButton.styleFrom(backgroundColor: HeritageColors.orange, foregroundColor: HeritageColors.background, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16))),
+                        icon: const Icon(Icons.camera_alt, size: 20),
+                        label: Text(_saving ? 'Saving...' : 'Take Photo'),
+                      ),
                     ],
                   ),
                 ),
+                const SizedBox(height: 16),
+                if (_visits.isNotEmpty) ...[
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Text('Recent Visits', style: TextStyle(color: HeritageColors.cream, fontSize: 18, fontWeight: FontWeight.bold)),
+                      TextButton.icon(onPressed: () => setState(() => _visits.clear()), icon: const Icon(Icons.delete_outline, size: 18), label: const Text('Clear')),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  ..._visits.map((visit) => Container(
+                    margin: const EdgeInsets.only(bottom: 12),
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(color: Colors.white.withOpacity(0.05), border: Border.all(color: Colors.white.withOpacity(0.08)), borderRadius: BorderRadius.circular(20)),
+                    child: Row(
+                      children: [
+                        ClipRRect(
+                          borderRadius: BorderRadius.circular(12),
+                          child: Image.file(File(visit.imagePath), width: 72, height: 72, fit: BoxFit.cover),
+                        ),
+                        const SizedBox(width: 14),
+                        Expanded(
+                          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                            const Text('Heritage Visit', style: TextStyle(color: HeritageColors.cream, fontSize: 14, fontWeight: FontWeight.bold)),
+                            const SizedBox(height: 4),
+                            Text('${visit.latitude.toStringAsFixed(4)}, ${visit.longitude.toStringAsFixed(4)}', style: const TextStyle(color: Color(0x99FEFAE0), fontSize: 12)),
+                            const SizedBox(height: 2),
+                            Text(visit.timestamp.toLocal().toString().substring(0, 19), style: const TextStyle(color: Color(0x66FFFFFF), fontSize: 11)),
+                          ]),
+                        ),
+                        if (AppConfig.hasSupabase)
+                          IconButton(onPressed: () => _uploadToSupabase(visit), icon: const Icon(Icons.cloud_upload_outlined, color: HeritageColors.orange, size: 20)),
+                      ],
+                    ),
+                  )),
+                ],
               ],
-            ],
-          ),
-          const Align(alignment: Alignment.bottomCenter, child: HeritageBottomNav(currentIndex: 2)),
-        ],
-      ),
-    ),
-  );
-
-  Widget _tabButton(int index, IconData icon, String label) {
-    final selected = _tab == index;
-    return GestureDetector(
-      onTap: () => setState(() => _tab = index),
-      child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 14),
-        decoration: BoxDecoration(color: selected ? HeritageColors.orange.withOpacity(0.15) : Colors.white.withOpacity(0.05), border: Border.all(color: selected ? HeritageColors.orange.withOpacity(0.40) : Colors.white.withOpacity(0.08)), borderRadius: BorderRadius.circular(16)),
-        child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-          Icon(icon, color: selected ? HeritageColors.orange : Colors.white54, size: 18),
-          const SizedBox(width: 8),
-          Text(label, style: TextStyle(color: selected ? HeritageColors.cream : Colors.white54, fontSize: 14, fontWeight: FontWeight.bold)),
-        ]),
+            ),
+            const Align(alignment: Alignment.bottomCenter, child: HeritageBottomNav(currentIndex: 2)),
+          ],
+        ),
       ),
     );
   }
 
-  Widget _info(String label, String value) => Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Text(label, style: const TextStyle(color: Color(0x66FFFFFF), fontSize: 10, fontWeight: FontWeight.bold, letterSpacing: 1)), const SizedBox(height: 4), Text(value, style: const TextStyle(color: HeritageColors.cream, fontWeight: FontWeight.bold))]);
   Widget _round(IconData icon, VoidCallback action) => InkWell(onTap: action, borderRadius: BorderRadius.circular(24), child: Container(width: 40, height: 40, decoration: BoxDecoration(color: Colors.white.withOpacity(0.05), border: Border.all(color: Colors.white.withOpacity(0.10)), shape: BoxShape.circle), child: Icon(icon, color: HeritageColors.orange, size: 20)));
 }
