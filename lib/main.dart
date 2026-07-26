@@ -134,7 +134,7 @@ class _HeritageLkAppState extends State<HeritageLkApp> {
     if (builder != null) {
       return _createRoute(builder);
     }
-    return MaterialPageRoute<void>(
+    return MaterialPageRoute<T>(
       builder: (_) => Scaffold(body: SafeArea(child: Center(child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
         const Icon(Icons.location_off, color: Color(0xFFE76F51), size: 64),
         const SizedBox(height: 24),

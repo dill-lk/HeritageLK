@@ -20,19 +20,19 @@ class QuestsScreen extends StatefulWidget {
 
 class _QuestsScreenState extends State<QuestsScreen> {
   final _fallbackQuests = const [
-    _QuestItem('🏰', 'The Fort Guardian', 'Scan 3 watchtowers in Galle Fort', 500, Color(0x1AB752B7), Color(0x20B752B7)),
-    _QuestItem('🌿', 'Forest Secret Finder', 'Identify 5 endemic plants from Kanneliya', 800, Color(0x1A52B788), Color(0x2052B788)),
-    _QuestItem('🐘', 'Wildlife Tracker', 'Spot and document a wild elephant in Minneriya', 1000, Color(0x1AF4A261), Color(0x20F4A261)),
-    _QuestItem('🌊', 'Ocean Defender', 'Participate in a Mirissa beach cleanup', 300, Color(0x1A52B788), Color(0x2052B788)),
-    _QuestItem('🏛️', 'Ruins Explorer', 'Visit and read the history of 3 ruins in Polonnaruwa', 600, Color(0x1AB752B7), Color(0x20B752B7)),
-    _QuestItem('🧗', 'Summit Scaler', 'Climb to the top of Sigiriya Rock Fortress', 1200, Color(0x1AF4A261), Color(0x20F4A261)),
-    _QuestItem('🫖', 'Tea Trailblazer', 'Learn about the tea-making process in Nuwara Eliya', 400, Color(0x1A52B788), Color(0x2052B788)),
-    _QuestItem('🚂', 'Ella Odyssey', 'Take the scenic train ride from Kandy to Ella', 750, Color(0x1AB752B7), Color(0x20B752B7)),
-    _QuestItem('🤿', 'Coral Guardian', 'Explore the coral reefs of Pigeon Island', 850, Color(0x1A52B788), Color(0x2052B788)),
-    _QuestItem('🛕', 'Sacred Relic', 'Visit the Temple of the Sacred Tooth Relic', 600, Color(0x1AF4A261), Color(0x20F4A261)),
-    _QuestItem("🌅", "Adam's Peak Pilgrim", "Reach the summit of Adam's Peak at sunrise", 1500, Color(0x1AB752B7), Color(0x20B752B7)),
-    _QuestItem('🐆', 'Yala Safari', 'Spot a leopard on a safari in Yala National Park', 1100, Color(0x1A52B788), Color(0x2052B788)),
-    _QuestItem('🏄', 'Arugam Bay Surfer', 'Catch a wave in the surfing capital', 900, Color(0x1AF4A261), Color(0x20F4A261)),
+    _QuestItem('fake-1', '🏰', 'The Fort Guardian', 'Scan 3 watchtowers in Galle Fort', 500, Color(0x1AB752B7), Color(0x20B752B7)),
+    _QuestItem('fake-2', '🌿', 'Forest Secret Finder', 'Identify 5 endemic plants from Kanneliya', 800, Color(0x1A52B788), Color(0x2052B788)),
+    _QuestItem('fake-3', '🐘', 'Wildlife Tracker', 'Spot and document a wild elephant in Minneriya', 1000, Color(0x1AF4A261), Color(0x20F4A261)),
+    _QuestItem('fake-4', '🌊', 'Ocean Defender', 'Participate in a Mirissa beach cleanup', 300, Color(0x1A52B788), Color(0x2052B788)),
+    _QuestItem('fake-5', '🏛️', 'Ruins Explorer', 'Visit and read the history of 3 ruins in Polonnaruwa', 600, Color(0x1AB752B7), Color(0x20B752B7)),
+    _QuestItem('fake-6', '🧗', 'Summit Scaler', 'Climb to the top of Sigiriya Rock Fortress', 1200, Color(0x1AF4A261), Color(0x20F4A261)),
+    _QuestItem('fake-7', '🫖', 'Tea Trailblazer', 'Learn about the tea-making process in Nuwara Eliya', 400, Color(0x1A52B788), Color(0x2052B788)),
+    _QuestItem('fake-8', '🚂', 'Ella Odyssey', 'Take the scenic train ride from Kandy to Ella', 750, Color(0x1AB752B7), Color(0x20B752B7)),
+    _QuestItem('fake-9', '🤿', 'Coral Guardian', 'Explore the coral reefs of Pigeon Island', 850, Color(0x1A52B788), Color(0x2052B788)),
+    _QuestItem('fake-10', '🛕', 'Sacred Relic', 'Visit the Temple of the Sacred Tooth Relic', 600, Color(0x1AF4A261), Color(0x20F4A261)),
+    _QuestItem("fake-11", "🌅", "Adam's Peak Pilgrim", "Reach the summit of Adam's Peak at sunrise", 1500, Color(0x1AB752B7), Color(0x20B752B7)),
+    _QuestItem('fake-12', '🐆', 'Yala Safari', 'Spot a leopard on a safari in Yala National Park', 1100, Color(0x1A52B788), Color(0x2052B788)),
+    _QuestItem('fake-13', '🏄', 'Arugam Bay Surfer', 'Catch a wave in the surfing capital', 900, Color(0x1AF4A261), Color(0x20F4A261)),
   ];
 
   List<_QuestItem> _activeQuests = [];
@@ -77,8 +77,8 @@ class _QuestsScreenState extends State<QuestsScreen> {
           }
           final completedIds = completed.map((q) => q.questId).toSet();
           if (quests.isNotEmpty) {
-            _activeQuests = quests.where((q) => !completedIds.contains(q.id)).map((q) => _QuestItem(q.icon ?? '🏆', q.title, q.description, q.points, const Color(0x1AB752B7), const Color(0x20B752B7))).toList();
-            _completedQuests = quests.where((q) => completedIds.contains(q.id)).map((q) => _QuestItem(q.icon ?? '🏆', q.title, q.description, q.points, const Color(0x1A52B788), const Color(0x2052B788))).toList();
+            _activeQuests = quests.where((q) => !completedIds.contains(q.id)).map((q) => _QuestItem(q.id, q.icon ?? '🏆', q.title, q.description, q.points, const Color(0x1AB752B7), const Color(0x20B752B7))).toList();
+            _completedQuests = quests.where((q) => completedIds.contains(q.id)).map((q) => _QuestItem(q.id, q.icon ?? '🏆', q.title, q.description, q.points, const Color(0x1A52B788), const Color(0x2052B788))).toList();
           }
           if (leaders.isNotEmpty) _leaders = leaders;
         });
@@ -323,11 +323,12 @@ class _QuestsScreenState extends State<QuestsScreen> {
 }
 
 class _QuestItem {
+  final String id;
   final String icon;
   final String title;
   final String description;
   final int points;
   final Color accent;
   final Color border;
-  const _QuestItem(this.icon, this.title, this.description, this.points, this.accent, this.border);
+  const _QuestItem(this.id, this.icon, this.title, this.description, this.points, this.accent, this.border);
 }

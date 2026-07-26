@@ -43,11 +43,6 @@ class HeritageApi {
     }
     return response.body;
   }
-    if (response.statusCode < 200 || response.statusCode >= 300) {
-      throw Exception('Failed to connect to Shingo AI.');
-    }
-    return response.body;
-  }
 
   Future<String> generateArchive(String topic) async {
     final response = await _client.post(
