@@ -63,6 +63,91 @@ class _HeritageLkAppState extends State<HeritageLkApp> {
     super.dispose();
   }
 
+  static Route<T> _createRoute<T>(WidgetBuilder builder) {
+    return PageRouteBuilder<T>(
+      settings: const RouteSettings(name: ''),
+      pageBuilder: (context, animation, secondaryAnimation) => builder(context),
+      transitionsBuilder: (context, animation, secondaryAnimation, child) {
+        const begin = Offset(0.0, 0.05);
+        const end = Offset.zero;
+        const curve = Curves.easeOutCubic;
+        var tween = Tween(begin: begin, end: end).chain(CurveTween(curve: curve));
+        var offsetAnimation = animation.drive(tween);
+        return FadeTransition(opacity: animation.drive(Tween(begin: 0.0, end: 1.0).chain(CurveTween(curve: curve))), child: SlideTransition(position: offsetAnimation, child: child));
+      },
+      transitionDuration: const Duration(milliseconds: 280),
+    );
+  }
+
+  Route<T> _onGenerateRoute<T>(RouteSettings settings) {
+    WidgetBuilder? builder;
+    switch (settings.name) {
+      case '/':
+        builder = (_) => const MainHomeScreen();
+      case '/login':
+        builder = (_) => const LoginScreen();
+      case '/signup':
+        builder = (_) => const SignupScreen();
+      case '/auth/callback':
+        builder = (_) => const AuthCallbackScreen();
+      case '/home':
+        builder = (_) => const HomeScreen();
+      case '/explore':
+        builder = (_) => const ExploreScreen();
+      case '/scanner':
+        builder = (_) => const ScannerScreen();
+      case '/quests':
+        builder = (_) => const QuestsScreen();
+      case '/archive':
+        builder = (_) => const ArchiveScreen();
+      case '/archive/shingo':
+        builder = (_) => const ShingoScreen();
+      case '/archive/upload':
+        builder = (_) => const ContributeScreen();
+      case '/archive/admin/generate':
+        builder = (_) => const GenerateArchiveScreen();
+      case '/profile':
+        builder = (_) => const ProfileScreen();
+      case '/settings':
+        builder = (_) => const SettingsScreen();
+      case '/settings/personal':
+        builder = (_) => const SettingsDetailScreen(title: 'Personal Information', description: 'Manage the information connected to your HeritageLK profile.');
+      case '/settings/security':
+        builder = (_) => const SettingsDetailScreen(title: 'Security', description: 'Keep your HeritageLK account secure and protected.');
+      case '/settings/notifications':
+        builder = (_) => const SettingsDetailScreen(title: 'Notifications', description: 'Choose when HeritageLK should notify you.');
+      case '/settings/privacy':
+        builder = (_) => const SettingsDetailScreen(title: 'Privacy & Data', description: 'Control how your heritage journey data is used.');
+      case '/settings/help':
+        builder = (_) => const SettingsDetailScreen(title: 'Help & Support', description: 'Find answers and get help with HeritageLK.');
+      case '/report-damage':
+        builder = (_) => const ReportDamageScreen();
+      case '/report-admin':
+        builder = (_) => const ReportAdminScreen();
+      default:
+        if (settings.name != null && settings.name!.startsWith('/archive/')) {
+          final archiveId = settings.name!.split('/').last;
+          builder = (_) => ArchiveDetailScreen(archiveId: archiveId);
+        }
+    }
+
+    if (builder != null) {
+      return _createRoute(builder);
+    }
+    return MaterialPageRoute<void>(
+      builder: (_) => Scaffold(body: SafeArea(child: Center(child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
+        const Icon(Icons.location_off, color: Color(0xFFE76F51), size: 64),
+        const SizedBox(height: 24),
+        const Text('Page Not Found', style: TextStyle(color: Color(0xFFFEFAE0), fontSize: 24, fontWeight: FontWeight.bold)),
+        const SizedBox(height: 8),
+        const Text('The page you are looking for does not exist.', style: TextStyle(color: Color(0x80FEFAE0), fontSize: 14)),
+        const SizedBox(height: 32),
+        FilledButton(onPressed: () => navigatorKey.currentState?.pushReplacementNamed('/home'), style: FilledButton.styleFrom(backgroundColor: const Color(0xFFF4A261), foregroundColor: const Color(0xFF100E0A), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16))), child: const Text('Go Home')),
+      ])))),
+      settings: settings,
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
@@ -71,48 +156,7 @@ class _HeritageLkAppState extends State<HeritageLkApp> {
       navigatorKey: navigatorKey,
       theme: buildHeritageTheme(),
       initialRoute: '/',
-      routes: {
-        '/': (_) => const MainHomeScreen(),
-        '/login': (_) => const LoginScreen(),
-        '/signup': (_) => const SignupScreen(),
-        '/auth/callback': (_) => const AuthCallbackScreen(),
-        '/home': (_) => const HomeScreen(),
-        '/explore': (_) => const ExploreScreen(),
-        '/scanner': (_) => const ScannerScreen(),
-        '/quests': (_) => const QuestsScreen(),
-        '/archive': (_) => const ArchiveScreen(),
-        '/archive/shingo': (_) => const ShingoScreen(),
-        '/archive/upload': (_) => const ContributeScreen(),
-        '/archive/admin/generate': (_) => const GenerateArchiveScreen(),
-        '/archive/detail': (_) => const ArchiveDetailScreen(),
-        '/profile': (_) => const ProfileScreen(),
-        '/settings': (_) => const SettingsScreen(),
-        '/settings/personal': (_) => const SettingsDetailScreen(title: 'Personal Information', description: 'Manage the information connected to your HeritageLK profile.'),
-        '/settings/security': (_) => const SettingsDetailScreen(title: 'Security', description: 'Keep your HeritageLK account secure and protected.'),
-        '/settings/notifications': (_) => const SettingsDetailScreen(title: 'Notifications', description: 'Choose when HeritageLK should notify you.'),
-        '/settings/privacy': (_) => const SettingsDetailScreen(title: 'Privacy & Data', description: 'Control how your heritage journey data is used.'),
-        '/settings/help': (_) => const SettingsDetailScreen(title: 'Help & Support', description: 'Find answers and get help with HeritageLK.'),
-        '/report-damage': (_) => const ReportDamageScreen(),
-        '/report-admin': (_) => const ReportAdminScreen(),
-      },
-      onGenerateRoute: (settings) {
-        if (settings.name != null && settings.name!.startsWith('/archive/')) {
-          final archiveId = settings.name!.split('/').last;
-          return MaterialPageRoute<void>(builder: (_) => ArchiveDetailScreen(archiveId: archiveId), settings: settings);
-        }
-        return MaterialPageRoute<void>(
-          builder: (_) => Scaffold(body: SafeArea(child: Center(child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
-            const Icon(Icons.location_off, color: Color(0xFFE76F51), size: 64),
-            const SizedBox(height: 24),
-            const Text('Page Not Found', style: TextStyle(color: Color(0xFFFEFAE0), fontSize: 24, fontWeight: FontWeight.bold)),
-            const SizedBox(height: 8),
-            const Text('The page you are looking for does not exist.', style: TextStyle(color: Color(0x80FEFAE0), fontSize: 14)),
-            const SizedBox(height: 32),
-            FilledButton(onPressed: () => Navigator.of(context).pushReplacementNamed('/home'), style: FilledButton.styleFrom(backgroundColor: const Color(0xFFF4A261), foregroundColor: const Color(0xFF100E0A), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16))), child: const Text('Go Home')),
-          ])))),
-          settings: settings,
-        );
-      },
+      onGenerateRoute: _onGenerateRoute,
     );
   }
 }
