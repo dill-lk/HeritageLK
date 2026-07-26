@@ -2,31 +2,37 @@ import 'dart:convert';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 
-class FakeClient extends http.Client {
-  final Future<http.Response> Function(http.Request request)? onSend;
+class FakeClient implements http.Client {
+  final Future<http.Response> Function(String method, Uri uri, {Map<String, String>? headers, Object? body}) onRequest;
 
-  FakeClient({this.onSend});
-
-  @override
-  Future<http.Response> get(Uri url, {Map<String, String>? headers}) async {
-    final request = http.Request('GET', url)..headers.addAll(headers ?? {});
-    return _send(request);
-  }
+  FakeClient({required this.onRequest});
 
   @override
-  Future<http.Response> post(Uri url, {Map<String, String>? headers, Object? body}) async {
-    final request = http.Request('POST', url)
-      ..headers.addAll(headers ?? {})
-      ..body = body?.toString() ?? '';
-    return _send(request);
-  }
+  Future<http.Response> get(Uri url, {Map<String, String>? headers}) => onRequest('GET', url, headers: headers);
 
-  Future<http.Response> _send(http.BaseRequest request) async {
-    if (onSend != null) {
-      return onSend!(request);
-    }
-    return http.Response('{}', 200);
-  }
+  @override
+  Future<http.Response> post(Uri url, {Map<String, String>? headers, Object? body, Encoding? encoding}) => onRequest('POST', url, headers: headers, body: body);
+
+  @override
+  Future<http.Response> put(Uri url, {Map<String, String>? headers, Object? body, Encoding? encoding}) => throw UnimplementedError();
+
+  @override
+  Future<http.Response> patch(Uri url, {Map<String, String>? headers, Object? body, Encoding? encoding}) => throw UnimplementedError();
+
+  @override
+  Future<http.Response> delete(Uri url, {Map<String, String>? headers, Object? body, Encoding? encoding}) => throw UnimplementedError();
+
+  @override
+  Future<http.Response> head(Uri url, {Map<String, String>? headers}) => throw UnimplementedError();
+
+  @override
+  Future<http.Response> read(Uri url, {Map<String, String>? headers}) => throw UnimplementedError();
+
+  @override
+  Future<String> readBytes(Uri url, {Map<String, String>? headers}) => throw UnimplementedError();
+
+  @override
+  Future<http.StreamedResponse> send(http.BaseRequest request) => throw UnimplementedError();
 
   @override
   void close() {}
@@ -35,7 +41,17 @@ class FakeClient extends http.Client {
 void main() {
   group('HeritageApi', () {
     test('siteDetails returns parsed response', () async {
-      final client = FakeClient();
+      final client = FakeClient(
+        onRequest: (method, uri, {headers, body}) async {
+          expect(method, 'GET');
+          expect(uri.toString(), contains('/api/site-details'));
+          return http.Response(
+            jsonEncode({'description': 'A historic site', 'status': 'Open', 'ticketPrice': 'FREE'}),
+            200,
+          );
+        },
+      );
+
       final response = await client.get(Uri.parse('https://api.example.com/api/site-details?name=Galle'));
       final body = jsonDecode(response.body) as Map<String, dynamic>;
       expect(body['description'], 'A historic site');
@@ -44,7 +60,16 @@ void main() {
     });
 
     test('shingoChat sends messages and returns response', () async {
-      final client = FakeClient();
+      final client = FakeClient(
+        onRequest: (method, uri, {headers, body}) async {
+          expect(method, 'POST');
+          expect(uri.toString(), contains('/api/shingo-chat'));
+          final decoded = jsonDecode(body as String);
+          expect(decoded['messages'], isA<List>());
+          return http.Response('Hello! I am Shingo AI.', 200);
+        },
+      );
+
       final response = await client.post(
         Uri.parse('https://api.example.com/api/shingo-chat'),
         headers: {'Content-Type': 'application/json'},
@@ -59,7 +84,16 @@ void main() {
     });
 
     test('generateArchive sends topic and returns markdown', () async {
-      final client = FakeClient();
+      final client = FakeClient(
+        onRequest: (method, uri, {headers, body}) async {
+          expect(method, 'POST');
+          expect(uri.toString(), contains('/api/generate-archive'));
+          final decoded = jsonDecode(body as String);
+          expect(decoded['topic'], 'Sigiriya');
+          return http.Response('# Sigiriya\n\nA rock fortress in Sri Lanka.', 200);
+        },
+      );
+
       final response = await client.post(
         Uri.parse('https://api.example.com/api/generate-archive'),
         headers: {'Content-Type': 'application/json'},
@@ -71,7 +105,9 @@ void main() {
 
     test('error response throws exception', () async {
       final client = FakeClient(
-        onSend: (_) => Future.value(http.Response('Server error', 500)),
+        onRequest: (method, uri, {headers, body}) async {
+          return http.Response('Server error', 500);
+        },
       );
 
       final response = await client.get(Uri.parse('https://api.example.com/api/site-details?name=Galle'));
@@ -79,7 +115,23 @@ void main() {
     });
 
     test('weather API returns temperature and wind', () async {
-      final client = FakeClient();
+      final client = FakeClient(
+        onRequest: (method, uri, {headers, body}) async {
+          expect(method, 'GET');
+          expect(uri.toString(), contains('/api/open-meteo'));
+          return http.Response(
+            jsonEncode({
+              'current_weather': {
+                'temperature': 28.5,
+                'windspeed': 12.3,
+                'weathercode': 1,
+              }
+            }),
+            200,
+          );
+        },
+      );
+
       final response = await client.get(Uri.parse('https://api.open-meteo.com/v1/forecast?latitude=6.0264&longitude=80.217&current_weather=true'));
       final body = jsonDecode(response.body) as Map<String, dynamic>;
       final weather = body['current_weather'] as Map<String, dynamic>;
