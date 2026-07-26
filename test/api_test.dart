@@ -1,21 +1,41 @@
 import 'dart:convert';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
-import 'package:mockito/annotations.dart';
-import 'package:mockito/mockito.dart';
 
-@GenerateMocks([http.Client])
-import 'supabase_test.mocks.dart';
+class FakeClient extends http.Client {
+  final Future<http.Response> Function(http.Request request)? onSend;
+
+  FakeClient({this.onSend});
+
+  @override
+  Future<http.Response> get(Uri url, {Map<String, String>? headers}) async {
+    final request = http.Request('GET', url)..headers.addAll(headers ?? {});
+    return _send(request);
+  }
+
+  @override
+  Future<http.Response> post(Uri url, {Map<String, String>? headers, Object? body}) async {
+    final request = http.Request('POST', url)
+      ..headers.addAll(headers ?? {})
+      ..body = body?.toString() ?? '';
+    return _send(request);
+  }
+
+  Future<http.Response> _send(http.BaseRequest request) async {
+    if (onSend != null) {
+      return onSend!(request);
+    }
+    return http.Response('{}', 200);
+  }
+
+  @override
+  void close() {}
+}
 
 void main() {
   group('HeritageApi', () {
     test('siteDetails returns parsed response', () async {
-      final client = MockClient();
-      when(client.get(any)).thenAnswer((_) async => http.Response(
-        jsonEncode({'description': 'A historic site', 'status': 'Open', 'ticketPrice': 'FREE'}),
-        200,
-      ));
-
+      final client = FakeClient();
       final response = await client.get(Uri.parse('https://api.example.com/api/site-details?name=Galle'));
       final body = jsonDecode(response.body) as Map<String, dynamic>;
       expect(body['description'], 'A historic site');
@@ -24,13 +44,7 @@ void main() {
     });
 
     test('shingoChat sends messages and returns response', () async {
-      final client = MockClient();
-      when(client.post(any, headers: anyNamed('headers'), body: anyNamed('body')))
-          .thenAnswer((_) async => http.Response(
-        'Hello! I am Shingo AI.',
-        200,
-      ));
-
+      final client = FakeClient();
       final response = await client.post(
         Uri.parse('https://api.example.com/api/shingo-chat'),
         headers: {'Content-Type': 'application/json'},
@@ -45,13 +59,7 @@ void main() {
     });
 
     test('generateArchive sends topic and returns markdown', () async {
-      final client = MockClient();
-      when(client.post(any, headers: anyNamed('headers'), body: anyNamed('body')))
-          .thenAnswer((_) async => http.Response(
-        '# Sigiriya\n\nA rock fortress in Sri Lanka.',
-        200,
-      ));
-
+      final client = FakeClient();
       final response = await client.post(
         Uri.parse('https://api.example.com/api/generate-archive'),
         headers: {'Content-Type': 'application/json'},
@@ -62,29 +70,16 @@ void main() {
     });
 
     test('error response throws exception', () async {
-      final client = MockClient();
-      when(client.get(any)).thenAnswer((_) async => http.Response(
-        'Server error',
-        500,
-      ));
+      final client = FakeClient(
+        onSend: (_) => Future.value(http.Response('Server error', 500)),
+      );
 
       final response = await client.get(Uri.parse('https://api.example.com/api/site-details?name=Galle'));
       expect(response.statusCode, greaterThanOrEqualTo(500));
     });
 
     test('weather API returns temperature and wind', () async {
-      final client = MockClient();
-      when(client.get(any)).thenAnswer((_) async => http.Response(
-        jsonEncode({
-          'current_weather': {
-            'temperature': 28.5,
-            'windspeed': 12.3,
-            'weathercode': 1,
-          }
-        }),
-        200,
-      ));
-
+      final client = FakeClient();
       final response = await client.get(Uri.parse('https://api.open-meteo.com/v1/forecast?latitude=6.0264&longitude=80.217&current_weather=true'));
       final body = jsonDecode(response.body) as Map<String, dynamic>;
       final weather = body['current_weather'] as Map<String, dynamic>;
@@ -95,9 +90,7 @@ void main() {
 
   group('Models', () {
     test('Quest.fromMap parses correctly', () {
-      // Import if needed
       final map = {'id': 'q1', 'title': 'Test Quest', 'description': 'Do something', 'points': 100, 'icon': '🏆'};
-      // Quest.fromMap(map) should not throw
       expect(map['id'], 'q1');
       expect(map['title'], 'Test Quest');
       expect(map['points'], 100);

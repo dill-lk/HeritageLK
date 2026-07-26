@@ -22,9 +22,13 @@ class HeritageApi {
   }
 
   Future<String> shingoChat(List<Map<String, String>> messages) async {
+    final headers = <String, String>{'Content-Type': 'application/json'};
+    if (AppConfig.shingoApiKey.isNotEmpty) {
+      headers['Authorization'] = 'Bearer ${AppConfig.shingoApiKey}';
+    }
     final response = await _client.post(
       Uri.parse('${AppConfig.apiBaseUrl}/api/shingo-chat'),
-      headers: {'Content-Type': 'application/json'},
+      headers: headers,
       body: jsonEncode({'messages': messages}),
     );
     if (response.statusCode < 200 || response.statusCode >= 300) {

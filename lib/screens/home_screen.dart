@@ -47,7 +47,8 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final name = _profile == null || _profile.fullName.trim().isEmpty ? 'Explorer' : _profile.fullName.trim();
+    final rawName = _profile?.fullName.trim();
+    final name = rawName == null || rawName.isEmpty ? 'Explorer' : rawName;
     final firstName = name.split(' ').first;
     final points = _profile?.points ?? 0;
     return Scaffold(
