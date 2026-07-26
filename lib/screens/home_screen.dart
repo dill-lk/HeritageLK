@@ -47,7 +47,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final name = _profile?.fullName.trim().isEmpty ?? true ? 'Explorer' : _profile!.fullName.trim();
+    final name = _profile == null || _profile.fullName.trim().isEmpty ? 'Explorer' : _profile.fullName.trim();
     final firstName = name.split(' ').first;
     final points = _profile?.points ?? 0;
     return Scaffold(
@@ -55,7 +55,10 @@ class _HomeScreenState extends State<HomeScreen> {
         child: Stack(children: [
           ListView(padding: const EdgeInsets.fromLTRB(24, 12, 24, 140), children: [
             Row(children: [
-              ClipOval(child: Image.network('https://api.builder.io/api/v1/image/assets/TEMP/8ac6e4f2918cb1ade2b53e903533707e4b93794a?width=88', width: 44, height: 44, fit: BoxFit.cover, errorBuilder: (_, __, ___) => const CircleAvatar(backgroundColor: HeritageColors.brown, child: Icon(Icons.person, color: HeritageColors.cream)))),
+              GestureDetector(
+                onTap: () => Navigator.of(context).pushNamed('/profile'),
+                child: ClipOval(child: Image.network('https://api.builder.io/api/v1/image/assets/TEMP/8ac6e4f2918cb1ade2b53e903533707e4b93794a?width=88', width: 44, height: 44, fit: BoxFit.cover, errorBuilder: (_, __, ___) => const CircleAvatar(backgroundColor: HeritageColors.brown, child: Icon(Icons.person, color: HeritageColors.cream)))),
+              ),
               const SizedBox(width: 10),
               Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                 const Text('EXPLORER', style: TextStyle(color: Color(0x99FEFAE0), fontSize: 12, fontWeight: FontWeight.w500, letterSpacing: 0.6)),
@@ -76,7 +79,10 @@ class _HomeScreenState extends State<HomeScreen> {
               _StatPill(icon: Icons.emoji_events, color: const Color(0xFF52B788), text: _rank == 0 ? 'Rank #-' : 'Rank #$_rank'),
             ]),
             const SizedBox(height: 24),
-            Container(padding: const EdgeInsets.all(16), decoration: BoxDecoration(color: HeritageColors.orange.withOpacity(0.10), border: Border.all(color: HeritageColors.orange.withOpacity(0.20)), borderRadius: BorderRadius.circular(16)), child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [const Text('⚠️', style: TextStyle(fontSize: 20)), const SizedBox(width: 12), const Expanded(child: Text('Community Report: Damage detected at Galle Fort. Tap to verify.', style: TextStyle(color: HeritageColors.orange, fontSize: 14, fontWeight: FontWeight.w500, height: 1.625))), const Icon(Icons.chevron_right, color: Color(0x99F4A261))])),
+            GestureDetector(
+              onTap: () => Navigator.of(context).pushNamed('/report-damage'),
+              child: Container(padding: const EdgeInsets.all(16), decoration: BoxDecoration(color: HeritageColors.orange.withOpacity(0.10), border: Border.all(color: HeritageColors.orange.withOpacity(0.20)), borderRadius: BorderRadius.circular(16)), child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [const Text('⚠️', style: TextStyle(fontSize: 20)), const SizedBox(width: 12), const Expanded(child: Text('Community Report: Damage detected at Galle Fort. Tap to verify.', style: TextStyle(color: HeritageColors.orange, fontSize: 14, fontWeight: FontWeight.w500, height: 1.625))), const Icon(Icons.chevron_right, color: Color(0x99F4A261))])),
+            ),
             const SizedBox(height: 24),
             _HomeCard(icon: Icons.report_problem_outlined, title: 'Report Damages', subtitle: 'Help us preserve our heritage by reporting any issues you see.', color: HeritageColors.orange, onTap: () => Navigator.of(context).pushNamed('/report-damage')),
             const SizedBox(height: 16),
@@ -96,13 +102,16 @@ class _HomeScreenState extends State<HomeScreen> {
             const SizedBox(height: 32),
             Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, crossAxisAlignment: CrossAxisAlignment.end, children: [
               Text('Nearby Heritage', style: GoogleFonts.plusJakartaSans(color: HeritageColors.cream, fontSize: 28, fontWeight: FontWeight.bold)),
-              Text('See All', style: TextStyle(color: const Color(0xFF52B788), fontSize: 13, fontWeight: FontWeight.bold, letterSpacing: 0.6)),
+              GestureDetector(
+                onTap: () => Navigator.of(context).pushNamed('/explore'),
+                child: const Text('See All', style: TextStyle(color: Color(0xFF52B788), fontSize: 13, fontWeight: FontWeight.bold, letterSpacing: 0.6)),
+              ),
             ]),
             const SizedBox(height: 16),
             Row(children: [
-              Expanded(child: _NearbyCard(emoji: '🏰', name: 'Galle Fort', distance: '1.2 km away')),
+              Expanded(child: _NearbyCard(emoji: '🏰', name: 'Galle Fort', distance: '1.2 km away', onTap: () => Navigator.of(context).pushNamed('/explore'))),
               const SizedBox(width: 12),
-              Expanded(child: _NearbyCard(emoji: '🛕', name: 'Yatagala Temple', distance: '3.5 km away')),
+              Expanded(child: _NearbyCard(emoji: '🛕', name: 'Yatagala Temple', distance: '3.5 km away', onTap: () => Navigator.of(context).pushNamed('/explore'))),
             ]),
           ]),
           const Align(alignment: Alignment.bottomCenter, child: HeritageBottomNav(currentIndex: 0)),
@@ -118,8 +127,8 @@ class _HomeCard extends StatelessWidget { const _HomeCard({required this.icon, r
 
 class _GridCard extends StatelessWidget { const _GridCard({required this.emoji, required this.title, required this.subtitle, required this.borderColor, required this.onTap}); final String emoji; final String title; final String subtitle; final Color borderColor; final VoidCallback onTap; @override Widget build(BuildContext context) => InkWell(onTap: onTap, borderRadius: BorderRadius.circular(32), child: Container(height: 220, padding: const EdgeInsets.all(20), decoration: BoxDecoration(color: Colors.white.withOpacity(0.05), border: Border.all(color: borderColor.withOpacity(0.20)), borderRadius: BorderRadius.circular(32)), child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Text(emoji, style: const TextStyle(fontSize: 40)), const Spacer(), Text(title, style: const TextStyle(color: HeritageColors.cream, fontSize: 20, fontWeight: FontWeight.bold)), const SizedBox(height: 2), Text(subtitle, style: const TextStyle(color: Color(0x99FEFAE0), fontSize: 12))]))); }
 
-class _SmallGridCard extends StatelessWidget { const _SmallGridCard({required this.emoji, required this.title, required this.borderColor, required this.onTap}); final String emoji; final String title; final Color borderColor; final VoidCallback onTap; @override Widget build(BuildContext context) => InkWell(onTap: onTap, borderRadius: BorderRadius.circular(28), child: Container(height: 94, padding: const EdgeInsets.all(16), decoration: BoxDecoration(color: Colors.white.withOpacity(0.05), border: Border.all(color: borderColor.withOpacity(0.30)), borderRadius: BorderRadius.circular(28)), child: Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, crossAxisAlignment: CrossAxisAlignment.start, children: [Text(emoji, style: const TextStyle(fontSize: 24)), Container(width: 28, height: 28, decoration: BoxDecoration(color: borderColor.withOpacity(0.20), shape: BoxShape.circle), child: Icon(Icons.arrow_forward_ios, color: borderColor, size: 12))]))); }
+class _SmallGridCard extends StatelessWidget { const _SmallGridCard({required this.emoji, required this.title, required this.borderColor, required this.onTap}); final String emoji; final String title; final Color borderColor; final VoidCallback onTap; @override Widget build(BuildContext context) => InkWell(onTap: onTap, borderRadius: BorderRadius.circular(28), child: Container(height: 94, padding: const EdgeInsets.all(16), decoration: BoxDecoration(color: Colors.white.withOpacity(0.05), border: Border.all(color: borderColor.withOpacity(0.30)), borderRadius: BorderRadius.circular(28)), child: Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [Text(emoji, style: const TextStyle(fontSize: 24)), Container(width: 24, height: 24, decoration: BoxDecoration(color: borderColor.withOpacity(0.20), shape: BoxShape.circle), child: Icon(Icons.arrow_forward_ios, color: borderColor, size: 10))]), Text(title, style: const TextStyle(color: HeritageColors.cream, fontSize: 16, fontWeight: FontWeight.bold))]))); }
 
 class _BannerCard extends StatelessWidget { const _BannerCard({required this.emoji, required this.title, required this.subtitle, required this.borderColor, required this.bgColor, required this.onTap}); final String emoji; final String title; final String subtitle; final Color borderColor; final Color bgColor; final VoidCallback onTap; @override Widget build(BuildContext context) => InkWell(onTap: onTap, borderRadius: BorderRadius.circular(28), child: Container(constraints: const BoxConstraints(minHeight: 120), padding: const EdgeInsets.all(24), decoration: BoxDecoration(color: bgColor.withOpacity(0.05), border: Border.all(color: borderColor.withOpacity(0.30)), borderRadius: BorderRadius.circular(28)), child: Row(children: [Container(width: 60, height: 60, decoration: BoxDecoration(color: bgColor.withOpacity(0.20), shape: BoxShape.circle), child: Center(child: Text(emoji, style: const TextStyle(fontSize: 28)))), const SizedBox(width: 20), Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Text(title, style: TextStyle(color: HeritageColors.cream, fontSize: 20, fontWeight: FontWeight.bold)), const SizedBox(height: 4), Text(subtitle, style: const TextStyle(color: Color(0xB3FEFAE0), fontSize: 13, height: 1.5))]))]))); }
 
-class _NearbyCard extends StatelessWidget { const _NearbyCard({required this.emoji, required this.name, required this.distance}); final String emoji; final String name; final String distance; @override Widget build(BuildContext context) => Container(padding: const EdgeInsets.all(20), decoration: BoxDecoration(color: Colors.white.withOpacity(0.05), border: Border.all(color: const Color(0x2652B788)), borderRadius: BorderRadius.circular(16)), child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Container(width: 56, height: 56, decoration: BoxDecoration(color: const Color(0x0DFEFAE0), shape: BoxShape.circle), child: Center(child: Text(emoji, style: const TextStyle(fontSize: 32)))), const SizedBox(height: 16), Text(name, style: const TextStyle(color: HeritageColors.cream, fontSize: 18, fontWeight: FontWeight.w600)), const SizedBox(height: 4), Text(distance, style: const TextStyle(color: Color(0x80FEFAE0), fontSize: 13))])); }
+class _NearbyCard extends StatelessWidget { const _NearbyCard({required this.emoji, required this.name, required this.distance, this.onTap}); final String emoji; final String name; final String distance; final VoidCallback? onTap; @override Widget build(BuildContext context) => InkWell(onTap: onTap, borderRadius: BorderRadius.circular(16), child: Container(padding: const EdgeInsets.all(20), decoration: BoxDecoration(color: Colors.white.withOpacity(0.05), border: Border.all(color: const Color(0x2652B788)), borderRadius: BorderRadius.circular(16)), child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Container(width: 56, height: 56, decoration: BoxDecoration(color: const Color(0x0DFEFAE0), shape: BoxShape.circle), child: Center(child: Text(emoji, style: const TextStyle(fontSize: 32)))), const SizedBox(height: 16), Text(name, style: const TextStyle(color: HeritageColors.cream, fontSize: 18, fontWeight: FontWeight.w600)), const SizedBox(height: 4), Text(distance, style: const TextStyle(color: Color(0x80FEFAE0), fontSize: 13))]))); }

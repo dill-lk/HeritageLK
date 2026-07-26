@@ -21,8 +21,8 @@ class HeritageSite {
         id: '${map['id'] ?? ''}',
         title: '${map['title'] ?? 'Heritage Site'}',
         summary: '${map['summary'] ?? map['article_content'] ?? ''}',
-        imageUrl: map['image_url'] as String?,
-        locationName: map['location_name'] as String?,
+        imageUrl: map['image_url']?.toString(),
+        locationName: map['location_name']?.toString(),
         lat: (map['lat'] as num?)?.toDouble() ?? double.tryParse('${map['lat'] ?? ''}'),
         lng: (map['lng'] as num?)?.toDouble() ?? double.tryParse('${map['lng'] ?? ''}'),
       );

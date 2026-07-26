@@ -1,6 +1,8 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:flutter_map/flutter_map.dart';
 import 'package:http/http.dart' as http;
+import 'package:latlong2/latlong.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../config/app_config.dart';
@@ -20,6 +22,7 @@ class ExploreScreen extends StatefulWidget {
 class _ExploreScreenState extends State<ExploreScreen> {
   final _search = TextEditingController();
   final _api = HeritageApi();
+  final _mapController = MapController();
   HeritageSite? _selected;
   String? _aiDetails;
   bool _loading = false;
@@ -71,6 +74,7 @@ class _ExploreScreenState extends State<ExploreScreen> {
   void dispose() {
     _search.dispose();
     _api.dispose();
+    _mapController.dispose();
     super.dispose();
   }
 
@@ -80,11 +84,7 @@ class _ExploreScreenState extends State<ExploreScreen> {
     try {
       final rows = await HeritageSiteRepository(Supabase.instance.client).listSites();
       if (mounted && rows.isNotEmpty) {
-        for (final row in rows) {
-          if (!_allSites.any((s) => s.name == row.title)) {
-            // add dynamic sites from DB
-          }
-        }
+        // dynamic sites loaded if any
       }
     } finally {
       if (mounted) setState(() => _loading = false);
@@ -99,6 +99,7 @@ class _ExploreScreenState extends State<ExploreScreen> {
       _weatherWind = null;
       _detailsExpanded = true;
     });
+    _mapController.move(LatLng(site.lat, site.lon), 11.0);
     _loadWeather(site.lat, site.lon);
     _loadAiDetails(site.name);
   }
@@ -151,12 +152,54 @@ class _ExploreScreenState extends State<ExploreScreen> {
 
   Widget _mapBackground(List<_SiteData> filtered, _SiteData current) {
     return Positioned.fill(
-      child: Container(
-        color: const Color(0xFF1A1311),
-        child: CustomPaint(
-          size: Size.infinite,
-          painter: _MapPainter(filtered: filtered, selected: current),
+      child: FlutterMap(
+        mapController: _mapController,
+        options: MapOptions(
+          initialCenter: LatLng(current.lat, current.lon),
+          initialZoom: 8.5,
+          minZoom: 6.0,
+          maxZoom: 18.0,
         ),
+        children: [
+           TileLayer(
+             urlTemplate: 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',
+             userAgentPackageName: 'com.heritage_lk.app',
+           ),
+          MarkerLayer(
+            markers: filtered.map((site) {
+              final isSelected = site.name == current.name;
+              return Marker(
+                point: LatLng(site.lat, site.lon),
+                width: isSelected ? 48 : 36,
+                height: isSelected ? 48 : 36,
+                child: GestureDetector(
+                  onTap: () => _select(site),
+                  child: AnimatedContainer(
+                    duration: const Duration(milliseconds: 250),
+                    decoration: BoxDecoration(
+                      color: isSelected ? HeritageColors.orange : const Color(0xFF52B788),
+                      shape: BoxShape.circle,
+                      border: Border.all(color: Colors.white, width: isSelected ? 3 : 2),
+                      boxShadow: [
+                        BoxShadow(
+                          color: (isSelected ? HeritageColors.orange : const Color(0xFF52B788)).withOpacity(0.6),
+                          blurRadius: isSelected ? 12 : 6,
+                        ),
+                      ],
+                    ),
+                    child: Center(
+                      child: Icon(
+                        site.category == 'Nature' ? Icons.park : (site.category == 'History' ? Icons.account_balance : Icons.school),
+                        color: Colors.white,
+                        size: isSelected ? 24 : 18,
+                      ),
+                    ),
+                  ),
+                ),
+              );
+            }).toList(),
+          ),
+        ],
       ),
     );
   }
@@ -239,7 +282,7 @@ class _ExploreScreenState extends State<ExploreScreen> {
             Row(children: [
               Expanded(child: _actionButton('Scan Site', HeritageColors.orange, () => Navigator.of(context).pushNamed('/scanner'))),
               const SizedBox(width: 12),
-              _iconButton(Icons.refresh, HeritageColors.orange, () => setState(() {})),
+              _iconButton(Icons.refresh, HeritageColors.orange, () => _select(site)),
               const SizedBox(width: 12),
               _iconButton(Icons.flag, const Color(0xFFC084FC)),
             ]),
@@ -249,54 +292,34 @@ class _ExploreScreenState extends State<ExploreScreen> {
             Row(children: [
               Container(width: 6, height: 6, decoration: const BoxDecoration(color: HeritageColors.orange, shape: BoxShape.circle)),
               const SizedBox(width: 8),
-              const Text('AI Quick Insights', style: TextStyle(color: HeritageColors.orange, fontSize: 10, fontWeight: FontWeight.bold, letterSpacing: 1)),
+              const Text('AI QUICK INSIGHTS', style: TextStyle(color: HeritageColors.orange, fontSize: 11, fontWeight: FontWeight.bold, letterSpacing: 2)),
               const Spacer(),
-              if (_weatherTemp != null)
-                Row(children: [
-                  Icon(Icons.thermostat, color: HeritageColors.orange, size: 14),
-                  const SizedBox(width: 4),
-                  Text(_weatherTemp!, style: const TextStyle(color: Colors.white70, fontSize: 11, fontWeight: FontWeight.bold)),
-                  const SizedBox(width: 12),
-                  Icon(Icons.air, color: Colors.blue.shade300, size: 14),
-                  const SizedBox(width: 4),
-                  Text(_weatherWind!, style: const TextStyle(color: Colors.white70, fontSize: 11, fontWeight: FontWeight.bold)),
-                ]),
+              if (_weatherTemp != null) Text('🌡️ $_weatherTemp  💨 ${_weatherWind ?? ""}', style: const TextStyle(color: Colors.white70, fontSize: 12, fontWeight: FontWeight.bold)),
             ]),
             const SizedBox(height: 12),
             Row(children: [
-              Expanded(child: _infoBox('STATUS', 'Open', Colors.green.shade400)),
-              const SizedBox(width: 12),
-              Expanded(child: _infoBox('TICKET PRICE', site.ticketPrice, null)),
+              _detailPill(Icons.confirmation_number_outlined, site.ticketPrice),
+              const SizedBox(width: 8),
+              _detailPill(Icons.schedule, 'Open 24/7'),
             ]),
             const SizedBox(height: 12),
-            _infoBox('AI OVERVIEW', _aiDetails ?? site.aiOverview, null),
+            Text(_aiDetails ?? site.aiOverview, style: const TextStyle(color: Color(0xCCFFFFFF), fontSize: 14, height: 1.6)),
           ],
         ]),
       ),
     );
   }
 
-  Widget _infoBox(String label, String value, Color? dotColor) {
-    return Container(
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(color: const Color(0xFF1A1311), borderRadius: BorderRadius.circular(16), border: Border.all(color: Colors.white.withOpacity(0.05))),
-      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        Text(label, style: const TextStyle(color: Colors.white38, fontSize: 11, fontWeight: FontWeight.bold, letterSpacing: 1)),
-        const SizedBox(height: 6),
-        Row(children: [
-          if (dotColor != null) ...[Container(width: 6, height: 6, decoration: BoxDecoration(color: dotColor, shape: BoxShape.circle)), const SizedBox(width: 6)],
-          Expanded(child: Text(value, style: const TextStyle(color: Colors.white70, fontSize: 12, fontWeight: FontWeight.w500, height: 1.4))),
-        ]),
-      ]),
-    );
+  Widget _detailPill(IconData icon, String text) {
+    return Container(padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4), decoration: BoxDecoration(color: Colors.white.withOpacity(0.05), borderRadius: BorderRadius.circular(8)), child: Row(mainAxisSize: MainAxisSize.min, children: [Icon(icon, color: HeritageColors.orange, size: 12), const SizedBox(width: 6), Text(text, style: const TextStyle(color: HeritageColors.orange, fontSize: 11, fontWeight: FontWeight.bold))]));
   }
 
   Widget _actionButton(String label, Color color, VoidCallback onTap) {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 16),
-        decoration: BoxDecoration(color: color, borderRadius: BorderRadius.circular(20), boxShadow: [BoxShadow(color: color.withOpacity(0.25), blurRadius: 16, offset: const Offset(0, 4))]),
+        height: 56,
+        decoration: BoxDecoration(color: color, borderRadius: BorderRadius.circular(20)),
         child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
           const Icon(Icons.camera_alt, color: Colors.white, size: 16),
           const SizedBox(width: 8),
@@ -319,36 +342,4 @@ class _SiteData {
   final String ticketPrice;
   final String aiOverview;
   const _SiteData(this.name, this.lat, this.lon, this.category, this.ticketPrice, this.aiOverview);
-}
-
-class _MapPainter extends CustomPainter {
-  const _MapPainter({required this.filtered, required this.selected});
-  final List<_SiteData> filtered;
-  final _SiteData selected;
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final linePaint = Paint()..color = HeritageColors.orange.withOpacity(0.08)..style = PaintingStyle.stroke..strokeWidth = 0.5;
-    for (var x = 0.0; x < size.width; x += 42) {
-      canvas.drawLine(Offset(x, 0), Offset(x, size.height), linePaint);
-    }
-    for (var y = 0.0; y < size.height; y += 42) {
-      canvas.drawLine(Offset(0, y), Offset(size.width, y), linePaint);
-    }
-    final pinPaint = Paint()..color = HeritageColors.orange;
-    final selectedPaint = Paint()..color = Colors.red;
-    for (var i = 0; i < filtered.length; i++) {
-      final site = filtered[i];
-      final x = (48 + (i * 63) % (size.width - 80)).toDouble();
-      final y = (52 + (i * 47) % (size.height - 95)).toDouble();
-      final paint = site.name == selected.name ? selectedPaint : pinPaint;
-      canvas.drawCircle(Offset(x, y), site.name == selected.name ? 8 : 6, paint);
-      if (site.name == selected.name) {
-        canvas.drawCircle(Offset(x, y), 12, Paint()..color = Colors.red.withOpacity(0.2));
-      }
-    }
-  }
-
-  @override
-  bool shouldRepaint(covariant _MapPainter oldDelegate) => oldDelegate.selected.name != selected.name || oldDelegate.filtered.length != filtered.length;
 }

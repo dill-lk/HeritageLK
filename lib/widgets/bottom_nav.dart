@@ -1,19 +1,39 @@
 import 'package:flutter/material.dart';
 
 import '../theme/heritage_colors.dart';
+import 'heritage_icons.dart';
 
 class HeritageBottomNav extends StatelessWidget {
   const HeritageBottomNav({super.key, required this.currentIndex});
 
   final int currentIndex;
 
+  Widget _getIcon(int index, Color color) {
+    switch (index) {
+      case 0:
+        return HeritageIcons.home(color: color, size: 22);
+      case 1:
+        return HeritageIcons.explore(color: color, size: 22);
+      case 2:
+        return HeritageIcons.camera(color: color, size: 22);
+      case 3:
+        return HeritageIcons.quests(color: color, size: 22);
+      case 4:
+        return HeritageIcons.archive(color: color, size: 22);
+      case 5:
+        return HeritageIcons.shingo(color: color, size: 22);
+      default:
+        return HeritageIcons.home(color: color, size: 22);
+    }
+  }
+
   static const _items = [
-    (Icons.home_filled, 'Home', '/home'),
-    (Icons.map_outlined, 'Explore', '/explore'),
-    (Icons.camera_alt_outlined, 'Camera', '/scanner'),
-    (Icons.explore_outlined, 'Quests', '/quests'),
-    (Icons.menu_book_outlined, 'Archive', '/archive'),
-    (Icons.auto_awesome, 'Shingo', '/archive/shingo'),
+    ('Home', '/home'),
+    ('Explore', '/explore'),
+    ('Camera', '/scanner'),
+    ('Quests', '/quests'),
+    ('Archive', '/archive'),
+    ('Shingo', '/archive/shingo'),
   ];
 
   @override
@@ -34,16 +54,17 @@ class HeritageBottomNav extends StatelessWidget {
           children: List.generate(_items.length, (index) {
             final item = _items[index];
             final selected = currentIndex == index;
+            final color = selected ? HeritageColors.orange : Colors.white;
             return Expanded(
               child: InkWell(
-                onTap: () => Navigator.of(context).pushReplacementNamed(item.$3),
+                onTap: () => Navigator.of(context).pushReplacementNamed(item.$2),
                 borderRadius: BorderRadius.circular(30),
                 child: Opacity(
                   opacity: selected ? 1 : 0.40,
                   child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
-                    Icon(item.$1, size: 22, color: selected ? HeritageColors.orange : Colors.white),
+                    _getIcon(index, color),
                     const SizedBox(height: 4),
-                    Text(item.$2.toUpperCase(), style: TextStyle(fontSize: 10, height: 1.5, fontWeight: FontWeight.bold, color: selected ? HeritageColors.orange : Colors.white)),
+                    Text(item.$1.toUpperCase(), style: TextStyle(fontSize: 10, height: 1.5, fontWeight: FontWeight.bold, color: color)),
                   ]),
                 ),
               ),

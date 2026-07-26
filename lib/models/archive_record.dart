@@ -23,7 +23,7 @@ class ArchiveRecord {
       location: '${map['location'] ?? 'SRI LANKA'}',
       category: '${map['category'] ?? 'Artifacts'}',
       content: '${map['content'] ?? map['intro'] ?? ''}',
-      image: map['image'] as String? ?? (images is List && images.isNotEmpty ? '${images.first}' : null),
+      image: map['image']?.toString() ?? (images is List && images.isNotEmpty ? '${images.first}' : null),
     );
   }
 }
