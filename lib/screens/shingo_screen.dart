@@ -22,20 +22,20 @@ class _ShingoScreenState extends State<ShingoScreen> {
 
   final List<_ChatMessage> _messages = [
     const _ChatMessage(
-      text: 'Ayubowan. I am Shingo, your Sri Lankan heritage and travel assistant.\n\nAsk me about sites, entry fees, weather, routes, damage reports, or history.',
+      text: 'Ayubowan! 🙏 I am **Shingo**, your personal AI guide for Sri Lankan heritage & travel.\n\nAsk me anything about historical sites, ticket prices, weather, travel routes, or wildlife safaris!',
       isUser: false,
     ),
   ];
 
   bool _loading = false;
 
-  final List<String> _suggestions = const [
-    'Sigiriya entry fee',
-    'Galle Fort sunset spots',
-    'Kandy Tooth Temple rules',
-    'Best time for Yala safari',
-    'How to report damage',
-    'Colombo to Ella route',
+  final List<Map<String, String>> _suggestions = const [
+    {'emoji': '🏰', 'text': 'Sigiriya entry fee'},
+    {'emoji': '🌅', 'text': 'Galle Fort sunset spots'},
+    {'emoji': '🛕', 'text': 'Kandy Tooth Temple rules'},
+    {'emoji': '🐆', 'text': 'Yala safari best time'},
+    {'emoji': '🛡️', 'text': 'How to report damage'},
+    {'emoji': '🚞', 'text': 'Colombo to Ella train'},
   ];
 
   @override
@@ -130,86 +130,93 @@ class _ShingoScreenState extends State<ShingoScreen> {
     }
   }
 
-  void _showAiCustomizationDialog() {
-    final keyController = TextEditingController(text: AppConfig.userGeminiApiKey);
-    showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        backgroundColor: const Color(0xFF171311),
-        title: const Text('AI Settings'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text(
-              'Add your Gemini API key if you want live AI responses.',
-              style: TextStyle(color: Color(0xB3FFFFFF), fontSize: 13, height: 1.4),
-            ),
-            const SizedBox(height: 16),
-            TextField(
-              controller: keyController,
-              obscureText: true,
-              decoration: const InputDecoration(
-                hintText: 'API key',
-              ),
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop(),
-            child: const Text('Close'),
-          ),
-          FilledButton(
-            onPressed: () {
-              AppConfig.userGeminiApiKey = keyController.text;
-              setState(() {
-                _shingoAi = ShingoAiService();
-              });
-              Navigator.of(ctx).pop();
-            },
-            child: const Text('Save'),
-          ),
-        ],
-      ),
-    );
-  }
-
   void _clearChat() {
     setState(() {
       _messages
         ..clear()
         ..add(const _ChatMessage(
-          text: 'Ayubowan. I am Shingo, your Sri Lankan heritage and travel assistant.\n\nAsk me about sites, entry fees, weather, routes, damage reports, or history.',
+          text: 'Ayubowan! 🙏 I am **Shingo**, your personal AI guide for Sri Lankan heritage & travel.\n\nAsk me anything about historical sites, ticket prices, weather, travel routes, or wildlife safaris!',
           isUser: false,
         ));
     });
+  }
+
+  void _showInfoSheet() {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: const Color(0xFF1C1917),
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
+      builder: (ctx) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(10),
+                    decoration: BoxDecoration(
+                      color: const Color(0x33E9C46A),
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                    child: const Icon(Icons.auto_awesome, color: Color(0xFFE9C46A), size: 24),
+                  ),
+                  const SizedBox(width: 14),
+                  const Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('Shingo AI Guide', style: TextStyle(color: HeritageColors.cream, fontSize: 18, fontWeight: FontWeight.bold)),
+                      Text('Powered by Gemini Intelligence', style: TextStyle(color: Color(0xFF52B788), fontSize: 12, fontWeight: FontWeight.w600)),
+                    ],
+                  ),
+                ],
+              ),
+              const SizedBox(height: 18),
+              const Text(
+                'Shingo AI helps you navigate Sri Lanka\'s rich heritage. Ask questions about UNESCO World Heritage sites, local customs, opening times, ticket prices, and damage reporting.',
+                style: TextStyle(color: Color(0xCCFFFFFF), fontSize: 13.5, height: 1.5),
+              ),
+              const SizedBox(height: 20),
+              Align(
+                alignment: Alignment.centerRight,
+                child: FilledButton(
+                  onPressed: () => Navigator.pop(ctx),
+                  style: FilledButton.styleFrom(backgroundColor: HeritageColors.orange),
+                  child: const Text('Got it', style: TextStyle(color: HeritageColors.background, fontWeight: FontWeight.bold)),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final assistantBaseStyle = theme.textTheme.bodyMedium?.copyWith(
-          color: const Color(0xF2FFFFFF),
+          color: const Color(0xF5FFFFFF),
           fontSize: 14.5,
           height: 1.55,
         ) ??
-        const TextStyle(color: Color(0xF2FFFFFF), fontSize: 14.5, height: 1.55);
+        const TextStyle(color: Color(0xF5FFFFFF), fontSize: 14.5, height: 1.55);
 
     final assistantMarkdownStyle = MarkdownStyleSheet.fromTheme(theme).copyWith(
       p: assistantBaseStyle,
-      pPadding: const EdgeInsets.only(bottom: 6),
-      listBullet: assistantBaseStyle.copyWith(color: HeritageColors.orange, fontWeight: FontWeight.bold),
+      pPadding: const EdgeInsets.only(bottom: 8),
+      listBullet: assistantBaseStyle.copyWith(color: const Color(0xFFE9C46A), fontWeight: FontWeight.bold),
       listBulletPadding: const EdgeInsets.only(right: 6),
       h1: assistantBaseStyle.copyWith(fontSize: 19, fontWeight: FontWeight.bold, color: HeritageColors.cream, height: 1.35),
       h2: assistantBaseStyle.copyWith(fontSize: 17, fontWeight: FontWeight.bold, color: HeritageColors.cream, height: 1.35),
       h3: assistantBaseStyle.copyWith(fontSize: 15, fontWeight: FontWeight.bold, color: HeritageColors.cream, height: 1.35),
-      strong: assistantBaseStyle.copyWith(fontWeight: FontWeight.bold, color: HeritageColors.cream),
+      strong: assistantBaseStyle.copyWith(fontWeight: FontWeight.bold, color: const Color(0xFFE9C46A)),
       em: assistantBaseStyle.copyWith(fontStyle: FontStyle.italic, color: const Color(0xE6FFFFFF)),
-      // Clean non-developer inline text highlighting
       code: assistantBaseStyle.copyWith(
         fontWeight: FontWeight.w600,
-        color: HeritageColors.cream,
+        color: const Color(0xFFE9C46A),
         backgroundColor: const Color(0x1AE9C46A),
       ),
       codeblockDecoration: BoxDecoration(
@@ -220,40 +227,24 @@ class _ShingoScreenState extends State<ShingoScreen> {
         color: const Color(0xE6FFFFFF),
         fontStyle: FontStyle.italic,
       ),
-      blockquotePadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      blockquotePadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
       blockquoteDecoration: BoxDecoration(
-        color: const Color(0x12FEFAE0),
-        borderRadius: BorderRadius.circular(10),
-        border: const Border(left: BorderSide(color: HeritageColors.orange, width: 3)),
+        color: const Color(0x14FEFAE0),
+        borderRadius: BorderRadius.circular(12),
+        border: const Border(left: BorderSide(color: Color(0xFFE9C46A), width: 3.5)),
       ),
     );
 
     return Scaffold(
-      backgroundColor: HeritageColors.background,
-      appBar: AppBar(
-        backgroundColor: HeritageColors.background,
-        elevation: 0,
-        title: const Text('Shingo AI'),
-        actions: [
-          IconButton(
-            onPressed: _showAiCustomizationDialog,
-            icon: const Icon(Icons.tune_outlined),
-            tooltip: 'AI settings',
-          ),
-          IconButton(
-            onPressed: _clearChat,
-            icon: const Icon(Icons.delete_outline),
-            tooltip: 'Clear chat',
-          ),
-        ],
-      ),
+      backgroundColor: const Color(0xFF0F0C0A),
       body: SafeArea(
         child: Column(
           children: [
+            _buildCustomHeader(),
             Expanded(
               child: ListView.builder(
                 controller: _scrollController,
-                padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
+                padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
                 itemCount: _messages.length + (_loading ? 1 : 0),
                 itemBuilder: (_, i) {
                   if (i == _messages.length) {
@@ -261,7 +252,7 @@ class _ShingoScreenState extends State<ShingoScreen> {
                       padding: EdgeInsets.symmetric(vertical: 12),
                       child: Align(
                         alignment: Alignment.centerLeft,
-                        child: _ShingoLoadingIndicator(),
+                        child: _ShingoLoadingBubble(),
                       ),
                     );
                   }
@@ -271,101 +262,285 @@ class _ShingoScreenState extends State<ShingoScreen> {
                   return Align(
                     alignment: isUser ? Alignment.centerRight : Alignment.centerLeft,
                     child: Container(
-                      constraints: const BoxConstraints(maxWidth: 360),
-                      margin: const EdgeInsets.only(bottom: 12),
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                      decoration: BoxDecoration(
-                        color: isUser ? HeritageColors.orange : const Color(0xFF1A1714),
-                        borderRadius: BorderRadius.circular(16),
-                        border: isUser ? null : Border.all(color: Colors.white.withValues(alpha: 0.08)),
-                      ),
-                      child: isUser
-                          ? Text(
-                              message.text,
-                              style: const TextStyle(
-                                color: HeritageColors.background,
-                                fontSize: 14,
-                                height: 1.45,
-                              ),
-                            )
-                          : MarkdownBody(
-                              data: message.text.isEmpty ? '...' : message.text,
-                              selectable: false,
-                              styleSheet: assistantMarkdownStyle,
-                              onTapLink: (_, __, ___) {},
-                            ),
-                    ),
-                  );
-                },
-              ),
-            ),
-            SizedBox(
-              height: 44,
-              child: ListView.separated(
-                scrollDirection: Axis.horizontal,
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                itemCount: _suggestions.length,
-                separatorBuilder: (_, __) => const SizedBox(width: 8),
-                itemBuilder: (_, index) {
-                  final suggestion = _suggestions[index];
-                  return ActionChip(
-                    backgroundColor: const Color(0xFF1A1714),
-                    side: BorderSide(color: Colors.white.withValues(alpha: 0.10)),
-                    label: Text(
-                      suggestion,
-                      style: const TextStyle(color: Color(0xE6FFFFFF), fontSize: 12),
-                    ),
-                    onPressed: () => _send(suggestion),
-                  );
-                },
-              ),
-            ),
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 12, 16, 20),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: TextField(
-                      controller: _input,
-                      onSubmitted: (_) => _send(),
-                      style: const TextStyle(color: Colors.white, fontSize: 14),
-                      decoration: InputDecoration(
-                        hintText: 'Ask Shingo about Sri Lanka heritage...',
-                        hintStyle: const TextStyle(color: Color(0x66FFFFFF), fontSize: 13),
-                        filled: true,
-                        fillColor: const Color(0xFF171311),
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(16),
-                          borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.08)),
-                        ),
-                        enabledBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(16),
-                          borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.08)),
-                        ),
-                        focusedBorder: const OutlineInputBorder(
-                          borderRadius: BorderRadius.all(Radius.circular(16)),
-                          borderSide: BorderSide(color: HeritageColors.orange),
-                        ),
-                        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  FilledButton(
-                    onPressed: _send,
-                    style: FilledButton.styleFrom(
-                      backgroundColor: HeritageColors.orange,
-                      foregroundColor: HeritageColors.background,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                      constraints: const BoxConstraints(maxWidth: 340),
+                      margin: const EdgeInsets.only(bottom: 16),
                       padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
+                      decoration: BoxDecoration(
+                        gradient: isUser
+                            ? const LinearGradient(
+                                colors: [Color(0xFFE9C46A), Color(0xFFF4A261)],
+                                begin: Alignment.topLeft,
+                                end: Alignment.bottomRight,
+                              )
+                            : null,
+                        color: isUser ? null : const Color(0xFF1B1714),
+                        borderRadius: BorderRadius.only(
+                          topLeft: const Radius.circular(22),
+                          topRight: const Radius.circular(22),
+                          bottomLeft: isUser ? const Radius.circular(22) : const Radius.circular(4),
+                          bottomRight: isUser ? const Radius.circular(4) : const Radius.circular(22),
+                        ),
+                        border: isUser ? null : Border.all(color: const Color(0x26E9C46A)),
+                        boxShadow: [
+                          BoxShadow(
+                            color: isUser
+                                ? const Color(0x40E9C46A)
+                                : Colors.black.withValues(alpha: 0.3),
+                            blurRadius: isUser ? 10 : 14,
+                            offset: const Offset(0, 4),
+                          ),
+                        ],
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          if (!isUser) ...[
+                            Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Container(
+                                  width: 20,
+                                  height: 20,
+                                  decoration: const BoxDecoration(
+                                    color: Color(0x33E9C46A),
+                                    shape: BoxShape.circle,
+                                  ),
+                                  child: const Center(
+                                    child: Icon(Icons.auto_awesome, color: Color(0xFFE9C46A), size: 12),
+                                  ),
+                                ),
+                                const SizedBox(width: 8),
+                                const Text(
+                                  'Shingo AI',
+                                  style: TextStyle(
+                                    color: Color(0xFFE9C46A),
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.bold,
+                                    letterSpacing: 0.8,
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 10),
+                          ],
+                          isUser
+                              ? Text(
+                                  message.text,
+                                  style: const TextStyle(
+                                    color: Color(0xFF140F0A),
+                                    fontSize: 15,
+                                    fontWeight: FontWeight.w600,
+                                    height: 1.4,
+                                  ),
+                                )
+                              : MarkdownBody(
+                                  data: message.text.isEmpty ? '...' : message.text,
+                                  selectable: false,
+                                  styleSheet: assistantMarkdownStyle,
+                                  onTapLink: (_, __, ___) {},
+                                ),
+                        ],
+                      ),
                     ),
-                    child: const Icon(Icons.send, size: 18),
+                  );
+                },
+              ),
+            ),
+            _buildSuggestionsList(),
+            _buildInputArea(),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildCustomHeader() {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      decoration: BoxDecoration(
+        color: const Color(0xFF161210),
+        border: Border(bottom: BorderSide(color: Colors.white.withValues(alpha: 0.08))),
+      ),
+      child: Row(
+        children: [
+          IconButton(
+            onPressed: () {
+              if (Navigator.of(context).canPop()) {
+                Navigator.of(context).pop();
+              } else {
+                Navigator.of(context).pushReplacementNamed('/home');
+              }
+            },
+            icon: const Icon(Icons.arrow_back, color: HeritageColors.cream),
+          ),
+          const SizedBox(width: 4),
+          Stack(
+            children: [
+              Container(
+                width: 42,
+                height: 42,
+                decoration: BoxDecoration(
+                  gradient: const LinearGradient(
+                    colors: [Color(0x33E9C46A), Color(0x11E9C46A)],
+                  ),
+                  shape: BoxShape.circle,
+                  border: Border.all(color: const Color(0x66E9C46A)),
+                ),
+                child: const Center(
+                  child: Icon(Icons.auto_awesome, color: Color(0xFFE9C46A), size: 22),
+                ),
+              ),
+              Positioned(
+                bottom: 2,
+                right: 2,
+                child: Container(
+                  width: 11,
+                  height: 11,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF52B788),
+                    shape: BoxShape.circle,
+                    border: Border.all(color: const Color(0xFF161210), width: 2),
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(width: 12),
+          const Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Shingo AI',
+                  style: TextStyle(
+                    color: HeritageColors.cream,
+                    fontSize: 17,
+                    fontWeight: FontWeight.bold,
+                    letterSpacing: 0.3,
+                  ),
+                ),
+                SizedBox(height: 2),
+                Row(
+                  children: [
+                    Icon(Icons.bolt, color: Color(0xFF52B788), size: 12),
+                    SizedBox(width: 4),
+                    Text(
+                      'Gemini AI Heritage Guide',
+                      style: TextStyle(
+                        color: Color(0xFF52B788),
+                        fontSize: 11,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+          IconButton(
+            onPressed: _showInfoSheet,
+            icon: const Icon(Icons.info_outline, color: Color(0xB3FFFFFF), size: 20),
+            tooltip: 'About Shingo',
+          ),
+          IconButton(
+            onPressed: _clearChat,
+            icon: const Icon(Icons.delete_outline, color: Color(0xB3FFFFFF), size: 20),
+            tooltip: 'Clear chat',
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSuggestionsList() {
+    return Container(
+      height: 48,
+      margin: const EdgeInsets.only(bottom: 6),
+      child: ListView.separated(
+        scrollDirection: Axis.horizontal,
+        padding: const EdgeInsets.symmetric(horizontal: 16),
+        itemCount: _suggestions.length,
+        separatorBuilder: (_, __) => const SizedBox(width: 8),
+        itemBuilder: (_, index) {
+          final suggestion = _suggestions[index];
+          return ActionChip(
+            backgroundColor: const Color(0xFF1A1613),
+            side: BorderSide(color: const Color(0xFFE9C46A).withValues(alpha: 0.25)),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+            avatar: Text(suggestion['emoji']!, style: const TextStyle(fontSize: 13)),
+            label: Text(
+              suggestion['text']!,
+              style: const TextStyle(color: Color(0xF2FFFFFF), fontSize: 12, fontWeight: FontWeight.w500),
+            ),
+            onPressed: () => _send(suggestion['text']),
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _buildInputArea() {
+    return Container(
+      padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+      decoration: BoxDecoration(
+        color: const Color(0xFF161210),
+        border: Border(top: BorderSide(color: Colors.white.withValues(alpha: 0.05))),
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: TextField(
+              controller: _input,
+              onSubmitted: (_) => _send(),
+              style: const TextStyle(color: Colors.white, fontSize: 14.5),
+              decoration: InputDecoration(
+                hintText: 'Ask Shingo about Sri Lanka heritage...',
+                hintStyle: const TextStyle(color: Color(0x66FFFFFF), fontSize: 13.5),
+                filled: true,
+                fillColor: const Color(0xFF1F1A17),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(24),
+                  borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.08)),
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(24),
+                  borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.08)),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(24),
+                  borderSide: const BorderSide(color: Color(0xFFE9C46A), width: 1.5),
+                ),
+                contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+              ),
+            ),
+          ),
+          const SizedBox(width: 10),
+          GestureDetector(
+            onTap: _send,
+            child: Container(
+              width: 48,
+              height: 48,
+              decoration: BoxDecoration(
+                gradient: const LinearGradient(
+                  colors: [Color(0xFFE9C46A), Color(0xFFF4A261)],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+                shape: BoxShape.circle,
+                boxShadow: [
+                  BoxShadow(
+                    color: const Color(0xFFE9C46A).withValues(alpha: 0.4),
+                    blurRadius: 10,
+                    offset: const Offset(0, 3),
                   ),
                 ],
               ),
+              child: const Center(
+                child: Icon(Icons.send_rounded, color: Color(0xFF140F0A), size: 20),
+              ),
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
@@ -379,16 +554,16 @@ class _ChatMessage {
   const _ChatMessage({required this.text, required this.isUser, this.isStreaming = false});
 }
 
-class _ShingoLoadingIndicator extends StatefulWidget {
-  const _ShingoLoadingIndicator();
+class _ShingoLoadingBubble extends StatefulWidget {
+  const _ShingoLoadingBubble();
 
   @override
-  State<_ShingoLoadingIndicator> createState() => _ShingoLoadingIndicatorState();
+  State<_ShingoLoadingBubble> createState() => _ShingoLoadingBubbleState();
 }
 
-class _ShingoLoadingIndicatorState extends State<_ShingoLoadingIndicator> with SingleTickerProviderStateMixin {
+class _ShingoLoadingBubbleState extends State<_ShingoLoadingBubble> with SingleTickerProviderStateMixin {
   late final AnimationController _controller = AnimationController(
-    duration: const Duration(milliseconds: 600),
+    duration: const Duration(milliseconds: 700),
     vsync: this,
   )..repeat();
   late final List<CurvedAnimation> _animations = List.generate(
@@ -407,23 +582,33 @@ class _ShingoLoadingIndicatorState extends State<_ShingoLoadingIndicator> with S
 
   @override
   Widget build(BuildContext context) {
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        for (var i = 0; i < 3; i++)
-          FadeTransition(
-            opacity: _animations[i],
-            child: Container(
-              width: 8,
-              height: 8,
-              margin: const EdgeInsets.symmetric(horizontal: 3),
-              decoration: const BoxDecoration(
-                color: Color(0x80FFFFFF),
-                shape: BoxShape.circle,
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      decoration: BoxDecoration(
+        color: const Color(0xFF1B1714),
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: const Color(0x26E9C46A)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const Icon(Icons.auto_awesome, color: Color(0xFFE9C46A), size: 14),
+          const SizedBox(width: 10),
+          for (var i = 0; i < 3; i++)
+            ScaleTransition(
+              scale: _animations[i],
+              child: Container(
+                width: 7,
+                height: 7,
+                margin: const EdgeInsets.symmetric(horizontal: 2.5),
+                decoration: const BoxDecoration(
+                  color: Color(0xFFE9C46A),
+                  shape: BoxShape.circle,
+                ),
               ),
             ),
-          ),
-      ],
+        ],
+      ),
     );
   }
 }

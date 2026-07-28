@@ -38,7 +38,7 @@ IMPORTANT FORMATTING & DISPLAY GUIDELINES FOR USERS:
 
     // 1. Try Gemini API if key is present
     if (key.isNotEmpty) {
-      final candidateModels = ['gemini-1.5-flash', 'gemini-2.0-flash', 'gemini-1.5-pro'];
+      final candidateModels = ['gemini-1.5-flash', 'gemini-2.0-flash-exp', 'gemini-1.5-pro', 'gemini-2.0-flash', 'gemini-pro'];
       String? context;
       try {
         context = await _wiki.search(userMessage);
