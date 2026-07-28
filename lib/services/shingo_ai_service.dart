@@ -65,13 +65,16 @@ STRICT RULES:
 
     final prompt = context != null ? 'Context from Wikipedia:\n$context\n\nQuestion: $userMessage' : userMessage;
 
-    if (_model == null) {
-      return _fallbackReply(userMessage);
-    }
-
     try {
-      final chat = _model!.startChat(history: _toGeminiHistory(history));
-      final response = await chat.sendMessage(Content.text(prompt));
+      final conversation = history.map((m) => '${m['role'] == 'user' ? 'User' : 'Shingo'}: ${m['content']}').join('\n');
+      final fullPrompt = conversation.isNotEmpty ? '$conversation\n\nUser: $userMessage' : userMessage;
+      if (_model == null) {
+        return _fallbackReply(userMessage);
+      }
+
+      try {
+        final chat = _model!.startChat();
+        final response = await chat.sendMessage(Content.text(context != null ? 'Context from Wikipedia:\n$context\n\n$fullPrompt' : fullPrompt));
       final text = response.text;
       if (text == null || text.trim().isEmpty) {
         return _fallbackReply(userMessage);
@@ -114,16 +117,6 @@ STRICT RULES:
     }
 
     return false;
-  }
-
-  List<Content> _toGeminiHistory(List<Map<String, String>> history) {
-    final result = <Content>[];
-    for (final msg in history) {
-      final text = msg['content'] ?? '';
-      if (text.isEmpty) continue;
-      result.add(msg['role'] == 'user' ? Content(Role.user, [TextPart(text)]) : Content(Role.model, [TextPart(text)]));
-    }
-    return result;
   }
 
   String _fallbackReply(String text) {
