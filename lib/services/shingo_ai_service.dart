@@ -24,6 +24,8 @@ Be friendly, concise, and helpful. Use emojis sparingly. If you don't know somet
 
     final models = <String>[
       'gemini-2.5-flash',
+      'gemini-2.0-flash',
+      'gemini-1.5-flash',
     ];
 
     for (final model in models) {
