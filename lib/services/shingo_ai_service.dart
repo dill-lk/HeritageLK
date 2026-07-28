@@ -20,7 +20,8 @@ Be friendly, informative, concise, and helpful. Use emojis tastefully.
         _wiki = WikipediaService(client: httpClient);
 
   String get effectiveKey {
-    if (_apiKey != null && _apiKey!.isNotEmpty) return _apiKey!;
+    final key = _apiKey;
+    if (key != null && key.isNotEmpty) return key;
     return AppConfig.effectiveGeminiApiKey;
   }
 

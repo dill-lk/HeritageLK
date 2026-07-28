@@ -411,7 +411,7 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
           const SizedBox(height: 14),
           Text(
             '"$_customBio"',
-            style: const TextStyle(color: Colors.white70, fontSize: 12, italic: true),
+            style: const TextStyle(color: Colors.white70, fontSize: 12, fontStyle: FontStyle.italic),
           ),
           const SizedBox(height: 18),
           ClipRRect(

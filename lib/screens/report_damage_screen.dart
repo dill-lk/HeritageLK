@@ -181,7 +181,7 @@ class _ReportDamageScreenState extends State<ReportDamageScreen> {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
                 decoration: BoxDecoration(
-                  gradient: LinearGradient(colors: [const Color(0x3352B788), const Color(0x1152B788)]),
+                  gradient: const LinearGradient(colors: [Color(0x3352B788), Color(0x1152B788)]),
                   border: Border.all(color: const Color(0x6652B788)),
                   borderRadius: BorderRadius.circular(24),
                 ),
@@ -302,7 +302,7 @@ class _ReportDamageScreenState extends State<ReportDamageScreen> {
                                 child: Container(
                                   width: 24,
                                   height: 24,
-                                  decoration: const BoxDecoration(color: Colors.black70, shape: BoxShape.circle),
+                                  decoration: const BoxDecoration(color: Color(0xB3000000), shape: BoxShape.circle),
                                   child: const Icon(Icons.close, color: Colors.white, size: 14),
                                 ),
                               ),
