@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:google_generative_ai/google_generative_ai.dart';
+import 'package:http/http.dart' as http;
 import '../config/app_config.dart';
 import 'wikipedia_service.dart';
 
@@ -19,12 +20,19 @@ Keep responses under 3 sentences unless the user asks for more detail.
   ShingoAiService({String? apiKey, http.Client? httpClient})
       : _wiki = WikipediaService(client: httpClient) {
     if (apiKey != null && apiKey.isNotEmpty) {
-      try {
-        _model = GenerativeModel(model: 'gemini-2.0-flash', apiKey: apiKey, systemInstruction: Content.system(_systemPrompt));
-      } catch (_) {
+      final models = <String>[
+        'gemini-3.5-flash',
+        'gemini-2.5-flash',
+        'gemini-2.0-flash',
+        'gemini-1.5-flash',
+      ];
+      for (final model in models) {
         try {
-          _model = GenerativeModel(model: 'gemini-1.5-flash', apiKey: apiKey, systemInstruction: Content.system(_systemPrompt));
-        } catch (_) {}
+          _model = GenerativeModel(model: model, apiKey: apiKey, systemInstruction: Content.system(_systemPrompt));
+          break;
+        } catch (_) {
+          continue;
+        }
       }
     }
   }
