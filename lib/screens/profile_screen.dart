@@ -272,7 +272,7 @@ class _AchievementBadge extends StatelessWidget {
       width: 72,
       decoration: BoxDecoration(color: const Color(0xFF17140F), borderRadius: BorderRadius.circular(18), border: Border.all(color: HeritageColors.orange.withValues(alpha: 0.15))),
       child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
-        Container(width: 40, height: 40, decoration: BoxDecoration(color: HeritageColors.orange.withValues(alpha: 0.12), shape: BoxShape.circle), child: Text(emoji, style: const TextStyle(fontSize: 20))),
+        Container(width: 40, height: 40, decoration: BoxDecoration(color: HeritageColors.orange.withValues(alpha: 0.12), shape: BoxShape.circle), child: Center(child: Text(emoji, style: const TextStyle(fontSize: 20)))),
         const SizedBox(height: 8),
         Text(label, maxLines: 1, overflow: TextOverflow.ellipsis, textAlign: TextAlign.center, style: TextStyle(color: HeritageColors.cream.withValues(alpha: 0.8), fontSize: 10, fontWeight: FontWeight.w500)),
       ]),
