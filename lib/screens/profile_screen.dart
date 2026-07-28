@@ -157,12 +157,13 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
   }
 
   Widget _buildStatsRow(int points) {
+    final rankLabel = _rank <= 0 ? '--' : '#$_rank';
     return Row(children: [
       Expanded(child: _StatCard(icon: Icons.star, color: const Color(0xFFF4A261), value: '$points', label: 'POINTS', subtitle: 'Total XP')),
       const SizedBox(width: 10),
       Expanded(child: _StatCard(icon: Icons.location_on, color: const Color(0xFF52B788), value: '${_completed.length}', label: 'PLACES', subtitle: 'Visited')),
       const SizedBox(width: 10),
-      Expanded(child: _StatCard(icon: Icons.emoji_events, color: const Color(0xFFE9C46A), value: _rank == 0 ? '--' : '#$_rank', label: 'RANK', subtitle: 'Global')),
+      Expanded(child: _StatCard(icon: Icons.emoji_events, color: const Color(0xFFE9C46A), value: rankLabel, label: 'RANK', subtitle: 'Global')),
     ]);
   }
 
@@ -183,7 +184,7 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
                 Text('Complete quests to unlock achievements', style: TextStyle(color: Color(0x80FFFFFF), fontSize: 13)),
               ]),
             )
-          : SizedBox(height: 100, child: ListView.separated(scrollDirection: Axis.horizontal, itemCount: _completed.length.clamp(0, 10), separatorBuilder: (_, __) => const SizedBox(width: 10), itemBuilder: (_, index) => _AchievementBadge(quest: _completed[index]))),
+          : SizedBox(height: 100, child: ListView.separated(scrollDirection: Axis.horizontal, itemCount: _completed.length.clamp(0, 10), separatorBuilder: (_, __) => const SizedBox(width: 10), itemBuilder: (_, index) => _AchievementBadge(label: 'Quest ${index + 1}'))),
     ]);
   }
 
@@ -204,7 +205,7 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
                 Text('No recent discoveries yet', style: TextStyle(color: Color(0x80FFFFFF), fontSize: 13)),
               ]),
             )
-          : SizedBox(height: 140, child: ListView.separated(scrollDirection: Axis.horizontal, itemCount: _completed.length.clamp(0, 8), separatorBuilder: (_, __) => const SizedBox(width: 12), itemBuilder: (_, index) => _DiscoveryCard(quest: _completed[index], index: index))),
+          : SizedBox(height: 140, child: ListView.separated(scrollDirection: Axis.horizontal, itemCount: _completed.length.clamp(0, 8), separatorBuilder: (_, __) => const SizedBox(width: 12), itemBuilder: (_, index) => _DiscoveryCard(label: 'Quest ${index + 1}', daysAgo: index + 1))),
     ]);
   }
 
@@ -260,31 +261,31 @@ class _StatCard extends StatelessWidget {
 }
 
 class _AchievementBadge extends StatelessWidget {
-  final UserQuest quest;
+  final String label;
 
-  const _AchievementBadge({required this.quest});
+  const _AchievementBadge({required this.label});
 
   @override
   Widget build(BuildContext context) {
     final emojis = ['🏆', '🌿', '📸', '🗺️', '🦁', '📜', '⛰️', '🌊'];
-    final emoji = emojis[quest.questId.hashCode % emojis.length];
+    final emoji = emojis[label.hashCode % emojis.length];
     return Container(
       width: 72,
       decoration: BoxDecoration(color: const Color(0xFF17140F), borderRadius: BorderRadius.circular(18), border: Border.all(color: HeritageColors.orange.withValues(alpha: 0.15))),
       child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
         Container(width: 40, height: 40, decoration: BoxDecoration(color: HeritageColors.orange.withValues(alpha: 0.12), shape: BoxShape.circle), child: Text(emoji, style: const TextStyle(fontSize: 20))),
         const SizedBox(height: 8),
-        Text(quest.questId.split('-').first, maxLines: 1, overflow: TextOverflow.ellipsis, textAlign: TextAlign.center, style: TextStyle(color: HeritageColors.cream.withValues(alpha: 0.8), fontSize: 10, fontWeight: FontWeight.w500)),
+        Text(label, maxLines: 1, overflow: TextOverflow.ellipsis, textAlign: TextAlign.center, style: TextStyle(color: HeritageColors.cream.withValues(alpha: 0.8), fontSize: 10, fontWeight: FontWeight.w500)),
       ]),
     );
   }
 }
 
 class _DiscoveryCard extends StatelessWidget {
-  final UserQuest quest;
-  final int index;
+  final String label;
+  final int daysAgo;
 
-  const _DiscoveryCard({required this.quest, required this.index});
+  const _DiscoveryCard({required this.label, required this.daysAgo});
 
   @override
   Widget build(BuildContext context) {
@@ -294,10 +295,10 @@ class _DiscoveryCard extends StatelessWidget {
       'https://images.unsplash.com/photo-1625805541012-e8ad54933a2a?q=80&w=300&auto=format&fit=crop',
     ];
     return SizedBox(width: 150, child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-      ClipRRect(borderRadius: BorderRadius.circular(16), child: Image.network(images[index % images.length], width: 150, height: 100, fit: BoxFit.cover)),
+      ClipRRect(borderRadius: BorderRadius.circular(16), child: Image.network(images[daysAgo % images.length], width: 150, height: 100, fit: BoxFit.cover)),
       const SizedBox(height: 8),
-      Text(quest.questId.replaceAll('-', ' '), maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(color: HeritageColors.cream, fontSize: 13, fontWeight: FontWeight.w600)),
-      Text('${index + 1} days ago', style: TextStyle(color: Colors.white.withValues(alpha: 0.5), fontSize: 11)),
+      Text(label, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(color: HeritageColors.cream, fontSize: 13, fontWeight: FontWeight.w600)),
+      Text('$daysAgo days ago', style: TextStyle(color: Colors.white.withValues(alpha: 0.5), fontSize: 11)),
     ]));
   }
 }
