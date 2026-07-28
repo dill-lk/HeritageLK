@@ -83,6 +83,9 @@ STRICT RULES:
       } catch (_) {
         return _fallbackReply(userMessage);
       }
+    } catch (_) {
+      return _fallbackReply(userMessage);
+    }
   }
 
   bool _isHeritageRelated(String lower) {
