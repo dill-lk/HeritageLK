@@ -1,11 +1,13 @@
 import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:geolocator/geolocator.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../config/app_config.dart';
 import '../services/damage_report_repository.dart';
+import '../services/location_service.dart';
 import '../theme/heritage_colors.dart';
 
 class ReportDamageScreen extends StatefulWidget {
@@ -18,7 +20,9 @@ class ReportDamageScreen extends StatefulWidget {
 class _ReportDamageScreenState extends State<ReportDamageScreen> {
   String _type = 'Structural Cracks';
   bool _submitting = false;
-  String _location = 'Galle Fort, Southern Wall';
+  bool _fetchingGps = false;
+  String _location = '';
+  final _locationController = TextEditingController();
   final _details = TextEditingController();
   final _types = const [
     'Structural Cracks',
@@ -32,9 +36,43 @@ class _ReportDamageScreenState extends State<ReportDamageScreen> {
   final List<String> _photos = [];
 
   @override
+  void initState() {
+    super.initState();
+    _detectLocation();
+  }
+
+  @override
   void dispose() {
+    _locationController.dispose();
     _details.dispose();
     super.dispose();
+  }
+
+  Future<void> _detectLocation() async {
+    if (_fetchingGps) return;
+    setState(() => _fetchingGps = true);
+    try {
+      final position = await LocationService.getCurrentPosition();
+      if (mounted) {
+        if (position != null) {
+          final locStr = LocationService.getNearestSiteDescription(position.latitude, position.longitude);
+          setState(() {
+            _location = locStr;
+            _locationController.text = locStr;
+            _fetchingGps = false;
+          });
+        } else {
+          setState(() => _fetchingGps = false);
+        }
+      }
+    } catch (_) {
+      if (mounted) {
+        setState(() => _fetchingGps = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('GPS location could not be detected. You can type the location manually.')),
+        );
+      }
+    }
   }
 
   void _showImagePickerOptions() {
@@ -72,8 +110,7 @@ class _ReportDamageScreenState extends State<ReportDamageScreen> {
               ),
               ListTile(
                 leading: Container(padding: const EdgeInsets.all(10), decoration: const BoxDecoration(color: Color(0x33F4A261), shape: BoxShape.circle), child: const Icon(Icons.photo_camera_back, color: Color(0xFFF4A261))),
-                title: const Text('Attach Heritage Sample Photo', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600)),
-                subtitle: const Text('Demo evidence for testing report submission', style: TextStyle(color: Colors.white54, fontSize: 11)),
+                title: const Text('Attach Sample Evidence Photo', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600)),
                 onTap: () {
                   Navigator.pop(ctx);
                   setState(() {
@@ -122,7 +159,7 @@ class _ReportDamageScreenState extends State<ReportDamageScreen> {
         await DamageReportRepository(Supabase.instance.client).submit(
           damageType: _type,
           details: text,
-          location: _location,
+          location: _locationController.text.trim().isEmpty ? _location : _locationController.text.trim(),
           photos: _photos,
         );
       }
@@ -134,7 +171,7 @@ class _ReportDamageScreenState extends State<ReportDamageScreen> {
               children: [
                 Icon(Icons.check_circle, color: Color(0xFF52B788)),
                 SizedBox(width: 12),
-                Expanded(child: Text('Damage report & photos submitted! +100 XP Earned 🎉')),
+                Expanded(child: Text('Damage report & photos submitted! Thank you 🎉')),
               ],
             ),
             backgroundColor: Color(0xFF1C1917),
@@ -193,17 +230,23 @@ class _ReportDamageScreenState extends State<ReportDamageScreen> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text('Heritage Guardian Task', style: TextStyle(color: Color(0xFF52B788), fontSize: 14, fontWeight: FontWeight.bold)),
-                          Text('Protect ancient monuments and earn XP', style: TextStyle(color: Colors.white70, fontSize: 11)),
+                          Text('Preserve Sri Lanka Heritage', style: TextStyle(color: Color(0xFF52B788), fontSize: 14, fontWeight: FontWeight.bold)),
+                          Text('Help protect monuments and historical structures', style: TextStyle(color: Colors.white70, fontSize: 11)),
                         ],
                       ),
                     ),
-                    Text('+100 XP', style: TextStyle(color: HeritageColors.orange, fontSize: 14, fontWeight: FontWeight.bold)),
                   ],
                 ),
               ),
               const SizedBox(height: 24),
               _label('LOCATION'),
+              const Padding(
+                padding: EdgeInsets.only(bottom: 8),
+                child: Text(
+                  'Use your live GPS location or edit it manually if needed.',
+                  style: TextStyle(color: Color(0x80FFFFFF), fontSize: 12, height: 1.4),
+                ),
+              ),
               _card(
                 Row(
                   children: [
@@ -211,16 +254,22 @@ class _ReportDamageScreenState extends State<ReportDamageScreen> {
                     const SizedBox(width: 12),
                     Expanded(
                       child: TextField(
-                        controller: TextEditingController(text: _location),
-                        decoration: const InputDecoration(border: InputBorder.none, hintText: 'Enter location', hintStyle: TextStyle(color: Color(0x4DFFFFFF))),
+                        controller: _locationController,
+                        decoration: const InputDecoration(
+                          border: InputBorder.none,
+                          hintText: 'Tap the GPS icon to fill your current location',
+                          hintStyle: TextStyle(color: Color(0x4DFFFFFF)),
+                        ),
                         style: const TextStyle(color: HeritageColors.cream, fontSize: 14),
-                        onChanged: (v) => _location = v.trim().isEmpty ? _location : v.trim(),
+                        onChanged: (v) => _location = v,
                       ),
                     ),
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                      decoration: BoxDecoration(color: const Color(0x662D6A4F), border: Border.all(color: const Color(0x3352B788)), borderRadius: BorderRadius.circular(20)),
-                      child: const Text('GPS ACTIVE', style: TextStyle(color: Color(0xFF52B788), fontSize: 10, fontWeight: FontWeight.bold, letterSpacing: 1)),
+                    IconButton(
+                      icon: _fetchingGps
+                          ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: Color(0xFF52B788)))
+                          : const Icon(Icons.my_location, color: Color(0xFF52B788), size: 20),
+                      onPressed: _detectLocation,
+                      tooltip: 'Get Current GPS Location',
                     ),
                   ],
                 ),
@@ -340,7 +389,7 @@ class _ReportDamageScreenState extends State<ReportDamageScreen> {
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
                   ),
                   child: Text(
-                    _submitting ? 'Submitting Damage Report...' : 'Submit Report (+100 XP)',
+                    _submitting ? 'Submitting Report...' : 'Submit Damage Report',
                     style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
                   ),
                 ),
