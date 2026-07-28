@@ -15,16 +15,16 @@ class FakeClient implements http.Client {
   Future<http.Response> post(Uri url, {Map<String, String>? headers, Object? body, Encoding? encoding}) => onRequest('POST', url, headers: headers, body: body);
 
   @override
-  Future<http.Response> put(Uri url, {Map<String, String>? headers, Object? body, Encoding? encoding}) => throw UnimplementedError();
+  Future<http.Response> put(Uri url, {Map<String, String>? headers, Object? body, Encoding? encoding}) => onRequest('PUT', url, headers: headers, body: body);
 
   @override
-  Future<http.Response> patch(Uri url, {Map<String, String>? headers, Object? body, Encoding? encoding}) => throw UnimplementedError();
+  Future<http.Response> patch(Uri url, {Map<String, String>? headers, Object? body, Encoding? encoding}) => onRequest('PATCH', url, headers: headers, body: body);
 
   @override
-  Future<http.Response> delete(Uri url, {Map<String, String>? headers, Object? body, Encoding? encoding}) => throw UnimplementedError();
+  Future<http.Response> delete(Uri url, {Map<String, String>? headers, Object? body, Encoding? encoding}) => onRequest('DELETE', url, headers: headers, body: body);
 
   @override
-  Future<http.Response> head(Uri url, {Map<String, String>? headers}) => throw UnimplementedError();
+  Future<http.Response> head(Uri url, {Map<String, String>? headers}) => onRequest('HEAD', url, headers: headers);
 
   @override
   Future<String> read(Uri url, {Map<String, String>? headers}) async {
@@ -39,7 +39,10 @@ class FakeClient implements http.Client {
   }
 
   @override
-  Future<http.StreamedResponse> send(http.BaseRequest request) => throw UnimplementedError();
+  Future<http.StreamedResponse> send(http.Request request) async {
+    final response = await onRequest(request.method, request.url, headers: request.headers, body: await request.read());
+    return http.StreamedResponse(const Stream.empty(), response.statusCode, headers: response.headers, reasonPhrase: response.reasonPhrase);
+  }
 
   @override
   void close() {}

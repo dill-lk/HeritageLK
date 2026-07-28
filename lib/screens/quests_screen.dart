@@ -5,7 +5,6 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../config/app_config.dart';
 import '../models/profile.dart';
-import '../models/quest.dart';
 import '../services/profile_repository.dart';
 import '../services/quest_repository.dart';
 import '../theme/heritage_colors.dart';

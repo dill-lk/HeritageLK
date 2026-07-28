@@ -46,7 +46,7 @@ class HeritageBottomNav extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: 8),
         decoration: BoxDecoration(
           color: const Color(0x99231B12),
-          border: Border.all(color: HeritageColors.orange.withOpacity(0.20)),
+          border: Border.all(color: HeritageColors.orange.withValues(opacity: 0.20)),
           borderRadius: BorderRadius.circular(42),
           boxShadow: const [BoxShadow(color: Color(0x8C000000), blurRadius: 24, offset: Offset(0, 12))],
         ),

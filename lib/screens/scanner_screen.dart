@@ -16,9 +16,8 @@ class _Visit {
   final double latitude;
   final double longitude;
   final DateTime timestamp;
-  final String? note;
 
-  _Visit({required this.id, required this.imagePath, required this.latitude, required this.longitude, required this.timestamp, this.note});
+  _Visit({required this.id, required this.imagePath, required this.latitude, required this.longitude, required this.timestamp});
 }
 
 class ScannerScreen extends StatefulWidget {
