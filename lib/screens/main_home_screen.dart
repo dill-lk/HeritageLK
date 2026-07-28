@@ -19,9 +19,9 @@ class MainHomeScreen extends StatelessWidget {
                 width: double.infinity,
                 padding: const EdgeInsets.all(32),
                 decoration: BoxDecoration(
-                  color: HeritageColors.brown.withValues(opacity:0.10),
+                  color: HeritageColors.brown.withValues(alpha:0.10),
                   border: Border.all(
-                    color: HeritageColors.brown.withValues(opacity:0.30),
+                    color: HeritageColors.brown.withValues(alpha:0.30),
                   ),
                   borderRadius: BorderRadius.circular(24),
                 ),
@@ -90,7 +90,7 @@ class _ActionButton extends StatelessWidget {
               onPressed: onPressed,
               style: OutlinedButton.styleFrom(
                 foregroundColor: HeritageColors.orange,
-                side: BorderSide(color: HeritageColors.orange.withValues(opacity:0.40)),
+                side: BorderSide(color: HeritageColors.orange.withValues(alpha:0.40)),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),
                 ),
@@ -119,3 +119,4 @@ class _ActionButton extends StatelessWidget {
     );
   }
 }
+

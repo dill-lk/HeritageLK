@@ -171,8 +171,8 @@ class _LoginScreenState extends State<LoginScreen> {
             constraints: const BoxConstraints(minWidth: 132),
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 9),
             decoration: BoxDecoration(
-              color: Colors.black.withValues(opacity:0.58),
-              border: Border.all(color: HeritageColors.orange.withValues(opacity:0.25)),
+              color: Colors.black.withValues(alpha:0.58),
+              border: Border.all(color: HeritageColors.orange.withValues(alpha:0.25)),
               borderRadius: BorderRadius.circular(25),
             ),
             child: Column(
@@ -206,8 +206,8 @@ class _LoginScreenState extends State<LoginScreen> {
               height: 32,
               padding: const EdgeInsets.symmetric(horizontal: 16),
               decoration: BoxDecoration(
-                color: HeritageColors.brown.withValues(opacity:0.15),
-                border: Border.all(color: HeritageColors.orange.withValues(opacity:0.20)),
+                color: HeritageColors.brown.withValues(alpha:0.15),
+                border: Border.all(color: HeritageColors.orange.withValues(alpha:0.20)),
                 borderRadius: BorderRadius.circular(20),
               ),
               child: Row(
@@ -231,8 +231,8 @@ class _LoginScreenState extends State<LoginScreen> {
       width: 40,
       height: 40,
       decoration: BoxDecoration(
-        color: HeritageColors.brown.withValues(opacity:0.15),
-        border: Border.all(color: HeritageColors.orange.withValues(opacity:0.10)),
+        color: HeritageColors.brown.withValues(alpha:0.15),
+        border: Border.all(color: HeritageColors.orange.withValues(alpha:0.10)),
         shape: BoxShape.circle,
       ),
       child: Icon(icon, size: 16, color: HeritageColors.orange),
@@ -242,16 +242,16 @@ class _LoginScreenState extends State<LoginScreen> {
   Widget _form(BuildContext context) {
     final inputDecoration = (String hint, IconData icon) => InputDecoration(
           hintText: hint,
-          hintStyle: TextStyle(color: HeritageColors.brown.withValues(opacity:0.50)),
+          hintStyle: TextStyle(color: HeritageColors.brown.withValues(alpha:0.50)),
           prefixIcon: Icon(icon, size: 18, color: HeritageColors.brown),
           filled: true,
-          fillColor: HeritageColors.brown.withValues(opacity:0.10),
+          fillColor: HeritageColors.brown.withValues(alpha:0.10),
           enabledBorder: OutlineInputBorder(
-            borderSide: BorderSide(color: HeritageColors.brown.withValues(opacity:0.30)),
+            borderSide: BorderSide(color: HeritageColors.brown.withValues(alpha:0.30)),
             borderRadius: BorderRadius.circular(16),
           ),
           focusedBorder: OutlineInputBorder(
-            borderSide: BorderSide(color: HeritageColors.orange.withValues(opacity:0.50)),
+            borderSide: BorderSide(color: HeritageColors.orange.withValues(alpha:0.50)),
             borderRadius: BorderRadius.circular(16),
           ),
         );
@@ -270,7 +270,7 @@ class _LoginScreenState extends State<LoginScreen> {
           decoration: inputDecoration('Enter Password', Icons.lock_outline).copyWith(
             suffixIcon: IconButton(
               onPressed: () => setState(() => _showPassword = !_showPassword),
-              color: HeritageColors.brown.withValues(opacity:0.50),
+              color: HeritageColors.brown.withValues(alpha:0.50),
               icon: Icon(_showPassword ? Icons.visibility : Icons.visibility_off, size: 18),
             ),
           ),
@@ -284,12 +284,12 @@ class _LoginScreenState extends State<LoginScreen> {
           height: 56,
           child: FilledButton(
             onPressed: _submitting ? null : _signIn,
-            style: FilledButton.styleFrom(backgroundColor: HeritageColors.orange, disabledBackgroundColor: HeritageColors.orange.withValues(opacity:0.55), foregroundColor: HeritageColors.background, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16))),
+            style: FilledButton.styleFrom(backgroundColor: HeritageColors.orange, disabledBackgroundColor: HeritageColors.orange.withValues(alpha:0.55), foregroundColor: HeritageColors.background, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16))),
             child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [Text(_submitting ? 'Signing In...' : 'Sign In', style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, letterSpacing: 0.5)), const SizedBox(width: 8), const Icon(Icons.arrow_forward, size: 18)]),
           ),
         ),
         const SizedBox(height: 24),
-        Row(children: [Expanded(child: Divider(color: HeritageColors.brown.withValues(opacity:0.20))), const Padding(padding: EdgeInsets.symmetric(horizontal: 16), child: Text('or sign in with', style: TextStyle(color: HeritageColors.brown, fontSize: 12, fontWeight: FontWeight.w600, letterSpacing: 0.6))), Expanded(child: Divider(color: HeritageColors.brown.withValues(opacity:0.20)))]),
+        Row(children: [Expanded(child: Divider(color: HeritageColors.brown.withValues(alpha:0.20))), const Padding(padding: EdgeInsets.symmetric(horizontal: 16), child: Text('or sign in with', style: TextStyle(color: HeritageColors.brown, fontSize: 12, fontWeight: FontWeight.w600, letterSpacing: 0.6))), Expanded(child: Divider(color: HeritageColors.brown.withValues(alpha:0.20)))]),
         const SizedBox(height: 24),
         Row(children: [_socialButton('Google', Icons.g_mobiledata), const SizedBox(width: 16), _socialButton('Apple', Icons.apple)]),
         const SizedBox(height: 32),
@@ -307,8 +307,8 @@ class _LoginScreenState extends State<LoginScreen> {
           icon: Icon(icon, color: HeritageColors.cream),
           label: Text(label, style: const TextStyle(color: HeritageColors.cream, fontSize: 14, fontWeight: FontWeight.w600)),
           style: OutlinedButton.styleFrom(
-            backgroundColor: HeritageColors.brown.withValues(opacity:0.10),
-            side: BorderSide(color: HeritageColors.brown.withValues(opacity:0.30)),
+            backgroundColor: HeritageColors.brown.withValues(alpha:0.10),
+            side: BorderSide(color: HeritageColors.brown.withValues(alpha:0.30)),
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
           ),
         ),
@@ -316,3 +316,4 @@ class _LoginScreenState extends State<LoginScreen> {
     );
   }
 }
+

@@ -57,7 +57,7 @@ class _ReportDamageScreenState extends State<ReportDamageScreen> {
             _round(Icons.notifications_none, () {}),
           ]),
           const SizedBox(height: 28),
-          Container(padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12), decoration: BoxDecoration(color: Colors.white.withValues(opacity:0.05), border: Border.all(color: const Color(0x4D52B788)), borderRadius: BorderRadius.circular(30)), child: const Row(children: [
+          Container(padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12), decoration: BoxDecoration(color: Colors.white.withValues(alpha:0.05), border: Border.all(color: const Color(0x4D52B788)), borderRadius: BorderRadius.circular(30)), child: const Row(children: [
             Icon(Icons.emoji_events, color: Color(0xFF52B788), size: 18),
             SizedBox(width: 8),
             Expanded(child: Text('Community Protection', style: TextStyle(color: Color(0xFF52B788), fontSize: 14, fontWeight: FontWeight.w600))),
@@ -77,7 +77,7 @@ class _ReportDamageScreenState extends State<ReportDamageScreen> {
           const SizedBox(height: 24),
           _label('VISUAL EVIDENCE'),
           Row(children: [
-            GestureDetector(onTap: () {}, child: Container(width: 96, height: 96, decoration: BoxDecoration(color: HeritageColors.orange.withValues(opacity:0.05), border: Border.all(color: HeritageColors.orange.withValues(opacity:0.40)), borderRadius: BorderRadius.circular(16)), child: const Column(mainAxisAlignment: MainAxisAlignment.center, children: [Icon(Icons.camera_alt_outlined, color: HeritageColors.orange), SizedBox(height: 4), Text('ADD PHOTO', style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold, letterSpacing: 1))]))),
+            GestureDetector(onTap: () {}, child: Container(width: 96, height: 96, decoration: BoxDecoration(color: HeritageColors.orange.withValues(alpha:0.05), border: Border.all(color: HeritageColors.orange.withValues(alpha:0.40)), borderRadius: BorderRadius.circular(16)), child: const Column(mainAxisAlignment: MainAxisAlignment.center, children: [Icon(Icons.camera_alt_outlined, color: HeritageColors.orange), SizedBox(height: 4), Text('ADD PHOTO', style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold, letterSpacing: 1))]))),
             const SizedBox(width: 16),
             _photo('https://images.unsplash.com/photo-1544640808-32cb4fbad06e?q=80&w=300&auto=format&fit=crop'),
             const SizedBox(width: 16),
@@ -87,14 +87,15 @@ class _ReportDamageScreenState extends State<ReportDamageScreen> {
           _label('DETAILS'),
           _card(TextField(controller: _details, maxLines: 4, style: const TextStyle(color: Colors.white, fontSize: 14), decoration: const InputDecoration(hintText: 'Graffiti discovered on the west gate section. Appears to be fresh spray paint...', hintStyle: TextStyle(color: Color(0x4DFFFFFF)), border: InputBorder.none))),
           const SizedBox(height: 28),
-          SizedBox(height: 56, child: FilledButton(onPressed: _submitting ? null : _submit, style: FilledButton.styleFrom(backgroundColor: HeritageColors.orange, disabledBackgroundColor: HeritageColors.orange.withValues(opacity:0.50), foregroundColor: HeritageColors.background, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16))), child: Text(_submitting ? 'Submitting...' : 'Submit Report', style: const TextStyle(fontWeight: FontWeight.bold)))),
+          SizedBox(height: 56, child: FilledButton(onPressed: _submitting ? null : _submit, style: FilledButton.styleFrom(backgroundColor: HeritageColors.orange, disabledBackgroundColor: HeritageColors.orange.withValues(alpha:0.50), foregroundColor: HeritageColors.background, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16))), child: Text(_submitting ? 'Submitting...' : 'Submit Report', style: const TextStyle(fontWeight: FontWeight.bold)))),
         ],
       ),
     ),
   );
 
   Widget _label(String text) => Padding(padding: const EdgeInsets.only(bottom: 12), child: Text(text, style: const TextStyle(color: Color(0x66FFFFFF), fontSize: 12, fontWeight: FontWeight.bold, letterSpacing: 2)));
-  Widget _card(Widget child) => Container(padding: const EdgeInsets.all(16), decoration: BoxDecoration(color: Colors.white.withValues(opacity:0.05), border: Border.all(color: Colors.white.withValues(opacity:0.10)), borderRadius: BorderRadius.circular(16)), child: child);
+  Widget _card(Widget child) => Container(padding: const EdgeInsets.all(16), decoration: BoxDecoration(color: Colors.white.withValues(alpha:0.05), border: Border.all(color: Colors.white.withValues(alpha:0.10)), borderRadius: BorderRadius.circular(16)), child: child);
   Widget _photo(String url) => ClipRRect(borderRadius: BorderRadius.circular(16), child: Image.network(url, width: 96, height: 96, fit: BoxFit.cover, errorBuilder: (_, __, ___) => const ColoredBox(color: HeritageColors.brown, child: SizedBox(width: 96, height: 96))));
-  Widget _round(IconData icon, VoidCallback action) => InkWell(onTap: action, borderRadius: BorderRadius.circular(24), child: Container(width: 40, height: 40, decoration: BoxDecoration(color: Colors.white.withValues(opacity:0.10), border: Border.all(color: Colors.white.withValues(opacity:0.20)), shape: BoxShape.circle), child: Icon(icon, color: Colors.white, size: 20)));
+  Widget _round(IconData icon, VoidCallback action) => InkWell(onTap: action, borderRadius: BorderRadius.circular(24), child: Container(width: 40, height: 40, decoration: BoxDecoration(color: Colors.white.withValues(alpha:0.10), border: Border.all(color: Colors.white.withValues(alpha:0.20)), shape: BoxShape.circle), child: Icon(icon, color: Colors.white, size: 20)));
 }
+

@@ -39,8 +39,10 @@ class FakeClient implements http.Client {
   }
 
   @override
-  Future<http.StreamedResponse> send(http.Request request) async {
-    final response = await onRequest(request.method, request.url, headers: request.headers, body: await request.read());
+  Future<http.StreamedResponse> send(http.BaseRequest request) async {
+    final chunks = await request.finalize().toList();
+    final bodyString = chunks.isEmpty ? '' : utf8.decode(chunks.expand((x) => x).toList());
+    final response = await onRequest(request.method, request.url, headers: request.headers, body: bodyString);
     return http.StreamedResponse(const Stream.empty(), response.statusCode, headers: response.headers, reasonPhrase: response.reasonPhrase);
   }
 

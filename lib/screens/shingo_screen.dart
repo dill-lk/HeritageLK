@@ -1,4 +1,7 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
+import 'package:http/http.dart' as http;
 
 import '../config/app_config.dart';
 import '../services/heritage_api.dart';
@@ -113,7 +116,7 @@ class _ShingoScreenState extends State<ShingoScreen> {
                     constraints: const BoxConstraints(maxWidth: 340),
                     margin: const EdgeInsets.only(bottom: 24),
                     padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(color: Colors.white.withValues(opacity:0.10), border: Border.all(color: Colors.white.withValues(opacity:0.05)), borderRadius: const BorderRadius.only(topLeft: Radius.circular(4), topRight: Radius.circular(24), bottomLeft: Radius.circular(24), bottomRight: Radius.circular(24))),
+                    decoration: BoxDecoration(color: Colors.white.withValues(alpha:0.10), border: Border.all(color: Colors.white.withValues(alpha:0.05)), borderRadius: const BorderRadius.only(topLeft: Radius.circular(4), topRight: Radius.circular(24), bottomLeft: Radius.circular(24), bottomRight: Radius.circular(24))),
                     child: Row(mainAxisSize: MainAxisSize.min, children: [
                       _bouncingDot(0),
                       const SizedBox(width: 4),
@@ -131,8 +134,8 @@ class _ShingoScreenState extends State<ShingoScreen> {
                     margin: const EdgeInsets.only(bottom: 24),
                     padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
-                      color: message.user ? HeritageColors.orange : Colors.white.withValues(opacity:0.10),
-                      border: message.user ? null : Border.all(color: Colors.white.withValues(opacity:0.05)),
+                      color: message.user ? HeritageColors.orange : Colors.white.withValues(alpha:0.10),
+                      border: message.user ? null : Border.all(color: Colors.white.withValues(alpha:0.05)),
                       borderRadius: BorderRadius.only(
                         topLeft: Radius.circular(message.user ? 24 : 4),
                         topRight: Radius.circular(message.user ? 4 : 24),
@@ -158,9 +161,9 @@ class _ShingoScreenState extends State<ShingoScreen> {
                   hintText: 'Ask Shingo...',
                   hintStyle: const TextStyle(color: Color(0x66FFFFFF), fontSize: 14),
                   filled: true,
-                  fillColor: Colors.white.withValues(opacity:0.05),
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(30), borderSide: BorderSide(color: Colors.white.withValues(opacity:0.10))),
-                  enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(30), borderSide: BorderSide(color: Colors.white.withValues(opacity:0.10))),
+                  fillColor: Colors.white.withValues(alpha:0.05),
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(30), borderSide: BorderSide(color: Colors.white.withValues(alpha:0.10))),
+                  enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(30), borderSide: BorderSide(color: Colors.white.withValues(alpha:0.10))),
                   focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(30), borderSide: const BorderSide(color: Color(0xFFE9C46A))),
                   contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
                 ),
@@ -180,9 +183,10 @@ class _ShingoScreenState extends State<ShingoScreen> {
     builder: (_, __, ___) => AnimatedContainer(
       duration: Duration(milliseconds: 400 + index * 200),
       width: 8, height: 8,
-      decoration: BoxDecoration(color: Colors.white.withValues(opacity:0.40), shape: BoxShape.circle),
+      decoration: BoxDecoration(color: Colors.white.withValues(alpha:0.40), shape: BoxShape.circle),
     ),
   );
 
-  Widget _round(IconData icon, VoidCallback action) => InkWell(onTap: action, borderRadius: BorderRadius.circular(24), child: Container(width: 40, height: 40, decoration: BoxDecoration(color: Colors.white.withValues(opacity:0.05), border: Border.all(color: Colors.white.withValues(opacity:0.10)), shape: BoxShape.circle), child: Icon(icon, color: const Color(0xFFE9C46A), size: 20)));
+  Widget _round(IconData icon, VoidCallback action) => InkWell(onTap: action, borderRadius: BorderRadius.circular(24), child: Container(width: 40, height: 40, decoration: BoxDecoration(color: Colors.white.withValues(alpha:0.05), border: Border.all(color: Colors.white.withValues(alpha:0.10)), shape: BoxShape.circle), child: Icon(icon, color: const Color(0xFFE9C46A), size: 20)));
 }
+
