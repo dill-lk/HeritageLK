@@ -61,6 +61,14 @@ class _ExploreScreenState extends State<ExploreScreen> {
     _SiteData('Ella Rock', 6.8647, 81.0483, 'Nature', 'FREE', 'A famous viewpoint offering panoramic views of the lush green valleys and mountains around Ella.'),
     _SiteData('Rawana Falls', 6.8407, 81.0543, 'Nature', 'FREE', 'A beautiful and popular waterfall in Ella, linked to the Hindu epic Ramayana.'),
     _SiteData('Yapahuwa Rock Fortress', 7.8285, 80.3204, 'History', r'$3 USD', 'Once a capital of Sri Lanka, this fortress features an iconic ornamental stairway that leads to the top.'),
+    _SiteData('Koneswaram Temple', 9.6814, 80.1175, 'History', 'FREE', 'An ancient Hindu temple on a cliff overlooking Trincomalee harbour. One of the five sacred Iswarams of Shiva.'),
+    _SiteData('Mihintale', 8.3486, 80.5896, 'History', 'FREE', 'Considered the cradle of Buddhism in Sri Lanka. Home to several ancient stupas and monastic ruins.'),
+    _SiteData('Pidurangala Rock', 7.9636, 80.7565, 'Nature', r'$5 USD', 'A large rock formation offering panoramic views of Sigiriya and the surrounding jungle.'),
+    _SiteData('Sinharaja Forest Reserve', 6.2111, 80.4044, 'Nature', r'~$35 USD', 'A UNESCO World Heritage Site and Sri Lanka\'s last viable primary tropical rainforest.'),
+    _SiteData('Bentota Beach', 6.4226, 80.0019, 'Nature', 'FREE', 'A popular beach destination known for water sports and turtle hatcheries.'),
+    _SiteData('Hikkaduwa Beach', 6.1427, 80.0983, 'Nature', 'FREE', 'Famous for its coral reefs, nightlife, and beachside restaurants.'),
+    _SiteData('Pettah Market', 6.9374, 79.8576, 'Knowledge', 'FREE', 'A bustling open-air market in Colombo offering everything from spices to textiles.'),
+    _SiteData('Viharamahadevi Park', 6.9167, 79.8608, 'Knowledge', 'FREE', 'A large public park in Colombo featuring a giant Buddha statue and seasonal blooms.'),
   ];
 
   @override
@@ -144,10 +152,27 @@ class _ExploreScreenState extends State<ExploreScreen> {
           _mapBackground(filtered, current),
           _topOverlay(q, filtered),
           _bottomInfoCard(current),
+          _buildZoomControls(),
           const Align(alignment: Alignment.bottomCenter, child: HeritageBottomNav(currentIndex: 1)),
         ]),
       ),
     );
+  }
+
+  Widget _buildZoomControls() {
+    return Positioned(
+      right: 16,
+      bottom: 140,
+      child: Column(children: [
+        _zoomButton(Icons.add, () => _mapController.zoomIn()),
+        const SizedBox(height: 8),
+        _zoomButton(Icons.remove, () => _mapController.zoomOut()),
+      ]),
+    );
+  }
+
+  Widget _zoomButton(IconData icon, VoidCallback onTap) {
+    return InkWell(onTap: onTap, child: Container(width: 40, height: 40, decoration: BoxDecoration(color: const Color(0xE61A1311), shape: BoxShape.circle, border: Border.all(color: Colors.white.withValues(alpha:0.10))), child: Icon(icon, color: HeritageColors.orange, size: 20)));
   }
 
   Widget _mapBackground(List<_SiteData> filtered, _SiteData current) {
