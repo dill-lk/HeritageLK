@@ -129,16 +129,16 @@ class _ReportDamageScreenState extends State<ReportDamageScreen> {
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
+          const SnackBar(
             content: Row(
-              children: const [
+              children: [
                 Icon(Icons.check_circle, color: Color(0xFF52B788)),
                 SizedBox(width: 12),
                 Expanded(child: Text('Damage report & photos submitted! +100 XP Earned 🎉')),
               ],
             ),
-            backgroundColor: const Color(0xFF1C1917),
-            duration: const Duration(seconds: 4),
+            backgroundColor: Color(0xFF1C1917),
+            duration: Duration(seconds: 4),
           ),
         );
         setState(() {
