@@ -164,9 +164,9 @@ class _ExploreScreenState extends State<ExploreScreen> {
       right: 16,
       bottom: 140,
       child: Column(children: [
-        _zoomButton(Icons.add, () => _mapController.zoomIn()),
+        _zoomButton(Icons.add, () => _mapController.move(_mapController.camera.center, (_mapController.camera.zoom + 1).clamp(6.0, 18.0))),
         const SizedBox(height: 8),
-        _zoomButton(Icons.remove, () => _mapController.zoomOut()),
+        _zoomButton(Icons.remove, () => _mapController.move(_mapController.camera.center, (_mapController.camera.zoom - 1).clamp(6.0, 18.0))),
       ]),
     );
   }

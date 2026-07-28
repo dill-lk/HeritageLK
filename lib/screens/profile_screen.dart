@@ -83,7 +83,6 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
 
   @override
   Widget build(BuildContext context) {
-    final name = _getDisplayName();
     final points = _profile?.points ?? 0;
     final level = points <= 0 ? 1 : (points ~/ 100).clamp(1, 999);
     final progress = points % 100;

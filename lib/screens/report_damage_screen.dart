@@ -97,7 +97,7 @@ class _ReportDamageScreenState extends State<ReportDamageScreen> {
           Row(children: [
             GestureDetector(onTap: _pickImage, child: Container(width: 96, height: 96, decoration: BoxDecoration(color: HeritageColors.orange.withValues(alpha:0.05), border: Border.all(color: HeritageColors.orange.withValues(alpha:0.40)), borderRadius: BorderRadius.circular(16)), child: const Column(mainAxisAlignment: MainAxisAlignment.center, children: [Icon(Icons.camera_alt_outlined, color: HeritageColors.orange), SizedBox(height: 4), Text('ADD PHOTO', style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold, letterSpacing: 1))]))),
             const SizedBox(width: 16),
-            ..._photos.map((path) => ClipRRect(borderRadius: BorderRadius.circular(16), child: Image.file(File(path), width: 96, height: 96, fit: BoxFit.cover))).toList(),
+            ..._photos.map((path) => ClipRRect(borderRadius: BorderRadius.circular(16), child: Image.file(File(path), width: 96, height: 96, fit: BoxFit.cover))),
           ]),
           const SizedBox(height: 24),
           _label('DETAILS'),
