@@ -408,7 +408,7 @@ class _GridVisitCard extends StatelessWidget {
         decoration: BoxDecoration(borderRadius: BorderRadius.circular(16), border: Border.all(color: Colors.white.withValues(alpha: 0.05))),
         child: Stack(children: [
           ClipRRect(borderRadius: BorderRadius.circular(16), child: Image.file(File(visit.imagePath), width: double.infinity, height: double.infinity, fit: BoxFit.cover)),
-          Positioned(top: 8, right: 8, child: InkWell(onTap: onDelete, child: Container(width: 28, height: 28, decoration: BoxDecoration(color: const Color(0xFF29261E).withValues(alpha: 0.8), shape: BoxShape.circle), child: const Icon(Icons.delete_outline, color: Color(0xFFE76F51), size: 14))),
+          Positioned(top: 8, right: 8, child: InkWell(onTap: onDelete, child: Container(width: 28, height: 28, decoration: BoxDecoration(color: const Color(0xFF29261E).withValues(alpha: 0.8), shape: BoxShape.circle), child: const Icon(Icons.delete_outline, color: Color(0xFFE76F51), size: 14)))),
           Positioned(bottom: 8, left: 8, right: 8, child: Container(padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4), decoration: BoxDecoration(color: const Color(0xFF29261E).withValues(alpha: 0.8), borderRadius: BorderRadius.circular(8)), child: Text(visit.timestamp.toLocal().toString().substring(0, 10), style: TextStyle(color: HeritageColors.cream.withValues(alpha: 0.8), fontSize: 10)))),
         ]),
       ),

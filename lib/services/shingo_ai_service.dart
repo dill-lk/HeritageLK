@@ -75,14 +75,14 @@ STRICT RULES:
       try {
         final chat = _model!.startChat();
         final response = await chat.sendMessage(Content.text(context != null ? 'Context from Wikipedia:\n$context\n\n$fullPrompt' : fullPrompt));
-      final text = response.text;
-      if (text == null || text.trim().isEmpty) {
+        final text = response.text;
+        if (text == null || text.trim().isEmpty) {
+          return _fallbackReply(userMessage);
+        }
+        return text.trim();
+      } catch (_) {
         return _fallbackReply(userMessage);
       }
-      return text.trim();
-    } catch (_) {
-      return _fallbackReply(userMessage);
-    }
   }
 
   bool _isHeritageRelated(String lower) {

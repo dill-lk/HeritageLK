@@ -89,7 +89,7 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
             ListView(padding: const EdgeInsets.fromLTRB(20, 12, 20, 140), children: [
               _buildHeader(name),
               const SizedBox(height: 24),
-              _buildLevelCard(level, levelProgress),
+              _buildLevelCard(level, levelProgress, points),
               const SizedBox(height: 20),
               _buildStatsRow(points),
               const SizedBox(height: 24),
@@ -116,7 +116,9 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
     ]);
   }
 
-  Widget _buildLevelCard(int level, double levelProgress) {
+  Widget _buildLevelCard(int level, double levelProgress, int points) {
+    final progress = (levelProgress * 100).toInt();
+    final nextLevelPoints = (level + 1) * 100;
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
