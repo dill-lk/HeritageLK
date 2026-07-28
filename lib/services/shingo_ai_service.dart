@@ -1,35 +1,53 @@
 import 'dart:convert';
 import 'package:google_generative_ai/google_generative_ai.dart';
 import '../config/app_config.dart';
+import 'wikipedia_service.dart';
 
 class ShingoAiService {
   static const _systemPrompt = '''
-You are Shingo, an expert AI assistant for HeritageLK, Sri Lanka's premier heritage and wildlife exploration app.
+You are Shingo, an advanced AI assistant for HeritageLK, Sri Lanka's premier heritage and wildlife exploration app.
 You have deep knowledge about Sri Lankan heritage sites, wildlife, entry fees, weather, directions, history, and culture.
+When external context is provided, use it to enrich your answer. Cite sources naturally if context is present.
 Always answer in a friendly, concise way. Use emojis sparingly. Prioritize accuracy.
 If you don't know something, admit it honestly.
 Keep responses under 3 sentences unless the user asks for more detail.
 ''';
 
-  final GenerativeModel? _model;
+  GenerativeModel? _model;
+  final WikipediaService _wiki;
 
-  ShingoAiService({String? apiKey})
-      : _model = (apiKey != null && apiKey.isNotEmpty)
-            ? GenerativeModel(model: 'gemini-1.5-flash', apiKey: apiKey, systemInstruction: Content.system(_systemPrompt))
-            : null;
+  ShingoAiService({String? apiKey, http.Client? httpClient})
+      : _wiki = WikipediaService(client: httpClient) {
+    if (apiKey != null && apiKey.isNotEmpty) {
+      try {
+        _model = GenerativeModel(model: 'gemini-2.0-flash', apiKey: apiKey, systemInstruction: Content.system(_systemPrompt));
+      } catch (_) {
+        try {
+          _model = GenerativeModel(model: 'gemini-1.5-flash', apiKey: apiKey, systemInstruction: Content.system(_systemPrompt));
+        } catch (_) {}
+      }
+    }
+  }
 
   bool get isAvailable => _model != null;
 
   Future<String> chat(List<Map<String, String>> history, String userMessage) async {
+    String? context;
+    try {
+      context = await _wiki.search(userMessage);
+    } catch (_) {}
+
+    final prompt = context != null ? 'Context from Wikipedia:\n$context\n\nQuestion: $userMessage' : userMessage;
+
     if (_model == null) {
       return _fallbackReply(userMessage);
     }
 
     try {
       final chat = _model!.startChat(history: _toGeminiHistory(history));
-      final response = await chat.sendMessage(Content.text(userMessage));
+      final response = await chat.sendMessage(Content.text(prompt));
       final text = response.text;
-      if (text == null || text.isEmpty) {
+      if (text == null || text.trim().isEmpty) {
         return _fallbackReply(userMessage);
       }
       return text.trim();
@@ -43,11 +61,7 @@ Keep responses under 3 sentences unless the user asks for more detail.
     for (final msg in history) {
       final text = msg['content'] ?? '';
       if (text.isEmpty) continue;
-      if (msg['role'] == 'user') {
-        result.add(Content.user(text));
-      } else {
-        result.add(Content.model(text));
-      }
+      result.add(msg['role'] == 'user' ? Content.user(text) : Content.model(text));
     }
     return result;
   }
