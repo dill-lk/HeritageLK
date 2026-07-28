@@ -182,7 +182,7 @@ class _ExploreScreenState extends State<ExploreScreen> {
                       border: Border.all(color: Colors.white, width: isSelected ? 3 : 2),
                       boxShadow: [
                         BoxShadow(
-                          color: (isSelected ? HeritageColors.orange : const Color(0xFF52B788)).withOpacity(0.6),
+                          color: (isSelected ? HeritageColors.orange : const Color(0xFF52B788)).withValues(opacity:0.6),
                           blurRadius: isSelected ? 12 : 6,
                         ),
                       ],
@@ -213,7 +213,7 @@ class _ExploreScreenState extends State<ExploreScreen> {
         padding: const EdgeInsets.fromLTRB(24, 16, 24, 0),
         child: Column(children: [
           Container(
-            decoration: BoxDecoration(color: const Color(0xE61A1311), borderRadius: BorderRadius.circular(20), boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.3), blurRadius: 12)]),
+            decoration: BoxDecoration(color: const Color(0xE61A1311), borderRadius: BorderRadius.circular(20), boxShadow: [BoxShadow(color: Colors.black.withValues(opacity:0.3), blurRadius: 12)]),
             child: TextField(
               controller: _search,
               onChanged: (_) => setState(() {}),
@@ -225,7 +225,7 @@ class _ExploreScreenState extends State<ExploreScreen> {
             Container(
               margin: const EdgeInsets.only(top: 4),
               constraints: const BoxConstraints(maxHeight: 260),
-              decoration: BoxDecoration(color: const Color(0xF00F0C0A), borderRadius: BorderRadius.circular(20), border: Border.all(color: Colors.white.withOpacity(0.05))),
+              decoration: BoxDecoration(color: const Color(0xF00F0C0A), borderRadius: BorderRadius.circular(20), border: Border.all(color: Colors.white.withValues(opacity:0.05))),
               child: ListView.builder(shrinkWrap: true, itemCount: filtered.length, itemBuilder: (_, i) {
                 final site = filtered[i];
                 return InkWell(onTap: () { _select(site); setState(() => _search.clear()); }, child: Padding(padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12), child: Row(children: [const Icon(Icons.location_on, color: HeritageColors.orange, size: 16), const SizedBox(width: 12), Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Text(site.name, style: const TextStyle(color: HeritageColors.cream, fontSize: 14, fontWeight: FontWeight.bold)), Text(site.category.toUpperCase(), style: const TextStyle(color: Color(0x80FEFAE0), fontSize: 10, fontWeight: FontWeight.bold, letterSpacing: 1))]))])));
@@ -250,7 +250,7 @@ class _ExploreScreenState extends State<ExploreScreen> {
       borderRadius: BorderRadius.circular(30),
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-        decoration: BoxDecoration(color: const Color(0xE61A1311), borderRadius: BorderRadius.circular(30), border: Border.all(color: Colors.white.withOpacity(0.05))),
+        decoration: BoxDecoration(color: const Color(0xE61A1311), borderRadius: BorderRadius.circular(30), border: Border.all(color: Colors.white.withValues(opacity:0.05))),
         child: Row(mainAxisSize: MainAxisSize.min, children: [
           Icon(selected ? Icons.check_circle : Icons.circle_outlined, color: selected ? HeritageColors.orange : Colors.white38, size: 14),
           const SizedBox(width: 8),
@@ -267,7 +267,7 @@ class _ExploreScreenState extends State<ExploreScreen> {
       right: 24,
       child: Container(
         padding: const EdgeInsets.all(24),
-        decoration: BoxDecoration(color: const Color(0xF00F0C0A), borderRadius: BorderRadius.circular(32), border: Border.all(color: Colors.white.withOpacity(0.05)), boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.4), blurRadius: 24)]),
+        decoration: BoxDecoration(color: const Color(0xF00F0C0A), borderRadius: BorderRadius.circular(32), border: Border.all(color: Colors.white.withValues(opacity:0.05)), boxShadow: [BoxShadow(color: Colors.black.withValues(opacity:0.4), blurRadius: 24)]),
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
           Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
             Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
@@ -275,7 +275,7 @@ class _ExploreScreenState extends State<ExploreScreen> {
               const SizedBox(height: 4),
               Row(children: [Icon(Icons.public, color: Colors.green.shade400, size: 12), const SizedBox(width: 6), Text('UNESCO WORLD HERITAGE SITE', style: TextStyle(color: Colors.green.shade400, fontSize: 10, fontWeight: FontWeight.bold, letterSpacing: 0.8))]),
             ])),
-            GestureDetector(onTap: () => setState(() => _detailsExpanded = !_detailsExpanded), child: Container(width: 44, height: 44, decoration: BoxDecoration(border: Border.all(color: Colors.white.withOpacity(0.05)), shape: BoxShape.circle), child: Icon(_detailsExpanded ? Icons.keyboard_arrow_down : Icons.keyboard_arrow_up, color: Colors.white70, size: 22))),
+            GestureDetector(onTap: () => setState(() => _detailsExpanded = !_detailsExpanded), child: Container(width: 44, height: 44, decoration: BoxDecoration(border: Border.all(color: Colors.white.withValues(opacity:0.05)), shape: BoxShape.circle), child: Icon(_detailsExpanded ? Icons.keyboard_arrow_down : Icons.keyboard_arrow_up, color: Colors.white70, size: 22))),
           ]),
           if (_detailsExpanded) ...[
             const SizedBox(height: 16),
@@ -287,7 +287,7 @@ class _ExploreScreenState extends State<ExploreScreen> {
               _iconButton(Icons.flag, const Color(0xFFC084FC)),
             ]),
             const SizedBox(height: 20),
-            Container(height: 1, color: Colors.white.withOpacity(0.05)),
+            Container(height: 1, color: Colors.white.withValues(opacity:0.05)),
             const SizedBox(height: 16),
             Row(children: [
               Container(width: 6, height: 6, decoration: const BoxDecoration(color: HeritageColors.orange, shape: BoxShape.circle)),
@@ -311,7 +311,7 @@ class _ExploreScreenState extends State<ExploreScreen> {
   }
 
   Widget _detailPill(IconData icon, String text) {
-    return Container(padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4), decoration: BoxDecoration(color: Colors.white.withOpacity(0.05), borderRadius: BorderRadius.circular(8)), child: Row(mainAxisSize: MainAxisSize.min, children: [Icon(icon, color: HeritageColors.orange, size: 12), const SizedBox(width: 6), Text(text, style: const TextStyle(color: HeritageColors.orange, fontSize: 11, fontWeight: FontWeight.bold))]));
+    return Container(padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4), decoration: BoxDecoration(color: Colors.white.withValues(opacity:0.05), borderRadius: BorderRadius.circular(8)), child: Row(mainAxisSize: MainAxisSize.min, children: [Icon(icon, color: HeritageColors.orange, size: 12), const SizedBox(width: 6), Text(text, style: const TextStyle(color: HeritageColors.orange, fontSize: 11, fontWeight: FontWeight.bold))]));
   }
 
   Widget _actionButton(String label, Color color, VoidCallback onTap) {
@@ -330,7 +330,7 @@ class _ExploreScreenState extends State<ExploreScreen> {
   }
 
   Widget _iconButton(IconData icon, Color color, [VoidCallback? onTap]) {
-    return GestureDetector(onTap: onTap, child: Container(width: 56, height: 56, decoration: BoxDecoration(color: Colors.white.withOpacity(0.05), border: Border.all(color: Colors.white.withOpacity(0.05)), borderRadius: BorderRadius.circular(20)), child: Icon(icon, color: color, size: 22)));
+    return GestureDetector(onTap: onTap, child: Container(width: 56, height: 56, decoration: BoxDecoration(color: Colors.white.withValues(opacity:0.05), border: Border.all(color: Colors.white.withValues(opacity:0.05)), borderRadius: BorderRadius.circular(20)), child: Icon(icon, color: color, size: 22)));
   }
 }
 

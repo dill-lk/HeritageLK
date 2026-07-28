@@ -100,7 +100,7 @@ class _SettingsDetailScreenState extends State<SettingsDetailScreen> {
     }
   }
 
-  Widget _toggle(String label, String subtitle, bool value, ValueChanged<bool> onChanged, IconData icon) => Container(padding: const EdgeInsets.all(18), decoration: BoxDecoration(color: Colors.white.withOpacity(0.05), border: Border.all(color: Colors.white.withOpacity(0.07)), borderRadius: BorderRadius.circular(16)), child: Row(children: [
+  Widget _toggle(String label, String subtitle, bool value, ValueChanged<bool> onChanged, IconData icon) => Container(padding: const EdgeInsets.all(18), decoration: BoxDecoration(color: Colors.white.withValues(opacity:0.05), border: Border.all(color: Colors.white.withValues(opacity:0.07)), borderRadius: BorderRadius.circular(16)), child: Row(children: [
     Icon(icon, color: HeritageColors.orange, size: 20),
     const SizedBox(width: 14),
     Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
@@ -108,10 +108,10 @@ class _SettingsDetailScreenState extends State<SettingsDetailScreen> {
       const SizedBox(height: 2),
       Text(subtitle, style: const TextStyle(color: Color(0x66FFFFFF), fontSize: 11)),
     ])),
-    Switch(value: value, activeColor: Colors.white, activeTrackColor: HeritageColors.orange, onChanged: onChanged),
+    Switch(value: value, activeThumbColor: Colors.white, activeTrackColor: HeritageColors.orange, onChanged: onChanged),
   ]));
 
-  Widget _infoField(String label, String value, IconData icon) => Container(padding: const EdgeInsets.all(18), decoration: BoxDecoration(color: Colors.white.withOpacity(0.05), border: Border.all(color: Colors.white.withOpacity(0.07)), borderRadius: BorderRadius.circular(16)), child: Row(children: [
+  Widget _infoField(String label, String value, IconData icon) => Container(padding: const EdgeInsets.all(18), decoration: BoxDecoration(color: Colors.white.withValues(opacity:0.05), border: Border.all(color: Colors.white.withValues(opacity:0.07)), borderRadius: BorderRadius.circular(16)), child: Row(children: [
     Icon(icon, color: HeritageColors.orange, size: 20),
     const SizedBox(width: 14),
     Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
@@ -122,7 +122,7 @@ class _SettingsDetailScreenState extends State<SettingsDetailScreen> {
     const Icon(Icons.chevron_right, color: Color(0x4DFFFFFF), size: 18),
   ]));
 
-  Widget _action(String label, String subtitle, IconData icon) => Container(padding: const EdgeInsets.all(18), decoration: BoxDecoration(color: Colors.white.withOpacity(0.05), border: Border.all(color: Colors.white.withOpacity(0.07)), borderRadius: BorderRadius.circular(16)), child: Row(children: [
+  Widget _action(String label, String subtitle, IconData icon) => Container(padding: const EdgeInsets.all(18), decoration: BoxDecoration(color: Colors.white.withValues(opacity:0.05), border: Border.all(color: Colors.white.withValues(opacity:0.07)), borderRadius: BorderRadius.circular(16)), child: Row(children: [
     Icon(icon, color: HeritageColors.orange, size: 20),
     const SizedBox(width: 14),
     Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
@@ -133,5 +133,5 @@ class _SettingsDetailScreenState extends State<SettingsDetailScreen> {
     const Icon(Icons.chevron_right, color: Color(0x4DFFFFFF), size: 18),
   ]));
 
-  Widget _round(IconData icon, VoidCallback action) => InkWell(onTap: action, borderRadius: BorderRadius.circular(24), child: Container(width: 40, height: 40, decoration: BoxDecoration(color: Colors.white.withOpacity(0.10), shape: BoxShape.circle), child: Icon(icon, color: HeritageColors.orange, size: 20)));
+  Widget _round(IconData icon, VoidCallback action) => InkWell(onTap: action, borderRadius: BorderRadius.circular(24), child: Container(width: 40, height: 40, decoration: BoxDecoration(color: Colors.white.withValues(opacity:0.10), shape: BoxShape.circle), child: Icon(icon, color: HeritageColors.orange, size: 20)));
 }

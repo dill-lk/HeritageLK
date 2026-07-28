@@ -68,7 +68,7 @@ class _SignupScreenState extends State<SignupScreen> {
                           onPressed: _submitting ? null : _signup,
                           style: FilledButton.styleFrom(
                             backgroundColor: HeritageColors.orange,
-                            disabledBackgroundColor: HeritageColors.orange.withOpacity(0.55),
+                            disabledBackgroundColor: HeritageColors.orange.withValues(opacity:0.55),
                             foregroundColor: HeritageColors.background,
                             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                           ),
@@ -85,9 +85,9 @@ class _SignupScreenState extends State<SignupScreen> {
                       const SizedBox(height: 24),
                       Row(
                         children: [
-                          Expanded(child: Divider(color: HeritageColors.brown.withOpacity(0.20))),
+                          Expanded(child: Divider(color: HeritageColors.brown.withValues(opacity:0.20))),
                           const Padding(padding: EdgeInsets.symmetric(horizontal: 16), child: Text('OR JOIN WITH', style: TextStyle(color: HeritageColors.brown, fontSize: 12, fontWeight: FontWeight.w600, letterSpacing: 0.6))),
-                          Expanded(child: Divider(color: HeritageColors.brown.withOpacity(0.20))),
+                          Expanded(child: Divider(color: HeritageColors.brown.withValues(opacity:0.20))),
                         ],
                       ),
                       const SizedBox(height: 24),
@@ -114,9 +114,9 @@ class _SignupScreenState extends State<SignupScreen> {
     ),
   );
   Widget _hero() => SizedBox(height: 340, child: Stack(fit: StackFit.expand, children: [Image.network('https://api.builder.io/api/v1/image/assets/TEMP/b02856ceecd423ab75d2e1d643e2e881960878b0?width=880', fit: BoxFit.cover, opacity: const AlwaysStoppedAnimation(0.60), errorBuilder: (_, __, ___) => const ColoredBox(color: HeritageColors.background)), const DecoratedBox(decoration: BoxDecoration(gradient: LinearGradient(begin: Alignment.topCenter, end: Alignment.bottomCenter, colors: [Color(0x66100E0A), Color(0x00100E0A), HeritageColors.background]))), const Positioned(left: 24, bottom: 24, child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Text('HeritageLK', style: TextStyle(color: HeritageColors.orange, fontStyle: FontStyle.italic, fontFamily: 'Inter', fontSize: 32, height: 1.4)), Text('JOIN THE LEGACY', style: TextStyle(color: HeritageColors.brown, fontSize: 14, fontWeight: FontWeight.w600, letterSpacing: 0.35))]))]));
-  InputDecoration _decoration(String hint, IconData icon) => InputDecoration(hintText: hint, hintStyle: TextStyle(color: HeritageColors.brown.withOpacity(0.50)), prefixIcon: Icon(icon, color: HeritageColors.brown, size: 18), filled: true, fillColor: HeritageColors.brown.withOpacity(0.10), enabledBorder: OutlineInputBorder(borderSide: BorderSide(color: HeritageColors.brown.withOpacity(0.30)), borderRadius: BorderRadius.circular(16)), focusedBorder: OutlineInputBorder(borderSide: BorderSide(color: HeritageColors.orange.withOpacity(0.50)), borderRadius: BorderRadius.circular(16)));
+  InputDecoration _decoration(String hint, IconData icon) => InputDecoration(hintText: hint, hintStyle: TextStyle(color: HeritageColors.brown.withValues(opacity:0.50)), prefixIcon: Icon(icon, color: HeritageColors.brown, size: 18), filled: true, fillColor: HeritageColors.brown.withValues(opacity:0.10), enabledBorder: OutlineInputBorder(borderSide: BorderSide(color: HeritageColors.brown.withValues(opacity:0.30)), borderRadius: BorderRadius.circular(16)), focusedBorder: OutlineInputBorder(borderSide: BorderSide(color: HeritageColors.orange.withValues(opacity:0.50)), borderRadius: BorderRadius.circular(16)));
   Widget _field(TextEditingController controller, String hint, IconData icon) => TextField(controller: controller, style: const TextStyle(color: HeritageColors.cream, fontSize: 16), decoration: _decoration(hint, icon));
-  Widget _passwordField() => TextField(controller: _password, obscureText: !_showPassword, style: const TextStyle(color: HeritageColors.cream, fontSize: 16), decoration: _decoration('Create Password', Icons.lock_outline).copyWith(suffixIcon: IconButton(onPressed: () => setState(() => _showPassword = !_showPassword), color: HeritageColors.brown.withOpacity(0.50), icon: Icon(_showPassword ? Icons.visibility : Icons.visibility_off, size: 18))));
+  Widget _passwordField() => TextField(controller: _password, obscureText: !_showPassword, style: const TextStyle(color: HeritageColors.cream, fontSize: 16), decoration: _decoration('Create Password', Icons.lock_outline).copyWith(suffixIcon: IconButton(onPressed: () => setState(() => _showPassword = !_showPassword), color: HeritageColors.brown.withValues(opacity:0.50), icon: Icon(_showPassword ? Icons.visibility : Icons.visibility_off, size: 18))));
   Widget _social(String text, IconData icon) => Expanded(
     child: SizedBox(
       height: 56,
@@ -125,8 +125,8 @@ class _SignupScreenState extends State<SignupScreen> {
         icon: Icon(icon, color: HeritageColors.cream),
         label: Text(text, style: const TextStyle(color: HeritageColors.cream, fontSize: 14, fontWeight: FontWeight.w600)),
         style: OutlinedButton.styleFrom(
-          backgroundColor: HeritageColors.brown.withOpacity(0.10),
-          side: BorderSide(color: HeritageColors.brown.withOpacity(0.30)),
+          backgroundColor: HeritageColors.brown.withValues(opacity:0.10),
+          side: BorderSide(color: HeritageColors.brown.withValues(opacity:0.30)),
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         ),
       ),

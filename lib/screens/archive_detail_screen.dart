@@ -67,7 +67,7 @@ class _ArchiveDetailScreenState extends State<ArchiveDetailScreen> {
                 ])),
                 if (_loading) const Center(child: CircularProgressIndicator(color: HeritageColors.orange)),
                 Positioned(left: 24, right: 24, bottom: 20, child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                  Container(padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4), decoration: BoxDecoration(color: HeritageColors.orange.withOpacity(0.10), border: Border.all(color: HeritageColors.orange.withOpacity(0.20)), borderRadius: BorderRadius.circular(4)), child: Text(record.category.toUpperCase(), style: const TextStyle(color: HeritageColors.orange, fontSize: 9, fontWeight: FontWeight.bold, letterSpacing: 1.5))),
+                  Container(padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4), decoration: BoxDecoration(color: HeritageColors.orange.withValues(opacity:0.10), border: Border.all(color: HeritageColors.orange.withValues(opacity:0.20)), borderRadius: BorderRadius.circular(4)), child: Text(record.category.toUpperCase(), style: const TextStyle(color: HeritageColors.orange, fontSize: 9, fontWeight: FontWeight.bold, letterSpacing: 1.5))),
                   const SizedBox(height: 12),
                   Text(record.title, style: const TextStyle(color: Colors.white, fontFamily: 'Playfair Display', fontSize: 36, fontWeight: FontWeight.bold, height: 1.1)),
                   const SizedBox(height: 12),
@@ -85,7 +85,7 @@ class _ArchiveDetailScreenState extends State<ArchiveDetailScreen> {
                 _image('https://images.unsplash.com/photo-1605806616949-1e87b487cb2a?q=80&w=500&auto=format&fit=crop'),
               ]),
               const SizedBox(height: 32),
-              Container(padding: const EdgeInsets.all(24), decoration: BoxDecoration(color: const Color(0xFF1A1311), border: Border.all(color: Colors.white.withOpacity(0.05)), borderRadius: BorderRadius.circular(24)), child: const Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Container(padding: const EdgeInsets.all(24), decoration: BoxDecoration(color: const Color(0xFF1A1311), border: Border.all(color: Colors.white.withValues(opacity:0.05)), borderRadius: BorderRadius.circular(24)), child: const Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                 Row(children: [Icon(Icons.info_outline, color: HeritageColors.orange, size: 20), SizedBox(width: 8), Text('Did you know?', style: TextStyle(color: HeritageColors.orange, fontSize: 14, fontWeight: FontWeight.bold))]),
                 SizedBox(height: 10),
                 Text('Traditional colors were derived from natural sources: white clay, yellow resin, and charred coconut shells for deep blacks.', style: TextStyle(color: Color(0x99FFFFFF), fontSize: 13, height: 1.7)),
@@ -97,7 +97,7 @@ class _ArchiveDetailScreenState extends State<ArchiveDetailScreen> {
     );
   }
 
-  Widget _round(BuildContext context, IconData icon, VoidCallback action, {bool filled = false}) => InkWell(onTap: action, borderRadius: BorderRadius.circular(24), child: Container(width: 40, height: 40, decoration: BoxDecoration(color: Colors.black.withOpacity(0.40), border: Border.all(color: Colors.white.withOpacity(0.10)), shape: BoxShape.circle), child: Icon(icon, color: filled ? HeritageColors.orange : Colors.white, size: 20)));
+  Widget _round(BuildContext context, IconData icon, VoidCallback action, {bool filled = false}) => InkWell(onTap: action, borderRadius: BorderRadius.circular(24), child: Container(width: 40, height: 40, decoration: BoxDecoration(color: Colors.black.withValues(opacity:0.40), border: Border.all(color: Colors.white.withValues(opacity:0.10)), shape: BoxShape.circle), child: Icon(icon, color: filled ? HeritageColors.orange : Colors.white, size: 20)));
   Widget _image(String url) => Expanded(child: ClipRRect(borderRadius: BorderRadius.circular(20), child: Image.network(url, height: 150, fit: BoxFit.cover, errorBuilder: (_, __, ___) => const ColoredBox(color: HeritageColors.brown))));
   Widget _heroImage(String? url) => url == null || url.isEmpty ? const ColoredBox(color: HeritageColors.brown) : Image.network(url, fit: BoxFit.cover, errorBuilder: (_, __, ___) => const ColoredBox(color: HeritageColors.brown));
 

@@ -69,7 +69,7 @@ class _ContributeScreenState extends State<ContributeScreen> {
           const SizedBox(height: 24),
           const Text('Upload Media', style: TextStyle(color: Color(0xCCFFFFFF), fontSize: 14, fontWeight: FontWeight.w600)),
           const SizedBox(height: 12),
-          GestureDetector(onTap: () {}, child: Container(height: 150, decoration: BoxDecoration(color: Colors.white.withOpacity(0.05), border: Border.all(color: Colors.white.withOpacity(0.20)), borderRadius: BorderRadius.circular(16)), child: const Column(mainAxisAlignment: MainAxisAlignment.center, children: [
+          GestureDetector(onTap: () {}, child: Container(height: 150, decoration: BoxDecoration(color: Colors.white.withValues(opacity:0.05), border: Border.all(color: Colors.white.withValues(opacity:0.20)), borderRadius: BorderRadius.circular(16)), child: const Column(mainAxisAlignment: MainAxisAlignment.center, children: [
             CircleAvatar(radius: 24, backgroundColor: HeritageColors.orange, child: Icon(Icons.upload_outlined, color: HeritageColors.background)),
             SizedBox(height: 12),
             Text('Drop photos, audio or PDFs', style: TextStyle(color: HeritageColors.cream, fontWeight: FontWeight.bold)),
@@ -81,7 +81,7 @@ class _ContributeScreenState extends State<ContributeScreen> {
           const SizedBox(height: 32),
           SizedBox(height: 56, child: FilledButton(
             onPressed: _submitting ? null : _submit,
-            style: FilledButton.styleFrom(backgroundColor: HeritageColors.orange, disabledBackgroundColor: HeritageColors.orange.withOpacity(0.50), foregroundColor: HeritageColors.background, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16))),
+            style: FilledButton.styleFrom(backgroundColor: HeritageColors.orange, disabledBackgroundColor: HeritageColors.orange.withValues(opacity:0.50), foregroundColor: HeritageColors.background, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16))),
             child: Text(_submitting ? 'Contributing...' : 'Contribute', style: const TextStyle(fontWeight: FontWeight.bold)),
           )),
         ],
@@ -89,11 +89,11 @@ class _ContributeScreenState extends State<ContributeScreen> {
     ),
   );
 
-  Widget _field(TextEditingController c, String hint, IconData icon) => Container(padding: const EdgeInsets.symmetric(horizontal: 16), decoration: BoxDecoration(color: Colors.white.withOpacity(0.05), border: Border.all(color: Colors.white.withOpacity(0.10)), borderRadius: BorderRadius.circular(16)), child: TextField(controller: c, style: const TextStyle(color: Colors.white, fontSize: 14), decoration: InputDecoration(icon: Icon(icon, color: const Color(0x66FFFFFF), size: 18), hintText: hint, hintStyle: const TextStyle(color: Color(0x33FFFFFF)), border: InputBorder.none)));
+  Widget _field(TextEditingController c, String hint, IconData icon) => Container(padding: const EdgeInsets.symmetric(horizontal: 16), decoration: BoxDecoration(color: Colors.white.withValues(opacity:0.05), border: Border.all(color: Colors.white.withValues(opacity:0.10)), borderRadius: BorderRadius.circular(16)), child: TextField(controller: c, style: const TextStyle(color: Colors.white, fontSize: 14), decoration: InputDecoration(icon: Icon(icon, color: const Color(0x66FFFFFF), size: 18), hintText: hint, hintStyle: const TextStyle(color: Color(0x33FFFFFF)), border: InputBorder.none)));
 
   Widget _categoryField() => Container(
     padding: const EdgeInsets.symmetric(horizontal: 16),
-    decoration: BoxDecoration(color: Colors.white.withOpacity(0.05), border: Border.all(color: Colors.white.withOpacity(0.10)), borderRadius: BorderRadius.circular(16)),
+    decoration: BoxDecoration(color: Colors.white.withValues(opacity:0.05), border: Border.all(color: Colors.white.withValues(opacity:0.10)), borderRadius: BorderRadius.circular(16)),
     child: Row(children: [
       const Icon(Icons.folder_outlined, color: Color(0x66FFFFFF), size: 18),
       const SizedBox(width: 12),
@@ -101,14 +101,14 @@ class _ContributeScreenState extends State<ContributeScreen> {
     ]),
   );
 
-  Widget _descriptionField() => Container(padding: const EdgeInsets.all(16), decoration: BoxDecoration(color: Colors.white.withOpacity(0.05), border: Border.all(color: Colors.white.withOpacity(0.10)), borderRadius: BorderRadius.circular(16)), child: TextField(controller: _description, maxLines: 5, style: const TextStyle(color: Colors.white, fontSize: 14), decoration: const InputDecoration(labelText: 'The Story / Description', labelStyle: TextStyle(color: Color(0x99FFFFFF)), hintText: 'Tell us the historical significance, the origin, or the personal memories associated with this contribution...', hintStyle: TextStyle(color: Color(0x33FFFFFF)), border: InputBorder.none)));
+  Widget _descriptionField() => Container(padding: const EdgeInsets.all(16), decoration: BoxDecoration(color: Colors.white.withValues(opacity:0.05), border: Border.all(color: Colors.white.withValues(opacity:0.10)), borderRadius: BorderRadius.circular(16)), child: TextField(controller: _description, maxLines: 5, style: const TextStyle(color: Colors.white, fontSize: 14), decoration: const InputDecoration(labelText: 'The Story / Description', labelStyle: TextStyle(color: Color(0x99FFFFFF)), hintText: 'Tell us the historical significance, the origin, or the personal memories associated with this contribution...', hintStyle: TextStyle(color: Color(0x33FFFFFF)), border: InputBorder.none)));
 
-  Widget _publicRow() => Container(padding: const EdgeInsets.all(16), decoration: BoxDecoration(color: Colors.white.withOpacity(0.05), border: Border.all(color: Colors.white.withOpacity(0.10)), borderRadius: BorderRadius.circular(16)), child: Row(children: [
+  Widget _publicRow() => Container(padding: const EdgeInsets.all(16), decoration: BoxDecoration(color: Colors.white.withValues(opacity:0.05), border: Border.all(color: Colors.white.withValues(opacity:0.10)), borderRadius: BorderRadius.circular(16)), child: Row(children: [
     const CircleAvatar(radius: 16, backgroundColor: Color(0x1AFFFFFF), child: Icon(Icons.lock_outline, color: Colors.white, size: 14)),
     const SizedBox(width: 12),
     const Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Text('Public Archive', style: TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.bold)), Text('Available for everyone to see', style: TextStyle(color: Color(0x66FFFFFF), fontSize: 12))])),
-    Switch(value: _public, activeColor: Colors.white, activeTrackColor: HeritageColors.orange, onChanged: (value) => setState(() => _public = value)),
+    Switch(value: _public, activeThumbColor: Colors.white, activeTrackColor: HeritageColors.orange, onChanged: (value) => setState(() => _public = value)),
   ]));
 
-  Widget _round(IconData icon, VoidCallback action) => InkWell(onTap: action, borderRadius: BorderRadius.circular(24), child: Container(width: 40, height: 40, decoration: BoxDecoration(color: Colors.white.withOpacity(0.10), border: Border.all(color: Colors.white.withOpacity(0.20)), shape: BoxShape.circle), child: Icon(icon, color: HeritageColors.orange, size: 20)));
+  Widget _round(IconData icon, VoidCallback action) => InkWell(onTap: action, borderRadius: BorderRadius.circular(24), child: Container(width: 40, height: 40, decoration: BoxDecoration(color: Colors.white.withValues(opacity:0.10), border: Border.all(color: Colors.white.withValues(opacity:0.20)), shape: BoxShape.circle), child: Icon(icon, color: HeritageColors.orange, size: 20)));
 }

@@ -70,7 +70,7 @@ class _ReportAdminScreenState extends State<ReportAdminScreen> {
             ]),
             if (_loading) const Padding(padding: EdgeInsets.only(top: 16), child: LinearProgressIndicator(color: HeritageColors.orange, backgroundColor: Color(0x1AFFFFFF))),
             const SizedBox(height: 24),
-            SingleChildScrollView(scrollDirection: Axis.horizontal, child: Row(children: ['all', 'pending', 'in_review', 'resolved', 'rejected'].map((status) => Padding(padding: const EdgeInsets.only(right: 8), child: ChoiceChip(label: Text(status.toUpperCase().replaceAll('_', ' ')), selected: _filter == status, selectedColor: HeritageColors.orange, backgroundColor: Colors.white.withOpacity(0.05), labelStyle: TextStyle(color: _filter == status ? HeritageColors.background : const Color(0x99FFFFFF), fontSize: 10, fontWeight: FontWeight.bold), onSelected: (_) => setState(() => _filter = status)))).toList())),
+            SingleChildScrollView(scrollDirection: Axis.horizontal, child: Row(children: ['all', 'pending', 'in_review', 'resolved', 'rejected'].map((status) => Padding(padding: const EdgeInsets.only(right: 8), child: ChoiceChip(label: Text(status.toUpperCase().replaceAll('_', ' ')), selected: _filter == status, selectedColor: HeritageColors.orange, backgroundColor: Colors.white.withValues(opacity:0.05), labelStyle: TextStyle(color: _filter == status ? HeritageColors.background : const Color(0x99FFFFFF), fontSize: 10, fontWeight: FontWeight.bold), onSelected: (_) => setState(() => _filter = status)))).toList())),
             const SizedBox(height: 20),
             ...reports.map(_reportCard),
           ],
@@ -81,7 +81,7 @@ class _ReportAdminScreenState extends State<ReportAdminScreen> {
 
   int _count(String status) => _reports.where((report) => report.status == status).length;
 
-  Widget _reportCard(DamageReport report) => Container(margin: const EdgeInsets.only(bottom: 12), padding: const EdgeInsets.all(16), decoration: BoxDecoration(color: Colors.white.withOpacity(0.05), border: Border.all(color: Colors.white.withOpacity(0.10)), borderRadius: BorderRadius.circular(16)), child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+  Widget _reportCard(DamageReport report) => Container(margin: const EdgeInsets.only(bottom: 12), padding: const EdgeInsets.all(16), decoration: BoxDecoration(color: Colors.white.withValues(opacity:0.05), border: Border.all(color: Colors.white.withValues(opacity:0.10)), borderRadius: BorderRadius.circular(16)), child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
     Row(children: [Expanded(child: Text(report.damageType, style: const TextStyle(color: HeritageColors.orange, fontWeight: FontWeight.bold))), _badge(report.status)]),
     const SizedBox(height: 8),
     Row(children: [const Icon(Icons.location_on, color: Color(0xFF52B788), size: 14), const SizedBox(width: 6), Text(report.location, style: const TextStyle(color: HeritageColors.cream, fontSize: 14))]),
@@ -95,9 +95,9 @@ class _ReportAdminScreenState extends State<ReportAdminScreen> {
     ]),
   ]));
 
-  Widget _stat(String value, String label, Color color) => Expanded(child: Container(margin: const EdgeInsets.only(right: 6), padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 4), decoration: BoxDecoration(color: color.withOpacity(0.06), border: Border.all(color: color.withOpacity(0.18)), borderRadius: BorderRadius.circular(12)), child: Column(children: [Text(value, style: TextStyle(color: color, fontSize: 18, fontWeight: FontWeight.bold)), Text(label, style: TextStyle(color: color.withOpacity(0.60), fontSize: 8, fontWeight: FontWeight.bold, letterSpacing: 1))])));
+  Widget _stat(String value, String label, Color color) => Expanded(child: Container(margin: const EdgeInsets.only(right: 6), padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 4), decoration: BoxDecoration(color: color.withValues(opacity:0.06), border: Border.all(color: color.withValues(opacity:0.18)), borderRadius: BorderRadius.circular(12)), child: Column(children: [Text(value, style: TextStyle(color: color, fontSize: 18, fontWeight: FontWeight.bold)), Text(label, style: TextStyle(color: color.withValues(opacity:0.60), fontSize: 8, fontWeight: FontWeight.bold, letterSpacing: 1))])));
 
-  Widget _badge(String status) => Container(padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5), decoration: BoxDecoration(color: HeritageColors.orange.withOpacity(0.10), border: Border.all(color: HeritageColors.orange.withOpacity(0.30)), borderRadius: BorderRadius.circular(20)), child: Text(status.replaceAll('_', ' '), style: const TextStyle(color: HeritageColors.orange, fontSize: 10, fontWeight: FontWeight.bold)));
+  Widget _badge(String status) => Container(padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5), decoration: BoxDecoration(color: HeritageColors.orange.withValues(opacity:0.10), border: Border.all(color: HeritageColors.orange.withValues(opacity:0.30)), borderRadius: BorderRadius.circular(20)), child: Text(status.replaceAll('_', ' '), style: const TextStyle(color: HeritageColors.orange, fontSize: 10, fontWeight: FontWeight.bold)));
 
-  Widget _round(IconData icon, VoidCallback action) => InkWell(onTap: action, borderRadius: BorderRadius.circular(24), child: Container(width: 40, height: 40, decoration: BoxDecoration(color: Colors.white.withOpacity(0.10), shape: BoxShape.circle), child: Icon(icon, color: Colors.white, size: 20)));
+  Widget _round(IconData icon, VoidCallback action) => InkWell(onTap: action, borderRadius: BorderRadius.circular(24), child: Container(width: 40, height: 40, decoration: BoxDecoration(color: Colors.white.withValues(opacity:0.10), shape: BoxShape.circle), child: Icon(icon, color: Colors.white, size: 20)));
 }

@@ -85,18 +85,6 @@ class _QuestsScreenState extends State<QuestsScreen> {
       if (mounted) setState(() {});
     }
   }
-          final completedIds = completed.map((q) => q.questId).toSet();
-          if (quests.isNotEmpty) {
-            _activeQuests = quests.where((q) => !completedIds.contains(q.id)).map((q) => _QuestItem(q.id, q.icon ?? '🏆', q.title, q.description, q.points, const Color(0x1AB752B7), const Color(0x20B752B7))).toList();
-            _completedQuests = quests.where((q) => completedIds.contains(q.id)).map((q) => _QuestItem(q.id, q.icon ?? '🏆', q.title, q.description, q.points, const Color(0x1A52B788), const Color(0x2052B788))).toList();
-          }
-          if (leaders.isNotEmpty) _leaders = leaders;
-        });
-      }
-    } finally {
-      if (mounted) setState(() => _loading = false);
-    }
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -111,10 +99,10 @@ class _QuestsScreenState extends State<QuestsScreen> {
                 Text('Quests', style: GoogleFonts.plusJakartaSans(color: HeritageColors.cream, fontSize: 32, fontWeight: FontWeight.w800, height: 1.5, letterSpacing: -0.8)),
                 const Text('Protect and Discover Heritage', style: TextStyle(color: Color(0x99FEFAE0), fontSize: 14, fontWeight: FontWeight.w500, height: 1.4)),
               ]),
-              Container(width: 44, height: 44, decoration: BoxDecoration(color: Colors.white.withOpacity(0.05), border: Border.all(color: HeritageColors.orange.withOpacity(0.15)), shape: BoxShape.circle), child: const Icon(Icons.notifications_outlined, color: HeritageColors.cream, size: 20)),
+              Container(width: 44, height: 44, decoration: BoxDecoration(color: Colors.white.withValues(opacity:0.05), border: Border.all(color: HeritageColors.orange.withValues(opacity:0.15)), shape: BoxShape.circle), child: const Icon(Icons.notifications_outlined, color: HeritageColors.cream, size: 20)),
             ]),
             const SizedBox(height: 32),
-            Container(padding: const EdgeInsets.all(24), decoration: BoxDecoration(color: Colors.white.withOpacity(0.05), border: Border.all(color: HeritageColors.orange.withOpacity(0.10)), borderRadius: BorderRadius.circular(32)), child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Container(padding: const EdgeInsets.all(24), decoration: BoxDecoration(color: Colors.white.withValues(opacity:0.05), border: Border.all(color: HeritageColors.orange.withValues(opacity:0.10)), borderRadius: BorderRadius.circular(32)), child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
               Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
                 Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                   const Text('Heritage Protector', style: TextStyle(color: HeritageColors.orange, fontSize: 10, fontWeight: FontWeight.bold, letterSpacing: 2)),
@@ -127,7 +115,7 @@ class _QuestsScreenState extends State<QuestsScreen> {
                   const SizedBox(height: 2),
                   Text('Global Rank: #${_userRank == 0 ? '-' : _userRank}', style: const TextStyle(color: Color(0x99E9C46A), fontSize: 12)),
                 ]),
-                Container(width: 48, height: 48, decoration: BoxDecoration(color: HeritageColors.orange.withOpacity(0.10), shape: BoxShape.circle), child: Center(child: Text('Lvl $level', style: const TextStyle(color: HeritageColors.orange, fontSize: 14, fontWeight: FontWeight.bold)))),
+                Container(width: 48, height: 48, decoration: BoxDecoration(color: HeritageColors.orange.withValues(opacity:0.10), shape: BoxShape.circle), child: Center(child: Text('Lvl $level', style: const TextStyle(color: HeritageColors.orange, fontSize: 14, fontWeight: FontWeight.bold)))),
               ]),
               const SizedBox(height: 20),
               Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [const Text('Progress to next Level', style: TextStyle(color: Color(0x99FEFAE0), fontSize: 12)), Text('$progress%', style: const TextStyle(color: HeritageColors.orange, fontSize: 12, fontWeight: FontWeight.bold))]),
@@ -140,7 +128,7 @@ class _QuestsScreenState extends State<QuestsScreen> {
               const Text('Season 4', style: TextStyle(color: HeritageColors.orange, fontSize: 10, fontWeight: FontWeight.bold, letterSpacing: 2)),
             ]),
             const SizedBox(height: 16),
-            Container(decoration: BoxDecoration(color: Colors.white.withOpacity(0.05), border: Border.all(color: HeritageColors.orange.withOpacity(0.10)), borderRadius: BorderRadius.circular(32)), child: Column(children: _leaders.asMap().entries.map((entry) {
+            Container(decoration: BoxDecoration(color: Colors.white.withValues(opacity:0.05), border: Border.all(color: HeritageColors.orange.withValues(opacity:0.10)), borderRadius: BorderRadius.circular(32)), child: Column(children: _leaders.asMap().entries.map((entry) {
               final i = entry.key;
               final leader = entry.value;
               final score = leader.points >= 1000 ? '${(leader.points / 1000).toStringAsFixed(1)}k' : '${leader.points}';
@@ -169,9 +157,9 @@ class _QuestsScreenState extends State<QuestsScreen> {
     );
   }
 
-  Widget _questCard(_QuestItem quest) => Container(margin: const EdgeInsets.only(bottom: 12), padding: const EdgeInsets.all(20), decoration: BoxDecoration(color: Colors.white.withOpacity(0.05), border: Border.all(color: quest.border), borderRadius: BorderRadius.circular(32)), child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+  Widget _questCard(_QuestItem quest) => Container(margin: const EdgeInsets.only(bottom: 12), padding: const EdgeInsets.all(20), decoration: BoxDecoration(color: Colors.white.withValues(opacity:0.05), border: Border.all(color: quest.border), borderRadius: BorderRadius.circular(32)), child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
     Row(children: [
-      Container(width: 40, height: 48, decoration: BoxDecoration(color: const Color(0xFF1F160E), border: Border.all(color: HeritageColors.orange.withOpacity(0.10)), borderRadius: BorderRadius.circular(16)), child: Center(child: Text(quest.icon, style: const TextStyle(fontSize: 24)))),
+      Container(width: 40, height: 48, decoration: BoxDecoration(color: const Color(0xFF1F160E), border: Border.all(color: HeritageColors.orange.withValues(opacity:0.10)), borderRadius: BorderRadius.circular(16)), child: Center(child: Text(quest.icon, style: const TextStyle(fontSize: 24)))),
       const SizedBox(width: 16),
       Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
         Text(quest.title, style: const TextStyle(color: HeritageColors.cream, fontSize: 16, fontWeight: FontWeight.bold)),
@@ -186,8 +174,8 @@ class _QuestsScreenState extends State<QuestsScreen> {
     ]),
   ]));
 
-  Widget _completedCard(_QuestItem quest) => Container(margin: const EdgeInsets.only(bottom: 8), padding: const EdgeInsets.all(20), decoration: BoxDecoration(color: const Color(0xFF241B13), border: Border.all(color: HeritageColors.orange.withOpacity(0.10)), borderRadius: BorderRadius.circular(32)), child: Row(children: [
-    Container(width: 56, height: 56, decoration: BoxDecoration(color: const Color(0xFF1F160E), border: Border.all(color: HeritageColors.orange.withOpacity(0.10)), borderRadius: BorderRadius.circular(16)), child: Center(child: Text(quest.icon, style: const TextStyle(fontSize: 28)))),
+  Widget _completedCard(_QuestItem quest) => Container(margin: const EdgeInsets.only(bottom: 8), padding: const EdgeInsets.all(20), decoration: BoxDecoration(color: const Color(0xFF241B13), border: Border.all(color: HeritageColors.orange.withValues(opacity:0.10)), borderRadius: BorderRadius.circular(32)), child: Row(children: [
+    Container(width: 56, height: 56, decoration: BoxDecoration(color: const Color(0xFF1F160E), border: Border.all(color: HeritageColors.orange.withValues(opacity:0.10)), borderRadius: BorderRadius.circular(16)), child: Center(child: Text(quest.icon, style: const TextStyle(fontSize: 28)))),
     const SizedBox(width: 16),
     Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
       Text(quest.title, style: const TextStyle(color: HeritageColors.orange, fontSize: 16, fontWeight: FontWeight.bold)),
@@ -206,7 +194,7 @@ class _QuestsScreenState extends State<QuestsScreen> {
     return GestureDetector(
       onTap: () => setState(() => _activeFlowQuest = null),
       child: Container(
-        color: Colors.black.withOpacity(0.80),
+        color: Colors.black.withValues(opacity:0.80),
         child: Align(
           alignment: Alignment.center,
           child: GestureDetector(
@@ -216,21 +204,21 @@ class _QuestsScreenState extends State<QuestsScreen> {
               padding: const EdgeInsets.all(24),
               decoration: BoxDecoration(
                 color: const Color(0xFF241B13),
-                border: Border.all(color: HeritageColors.orange.withOpacity(0.20)),
+                border: Border.all(color: HeritageColors.orange.withValues(opacity:0.20)),
                 borderRadius: BorderRadius.circular(32),
               ),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Align(alignment: Alignment.topRight, child: GestureDetector(onTap: () => setState(() => _activeFlowQuest = null), child: const Icon(Icons.close, color: Colors.white54, size: 24))),
-                  Container(width: 64, height: 64, decoration: BoxDecoration(color: const Color(0xFF1F160E), border: Border.all(color: HeritageColors.orange.withOpacity(0.20)), shape: BoxShape.circle), child: Center(child: Text(quest.icon, style: const TextStyle(fontSize: 32)))),
+                  Container(width: 64, height: 64, decoration: BoxDecoration(color: const Color(0xFF1F160E), border: Border.all(color: HeritageColors.orange.withValues(opacity:0.20)), shape: BoxShape.circle), child: Center(child: Text(quest.icon, style: const TextStyle(fontSize: 32)))),
                   const SizedBox(height: 16),
                   Text(quest.title, style: const TextStyle(color: HeritageColors.cream, fontSize: 20, fontWeight: FontWeight.bold)),
                   const SizedBox(height: 8),
                   if (_flowStep == 'intro') ...[
                     Text(quest.description, style: const TextStyle(color: Colors.white70, fontSize: 14), textAlign: TextAlign.center),
                     const SizedBox(height: 24),
-                    Container(padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8), decoration: BoxDecoration(color: HeritageColors.orange.withOpacity(0.10), borderRadius: BorderRadius.circular(12)), child: Text('Reward: +${quest.points} PTS', style: const TextStyle(color: HeritageColors.orange, fontSize: 14, fontWeight: FontWeight.bold))),
+                    Container(padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8), decoration: BoxDecoration(color: HeritageColors.orange.withValues(opacity:0.10), borderRadius: BorderRadius.circular(12)), child: Text('Reward: +${quest.points} PTS', style: const TextStyle(color: HeritageColors.orange, fontSize: 14, fontWeight: FontWeight.bold))),
                     const SizedBox(height: 24),
                      GestureDetector(onTap: () async {
                         setState(() => _flowStep = 'checking_location');
@@ -274,10 +262,10 @@ class _QuestsScreenState extends State<QuestsScreen> {
                     const SizedBox(height: 16),
                     const Text('To complete this quest, answer the guardian\'s question:', style: TextStyle(color: Colors.white, fontSize: 14), textAlign: TextAlign.center),
                     const SizedBox(height: 16),
-                    Container(width: double.infinity, padding: const EdgeInsets.all(16), decoration: BoxDecoration(color: Colors.black26, borderRadius: BorderRadius.circular(16), border: Border.all(color: Colors.white.withOpacity(0.05))), child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                    Container(width: double.infinity, padding: const EdgeInsets.all(16), decoration: BoxDecoration(color: Colors.black26, borderRadius: BorderRadius.circular(16), border: Border.all(color: Colors.white.withValues(opacity:0.05))), child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                       const Text('What is a key historical or ecological fact associated with this location?', style: TextStyle(color: Colors.white, fontSize: 14, height: 1.5)),
                       const SizedBox(height: 16),
-                      ...['Built to protect the coast / Endemic ecosystem', 'Created within the last decade', 'A shopping complex'].asMap().entries.map((entry) => GestureDetector(onTap: () => setState(() => _quizSelection = entry.key), child: Container(margin: const EdgeInsets.only(bottom: 8), padding: const EdgeInsets.all(14), decoration: BoxDecoration(color: _quizSelection == entry.key ? HeritageColors.orange.withOpacity(0.20) : Colors.white.withOpacity(0.05), border: Border.all(color: _quizSelection == entry.key ? HeritageColors.orange : Colors.white.withOpacity(0.05)), borderRadius: BorderRadius.circular(12)), child: Text(entry.value, style: TextStyle(color: _quizSelection == entry.key ? HeritageColors.orange : Colors.white70, fontSize: 14))))),
+                      ...['Built to protect the coast / Endemic ecosystem', 'Created within the last decade', 'A shopping complex'].asMap().entries.map((entry) => GestureDetector(onTap: () => setState(() => _quizSelection = entry.key), child: Container(margin: const EdgeInsets.only(bottom: 8), padding: const EdgeInsets.all(14), decoration: BoxDecoration(color: _quizSelection == entry.key ? HeritageColors.orange.withValues(opacity:0.20) : Colors.white.withValues(opacity:0.05), border: Border.all(color: _quizSelection == entry.key ? HeritageColors.orange : Colors.white.withValues(opacity:0.05)), borderRadius: BorderRadius.circular(12)), child: Text(entry.value, style: TextStyle(color: _quizSelection == entry.key ? HeritageColors.orange : Colors.white70, fontSize: 14))))),
                     ])),
                     const SizedBox(height: 16),
                     GestureDetector(onTap: _quizSelection == 0 ? () async {

@@ -1,5 +1,4 @@
 import 'dart:io';
-import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:image_picker/image_picker.dart';
@@ -132,15 +131,15 @@ class _ScannerScreenState extends State<ScannerScreen> {
                 const SizedBox(height: 24),
                 Container(
                   height: 260,
-                  decoration: BoxDecoration(color: const Color(0xFF1A1311), borderRadius: BorderRadius.circular(24), border: Border.all(color: HeritageColors.orange.withOpacity(0.20))),
+                  decoration: BoxDecoration(color: const Color(0xFF1A1311), borderRadius: BorderRadius.circular(24), border: Border.all(color: HeritageColors.orange.withValues(opacity:0.20))),
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Container(width: 80, height: 80, decoration: BoxDecoration(color: HeritageColors.orange.withOpacity(0.10), shape: BoxShape.circle), child: Icon(Icons.camera_alt, color: HeritageColors.orange, size: 36)),
+                      Container(width: 80, height: 80, decoration: BoxDecoration(color: HeritageColors.orange.withValues(opacity:0.10), shape: BoxShape.circle), child: Icon(Icons.camera_alt, color: HeritageColors.orange, size: 36)),
                       const SizedBox(height: 16),
                       Text(_visits.isEmpty ? 'Capture your heritage journey' : '${_visits.length} visit${_visits.length == 1 ? '' : 's'} captured', style: const TextStyle(color: HeritageColors.cream, fontSize: 16, fontWeight: FontWeight.bold)),
                       const SizedBox(height: 8),
-                      Text('Tap below to take a photo at a heritage site', style: TextStyle(color: Colors.white.withOpacity(0.60), fontSize: 13)),
+                      Text('Tap below to take a photo at a heritage site', style: TextStyle(color: Colors.white.withValues(opacity:0.60), fontSize: 13)),
                       const SizedBox(height: 20),
                       FilledButton.icon(
                         onPressed: _saving ? null : _captureVisit,
@@ -164,7 +163,7 @@ class _ScannerScreenState extends State<ScannerScreen> {
                   ..._visits.map((visit) => Container(
                     margin: const EdgeInsets.only(bottom: 12),
                     padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(color: Colors.white.withOpacity(0.05), border: Border.all(color: Colors.white.withOpacity(0.08)), borderRadius: BorderRadius.circular(20)),
+                    decoration: BoxDecoration(color: Colors.white.withValues(opacity:0.05), border: Border.all(color: Colors.white.withValues(opacity:0.08)), borderRadius: BorderRadius.circular(20)),
                     child: Row(
                       children: [
                         ClipRRect(
@@ -196,5 +195,5 @@ class _ScannerScreenState extends State<ScannerScreen> {
     );
   }
 
-  Widget _round(IconData icon, VoidCallback action) => InkWell(onTap: action, borderRadius: BorderRadius.circular(24), child: Container(width: 40, height: 40, decoration: BoxDecoration(color: Colors.white.withOpacity(0.05), border: Border.all(color: Colors.white.withOpacity(0.10)), shape: BoxShape.circle), child: Icon(icon, color: HeritageColors.orange, size: 20)));
+  Widget _round(IconData icon, VoidCallback action) => InkWell(onTap: action, borderRadius: BorderRadius.circular(24), child: Container(width: 40, height: 40, decoration: BoxDecoration(color: Colors.white.withValues(opacity:0.05), border: Border.all(color: Colors.white.withValues(opacity:0.10)), shape: BoxShape.circle), child: Icon(icon, color: HeritageColors.orange, size: 20)));
 }
