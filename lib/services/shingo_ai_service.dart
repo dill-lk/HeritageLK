@@ -1,21 +1,30 @@
-import 'dart:convert';
 import 'package:google_generative_ai/google_generative_ai.dart';
 import 'package:http/http.dart' as http;
-import '../config/app_config.dart';
 import 'wikipedia_service.dart';
 
 class ShingoAiService {
   static const _systemPrompt = '''
-You are Shingo, an advanced AI assistant for HeritageLK, Sri Lanka's premier heritage and wildlife exploration app.
-You have deep knowledge about Sri Lankan heritage sites, wildlife, entry fees, weather, directions, history, and culture.
-When external context is provided, use it to enrich your answer. Cite sources naturally if context is present.
-Always answer in a friendly, concise way. Use emojis sparingly. Prioritize accuracy.
-If you don't know something, admit it honestly.
-Keep responses under 3 sentences unless the user asks for more detail.
+You are Shingo, the exclusive AI assistant for HeritageLK, Sri Lanka's premier heritage and wildlife exploration app.
+STRICT RULES:
+- ONLY answer questions directly related to Sri Lankan heritage, wildlife, culture, history, entry fees, directions, weather, or the HeritageLK app itself.
+- If a question is unrelated to HeritageLK or Sri Lankan heritage, politely refuse and say: "I only answer questions about Sri Lankan heritage and the HeritageLK app."
+- NEVER answer general knowledge, coding, math, politics, entertainment, or any off-topic questions.
+- When external context is provided, use it to enrich your answer. Cite sources naturally if context is present.
+- Always answer in a friendly, concise way. Use emojis sparingly. Prioritize accuracy.
+- If you don't know something, admit it honestly.
+- Keep responses under 3 sentences unless the user asks for more detail.
 ''';
 
   GenerativeModel? _model;
   final WikipediaService _wiki;
+
+  static const _offTopicIndicators = <String>[
+    'joke', 'riddle', 'political', 'president', 'prime minister', 'salary', 'stock', 'bitcoin', 'crypto',
+    'python', 'javascript', 'code', 'program', 'movie', 'actor', 'actress', 'music', 'song', 'game',
+    'sports', 'football', 'cricket score', 'recipe', 'cook', 'doctor', 'medicine', 'lawyer', 'legal',
+    'generate image', 'draw', 'poem', 'story', 'translate', 'language', 'date', 'love', 'relationship',
+    'capital of france', 'capital of usa', 'what is ai', 'who are you', 'your name',
+  ];
 
   ShingoAiService({String? apiKey, http.Client? httpClient})
       : _wiki = WikipediaService(client: httpClient) {
@@ -40,10 +49,19 @@ Keep responses under 3 sentences unless the user asks for more detail.
   bool get isAvailable => _model != null;
 
   Future<String> chat(List<Map<String, String>> history, String userMessage) async {
+    final lower = userMessage.toLowerCase();
+    final isHeritageRelated = _isHeritageRelated(lower);
+
+    if (!isHeritageRelated) {
+      return 'I only answer questions about Sri Lankan heritage and the HeritageLK app. Ask me anything about heritage sites, entry fees, directions, weather, or the app itself!';
+    }
+
     String? context;
-    try {
-      context = await _wiki.search(userMessage);
-    } catch (_) {}
+    if (isHeritageRelated) {
+      try {
+        context = await _wiki.search(userMessage);
+      } catch (_) {}
+    }
 
     final prompt = context != null ? 'Context from Wikipedia:\n$context\n\nQuestion: $userMessage' : userMessage;
 
@@ -64,12 +82,46 @@ Keep responses under 3 sentences unless the user asks for more detail.
     }
   }
 
+  bool _isHeritageRelated(String lower) {
+    final heritageKeywords = <String>[
+      'heritage', 'site', 'temple', 'fort', 'rock', 'national park', 'wildlife', 'elephant', 'leopard',
+      'sigiriya', 'galle', 'kandy', 'colombo', 'ella', 'anuradhapura', 'polonnaruwa', 'dambulla',
+      'minneriya', 'yala', 'horton plains', 'adams peak', 'pinnawala', 'jaffna', 'mirissa',
+      'nuwara eliya', 'anuradhapura', 'pollonnaruwa', 'rawana', 'arugam bay',
+      'entry', 'ticket', 'price', 'fee', 'cost', 'free', 'usd', 'lkr',
+      'weather', 'temperature', 'climate', 'rain', 'monsoon', 'season',
+      'direction', 'how to reach', 'how to get', 'train', 'bus', 'flight', 'airport',
+      'history', 'ancient', 'king', 'dutch', 'portuguese', 'british', 'unesco', 'world heritage',
+      'buddhist', 'hindu', 'temple', 'shrine', 'mosque', 'church',
+      'beach', 'surf', 'waterfall', 'mountain', 'hike', 'climb',
+      'heritagelk', 'app', 'feature', 'quest', 'archive', 'scanner', 'map', 'profile', 'settings',
+      'points', 'rank', 'level', 'badge', 'leaderboard',
+      'shingo', 'ai', 'ask', 'help', 'assistant',
+    ];
+
+    final offTopic = _offTopicIndicators.any((indicator) => lower.contains(indicator));
+    if (offTopic) return false;
+
+    final related = heritageKeywords.any((keyword) => lower.contains(keyword));
+    if (related) return true;
+
+    if (lower.length < 3) return false;
+    if (lower.contains('?')) {
+      final questionWords = <String>['what', 'where', 'when', 'how', 'why', 'who', 'which', 'tell', 'explain', 'describe', 'show', 'list', 'find', 'search', 'recommend', 'suggest', 'plan', 'itinerary', 'visit', 'see', 'do', 'know'];
+      if (questionWords.any((w) => lower.startsWith(w))) {
+        return true;
+      }
+    }
+
+    return false;
+  }
+
   List<Content> _toGeminiHistory(List<Map<String, String>> history) {
     final result = <Content>[];
     for (final msg in history) {
       final text = msg['content'] ?? '';
       if (text.isEmpty) continue;
-      result.add(msg['role'] == 'user' ? Content.user(text) : Content.model(text));
+      result.add(msg['role'] == 'user' ? Content(Role.user, [TextPart(text)]) : Content(Role.model, [TextPart(text)]));
     }
     return result;
   }
