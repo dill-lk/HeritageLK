@@ -87,6 +87,30 @@ class _ReportAdminScreenState extends State<ReportAdminScreen> {
     Row(children: [const Icon(Icons.location_on, color: Color(0xFF52B788), size: 14), const SizedBox(width: 6), Text(report.location, style: const TextStyle(color: HeritageColors.cream, fontSize: 14))]),
     const SizedBox(height: 8),
     Text(report.details.isEmpty ? 'Report details awaiting review.' : report.details, style: const TextStyle(color: Color(0x80FFFFFF), fontSize: 12)),
+    if (report.photos.isNotEmpty) ...[
+      const SizedBox(height: 10),
+      SizedBox(
+        height: 60,
+        child: ListView.separated(
+          scrollDirection: Axis.horizontal,
+          itemCount: report.photos.length,
+          separatorBuilder: (_, __) => const SizedBox(width: 8),
+          itemBuilder: (_, i) {
+            final p = report.photos[i];
+            return ClipRRect(
+              borderRadius: BorderRadius.circular(8),
+              child: SizedBox(
+                width: 60,
+                height: 60,
+                child: p.startsWith('http')
+                    ? Image.network(p, fit: BoxFit.cover)
+                    : Container(color: Colors.white10, child: const Icon(Icons.image, color: Colors.white54, size: 20)),
+              ),
+            );
+          },
+        ),
+      ),
+    ],
     const SizedBox(height: 12),
     Row(children: [
       TextButton(onPressed: () => _updateStatus(report, 'in_review'), child: const Text('Review', style: TextStyle(color: HeritageColors.orange))),

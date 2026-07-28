@@ -152,27 +152,60 @@ class _ExploreScreenState extends State<ExploreScreen> {
           _mapBackground(filtered, current),
           _topOverlay(q, filtered),
           _bottomInfoCard(current),
-          _buildZoomControls(),
+          _buildZoomControls(current),
           const Align(alignment: Alignment.bottomCenter, child: HeritageBottomNav(currentIndex: 1)),
         ]),
       ),
     );
   }
 
-  Widget _buildZoomControls() {
+  Widget _buildZoomControls(_SiteData current) {
     return Positioned(
       right: 16,
-      bottom: 140,
+      top: 130,
       child: Column(children: [
-        _zoomButton(Icons.add, () => _mapController.move(_mapController.camera.center, (_mapController.camera.zoom + 1).clamp(6.0, 18.0))),
+        _zoomButton(Icons.add, () {
+          final currentZoom = _mapController.camera.zoom;
+          _mapController.move(_mapController.camera.center, (currentZoom + 1.2).clamp(6.0, 18.0));
+        }),
         const SizedBox(height: 8),
-        _zoomButton(Icons.remove, () => _mapController.move(_mapController.camera.center, (_mapController.camera.zoom - 1).clamp(6.0, 18.0))),
+        _zoomButton(Icons.remove, () {
+          final currentZoom = _mapController.camera.zoom;
+          _mapController.move(_mapController.camera.center, (currentZoom - 1.2).clamp(6.0, 18.0));
+        }),
+        const SizedBox(height: 8),
+        _zoomButton(Icons.my_location, () {
+          _mapController.move(LatLng(current.lat, current.lon), 11.5);
+        }),
       ]),
     );
   }
 
   Widget _zoomButton(IconData icon, VoidCallback onTap) {
-    return InkWell(onTap: onTap, child: Container(width: 40, height: 40, decoration: BoxDecoration(color: const Color(0xE61A1311), shape: BoxShape.circle, border: Border.all(color: Colors.white.withValues(alpha:0.10))), child: Icon(icon, color: HeritageColors.orange, size: 20)));
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(24),
+        child: Container(
+          width: 44,
+          height: 44,
+          decoration: BoxDecoration(
+            color: const Color(0xF01A1311),
+            shape: BoxShape.circle,
+            border: Border.all(color: Colors.white.withValues(alpha: 0.15)),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.4),
+                blurRadius: 8,
+                offset: const Offset(0, 2),
+              ),
+            ],
+          ),
+          child: Icon(icon, color: HeritageColors.orange, size: 20),
+        ),
+      ),
+    );
   }
 
   Widget _mapBackground(List<_SiteData> filtered, _SiteData current) {
@@ -184,6 +217,10 @@ class _ExploreScreenState extends State<ExploreScreen> {
           initialZoom: 8.5,
           minZoom: 6.0,
           maxZoom: 18.0,
+          interactionOptions: const InteractionOptions(
+            flags: InteractiveFlag.all,
+            enableMultiFingerGestureRace: true,
+          ),
         ),
         children: [
            TileLayer(
