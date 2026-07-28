@@ -22,7 +22,6 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
   Profile? _profile;
   List<UserQuest> _completed = const [];
   int _rank = 0;
-  bool _loading = false;
   late final AnimationController _avatarController = AnimationController(duration: const Duration(milliseconds: 800), vsync: this);
   late final Animation<double> _avatarScale = CurvedAnimation(parent: _avatarController, curve: Curves.elasticOut);
 
@@ -41,7 +40,6 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
 
   Future<void> _loadProfile() async {
     if (!AppConfig.hasSupabase) return;
-    setState(() => _loading = true);
     try {
       final client = Supabase.instance.client;
       if (client.auth.currentSession == null) {
@@ -60,7 +58,7 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
         });
       }
     } finally {
-      if (mounted) setState(() => _loading = false);
+      if (mounted) {}
     }
   }
 
@@ -77,8 +75,6 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
     final points = _profile?.points ?? 0;
     final level = points <= 0 ? 1 : (points ~/ 100).clamp(1, 999);
     final progress = points % 100;
-    final nextLevelPoints = level * 100;
-    final currentLevelPoints = (level - 1) * 100;
     final levelProgress = progress / 100;
 
     return Scaffold(
@@ -128,7 +124,7 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
       ),
       child: Column(children: [
         Row(children: [
-          ScaleTransition(scale: _avatarScale, child: Container(width: 72, height: 72, decoration: BoxDecoration(shape: BoxShape.circle, border: Border.all(color: HeritageColors.orange, width: 3)), child: CircleAvatar(radius: 64, backgroundColor: HeritageColors.brown, child: Text((_profile?.fullName?.isNotEmpty == true ? _profile!.fullName![0] : 'E').toUpperCase(), style: TextStyle(color: HeritageColors.cream, fontSize: 32, fontWeight: FontWeight.bold))))),
+          ScaleTransition(scale: _avatarScale, child: Container(width: 72, height: 72, decoration: BoxDecoration(shape: BoxShape.circle, border: Border.all(color: HeritageColors.orange, width: 3)), child: CircleAvatar(radius: 64, backgroundColor: HeritageColors.brown, child: Builder(builder: (context) { final name = _profile?.fullName; final initial = (name != null && name.isNotEmpty) ? name[0] : 'E'; return Text(initial.toUpperCase(), style: const TextStyle(color: HeritageColors.cream, fontSize: 32, fontWeight: FontWeight.bold)); })))),
           const SizedBox(width: 16),
           Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
             Text(_profile?.fullName ?? 'Explorer', style: TextStyle(color: HeritageColors.cream, fontSize: 22, fontWeight: FontWeight.bold)),

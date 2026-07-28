@@ -63,8 +63,6 @@ STRICT RULES:
       } catch (_) {}
     }
 
-    final prompt = context != null ? 'Context from Wikipedia:\n$context\n\nQuestion: $userMessage' : userMessage;
-
     try {
       final conversation = history.map((m) => '${m['role'] == 'user' ? 'User' : 'Shingo'}: ${m['content']}').join('\n');
       final fullPrompt = conversation.isNotEmpty ? '$conversation\n\nUser: $userMessage' : userMessage;
