@@ -186,18 +186,18 @@ class _HomeScreenState extends State<HomeScreen> {
                       border: Border.all(color: HeritageColors.orange.withValues(alpha: 0.20)),
                       borderRadius: BorderRadius.circular(16),
                     ),
-                    child: Row(
+                    child: const Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Text('⚠️', style: TextStyle(fontSize: 20)),
-                        const SizedBox(width: 12),
-                        const Expanded(
+                        Text('⚠️', style: TextStyle(fontSize: 20)),
+                        SizedBox(width: 12),
+                        Expanded(
                           child: Text(
                             'Community Report: Review the latest damage reports near you. Tap to verify.',
                             style: TextStyle(color: HeritageColors.orange, fontSize: 14, fontWeight: FontWeight.w500, height: 1.625),
                           ),
                         ),
-                        const Icon(Icons.chevron_right, color: Color(0x99F4A261)),
+                        Icon(Icons.chevron_right, color: Color(0x99F4A261)),
                       ],
                     ),
                   ),
@@ -501,7 +501,7 @@ class _BannerCard extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(title, style: TextStyle(color: HeritageColors.cream, fontSize: 20, fontWeight: FontWeight.bold)),
+                    Text(title, style: const TextStyle(color: HeritageColors.cream, fontSize: 20, fontWeight: FontWeight.bold)),
                     const SizedBox(height: 4),
                     Text(subtitle, style: const TextStyle(color: Color(0xB3FEFAE0), fontSize: 13, height: 1.5)),
                   ],
@@ -538,7 +538,7 @@ class _NearbyCard extends StatelessWidget {
               Container(
                 width: 56,
                 height: 56,
-                decoration: BoxDecoration(color: const Color(0x0DFEFAE0), shape: BoxShape.circle),
+                decoration: const BoxDecoration(color: Color(0x0DFEFAE0), shape: BoxShape.circle),
                 child: Center(child: Text(emoji, style: const TextStyle(fontSize: 32))),
               ),
               const SizedBox(height: 16),
