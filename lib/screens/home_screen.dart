@@ -26,7 +26,6 @@ class _HomeScreenState extends State<HomeScreen> {
   int _rank = 0;
   int _visited = 0;
   List<Map<String, String>> _placesToExplore = LocationService.getPlacesToExplore(null);
-  Position? _currentPosition;
 
   @override
   void initState() {
@@ -40,7 +39,6 @@ class _HomeScreenState extends State<HomeScreen> {
       final pos = await LocationService.getCurrentPosition();
       if (pos != null && mounted) {
         setState(() {
-          _currentPosition = pos;
           _placesToExplore = LocationService.getPlacesToExplore(pos);
         });
       }
