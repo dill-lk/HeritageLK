@@ -42,8 +42,15 @@ class LocationService {
       }
       if (permission == LocationPermission.deniedForever) return null;
 
+      // Try fast last known position first
+      Position? position = await Geolocator.getLastKnownPosition();
+      if (position != null) return position;
+
       return await Geolocator.getCurrentPosition(
-        locationSettings: const LocationSettings(accuracy: LocationAccuracy.high),
+        locationSettings: const LocationSettings(
+          accuracy: LocationAccuracy.high,
+          timeLimit: Duration(seconds: 8),
+        ),
       );
     } catch (_) {
       return null;
