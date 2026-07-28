@@ -67,11 +67,23 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
     if (mounted) Navigator.of(context).pushReplacementNamed('/login');
   }
 
+  String _getDisplayName() {
+    final user = Supabase.instance.client.auth.currentUser;
+    final profileName = _profile?.fullName;
+    if (profileName != null && profileName.isNotEmpty) return profileName;
+    final metaName = user?.userMetadata?['full_name']?.toString();
+    if (metaName != null && metaName.isNotEmpty) return metaName;
+    final email = user?.email;
+    if (email != null && email.isNotEmpty) {
+      final local = email.split('@').first;
+      if (local.isNotEmpty) return local;
+    }
+    return 'Explorer';
+  }
+
   @override
   Widget build(BuildContext context) {
-    final user = AppConfig.hasSupabase ? Supabase.instance.client.auth.currentUser : null;
-    final emailName = user?.email?.split('@').first;
-    final name = _profile?.fullName ?? user?.userMetadata?['full_name']?.toString() ?? emailName ?? 'Explorer';
+    final name = _getDisplayName();
     final points = _profile?.points ?? 0;
     final level = points <= 0 ? 1 : (points ~/ 100).clamp(1, 999);
     final progress = points % 100;
@@ -83,7 +95,7 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
           onVerticalDragUpdate: (_) {},
           child: Stack(children: [
             ListView(padding: const EdgeInsets.fromLTRB(20, 12, 20, 140), children: [
-              _buildHeader(name),
+              _buildHeader(),
               const SizedBox(height: 24),
               _buildLevelCard(level, levelProgress, points),
               const SizedBox(height: 20),
@@ -104,7 +116,7 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
     );
   }
 
-  Widget _buildHeader(String name) {
+  Widget _buildHeader() {
     return Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
       _round(Icons.arrow_back, () => Navigator.of(context).pushReplacementNamed('/home')),
       Text('Profile', style: TextStyle(color: HeritageColors.cream.withValues(alpha: 0.9), fontSize: 18, fontWeight: FontWeight.w600)),
@@ -124,10 +136,10 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
       ),
       child: Column(children: [
         Row(children: [
-          ScaleTransition(scale: _avatarScale, child: Container(width: 72, height: 72, decoration: BoxDecoration(shape: BoxShape.circle, border: Border.all(color: HeritageColors.orange, width: 3)), child: CircleAvatar(radius: 64, backgroundColor: HeritageColors.brown, child: Builder(builder: (context) { final name = _profile?.fullName; final initial = (name != null && name.isNotEmpty) ? name[0] : 'E'; return Text(initial.toUpperCase(), style: const TextStyle(color: HeritageColors.cream, fontSize: 32, fontWeight: FontWeight.bold)); })))),
+          ScaleTransition(scale: _avatarScale, child: Container(width: 72, height: 72, decoration: BoxDecoration(shape: BoxShape.circle, border: Border.all(color: HeritageColors.orange, width: 3)), child: CircleAvatar(radius: 64, backgroundColor: HeritageColors.brown, child: Text(_getDisplayName()[0].toUpperCase(), style: const TextStyle(color: HeritageColors.cream, fontSize: 32, fontWeight: FontWeight.bold))))),
           const SizedBox(width: 16),
           Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Text(_profile?.fullName ?? 'Explorer', style: TextStyle(color: HeritageColors.cream, fontSize: 22, fontWeight: FontWeight.bold)),
+            Text(_getDisplayName(), style: const TextStyle(color: HeritageColors.cream, fontSize: 22, fontWeight: FontWeight.bold)),
             const SizedBox(height: 4),
             Container(padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4), decoration: BoxDecoration(color: HeritageColors.orange.withValues(alpha: 0.2), borderRadius: BorderRadius.circular(12)), child: Text('LEVEL $level', style: TextStyle(color: HeritageColors.orange, fontSize: 11, fontWeight: FontWeight.bold, letterSpacing: 1))),
           ])),
@@ -138,7 +150,7 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
         const SizedBox(height: 8),
         Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
           Text('$progress% to Level ${level + 1}', style: TextStyle(color: Colors.white.withValues(alpha: 0.7), fontSize: 12)),
-          Text('${_profile?.points ?? 0} / $nextLevelPoints XP', style: TextStyle(color: HeritageColors.orange, fontSize: 12, fontWeight: FontWeight.w600)),
+          Text('$points / $nextLevelPoints XP', style: TextStyle(color: HeritageColors.orange, fontSize: 12, fontWeight: FontWeight.w600)),
         ]),
       ]),
     );
