@@ -136,7 +136,7 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
       ),
       child: Column(children: [
         Row(children: [
-          ScaleTransition(scale: _avatarScale, child: Container(width: 72, height: 72, decoration: BoxDecoration(shape: BoxShape.circle, border: Border.all(color: HeritageColors.orange, width: 3)), child: CircleAvatar(radius: 64, backgroundColor: HeritageColors.brown, child: Text(_getDisplayName()[0].toUpperCase(), style: const TextStyle(color: HeritageColors.cream, fontSize: 32, fontWeight: FontWeight.bold))))),
+          ScaleTransition(scale: _avatarScale, child: Container(width: 72, height: 72, decoration: BoxDecoration(shape: BoxShape.circle, border: Border.all(color: HeritageColors.orange, width: 3)), child: CircleAvatar(backgroundColor: HeritageColors.brown, child: Text(_getDisplayName()[0].toUpperCase(), style: const TextStyle(color: HeritageColors.cream, fontSize: 32, fontWeight: FontWeight.bold))))),
           const SizedBox(width: 16),
           Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
             Text(_getDisplayName(), style: const TextStyle(color: HeritageColors.cream, fontSize: 22, fontWeight: FontWeight.bold)),
