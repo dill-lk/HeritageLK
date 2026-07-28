@@ -25,7 +25,6 @@ class _ExploreScreenState extends State<ExploreScreen> {
   final _mapController = MapController();
   HeritageSite? _selected;
   String? _aiDetails;
-  bool _loading = false;
   bool _detailsExpanded = true;
   String? _weatherTemp;
   String? _weatherWind;
@@ -80,14 +79,15 @@ class _ExploreScreenState extends State<ExploreScreen> {
 
   Future<void> _loadSites() async {
     if (!AppConfig.hasSupabase) return;
-    setState(() => _loading = true);
     try {
       final rows = await HeritageSiteRepository(Supabase.instance.client).listSites();
       if (mounted && rows.isNotEmpty) {
         // dynamic sites loaded if any
       }
-    } finally {
-      if (mounted) setState(() => _loading = false);
+    } catch (_) {
+      if (mounted) {
+        // handle error
+      }
     }
   }
 

@@ -1,3 +1,5 @@
+// ignore_for_file: prefer_const_constructors, prefer_const_literals_to_create_immutables
+
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
@@ -51,7 +53,9 @@ class _ScannerScreenState extends State<ScannerScreen> {
             permission = await Geolocator.requestPermission();
           }
           if (permission != LocationPermission.denied && permission != LocationPermission.deniedForever) {
-            position = await Geolocator.getCurrentPosition(desiredAccuracy: LocationAccuracy.high);
+            position = await Geolocator.getCurrentPosition(
+              locationSettings: const LocationSettings(accuracy: LocationAccuracy.high),
+            );
           }
         }
       } catch (_) {}

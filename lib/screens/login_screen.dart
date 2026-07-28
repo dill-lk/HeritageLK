@@ -1,3 +1,5 @@
+// ignore_for_file: prefer_const_constructors, prefer_const_literals_to_create_immutables
+
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -240,21 +242,23 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   Widget _form(BuildContext context) {
-    final inputDecoration = (String hint, IconData icon) => InputDecoration(
-          hintText: hint,
-          hintStyle: TextStyle(color: HeritageColors.brown.withValues(alpha:0.50)),
-          prefixIcon: Icon(icon, size: 18, color: HeritageColors.brown),
-          filled: true,
-          fillColor: HeritageColors.brown.withValues(alpha:0.10),
-          enabledBorder: OutlineInputBorder(
-            borderSide: BorderSide(color: HeritageColors.brown.withValues(alpha:0.30)),
-            borderRadius: BorderRadius.circular(16),
-          ),
-          focusedBorder: OutlineInputBorder(
-            borderSide: BorderSide(color: HeritageColors.orange.withValues(alpha:0.50)),
-            borderRadius: BorderRadius.circular(16),
-          ),
-        );
+    InputDecoration inputDecoration(String hint, IconData icon) {
+      return InputDecoration(
+            hintText: hint,
+            hintStyle: TextStyle(color: HeritageColors.brown.withValues(alpha:0.50)),
+            prefixIcon: Icon(icon, size: 18, color: HeritageColors.brown),
+            filled: true,
+            fillColor: HeritageColors.brown.withValues(alpha:0.10),
+            enabledBorder: OutlineInputBorder(
+              borderSide: BorderSide(color: HeritageColors.brown.withValues(alpha:0.30)),
+              borderRadius: BorderRadius.circular(16),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderSide: BorderSide(color: HeritageColors.orange.withValues(alpha:0.50)),
+              borderRadius: BorderRadius.circular(16),
+            ),
+          );
+    }
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
