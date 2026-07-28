@@ -21,29 +21,6 @@ class HeritageApi {
     return _decode(response);
   }
 
-  Future<String> shingoChat(List<Map<String, String>> messages) async {
-    final headers = <String, String>{'Content-Type': 'application/json'};
-    if (AppConfig.shingoApiKey.isNotEmpty) {
-      headers['Authorization'] = 'Bearer ${AppConfig.shingoApiKey}';
-    }
-    final response = await _client.post(
-      Uri.parse('${AppConfig.apiBaseUrl}/api/shingo-chat'),
-      headers: headers,
-      body: jsonEncode({'messages': messages}),
-    );
-    if (response.statusCode < 200 || response.statusCode >= 300) {
-      String message = 'Failed to connect to Shingo AI.';
-      try {
-        final decoded = jsonDecode(response.body);
-        if (decoded is Map && decoded['error'] is String) {
-          message = decoded['error'];
-        }
-      } catch (_) {}
-      throw Exception(message);
-    }
-    return response.body;
-  }
-
   Future<String> generateArchive(String topic) async {
     final response = await _client.post(
       Uri.parse('${AppConfig.apiBaseUrl}/api/generate-archive'),

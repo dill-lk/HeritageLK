@@ -71,30 +71,6 @@ void main() {
       expect(body['ticketPrice'], 'FREE');
     });
 
-    test('shingoChat sends messages and returns response', () async {
-      final client = FakeClient(
-        onRequest: (method, uri, {headers, body}) async {
-          expect(method, 'POST');
-          expect(uri.toString(), contains('/api/shingo-chat'));
-          final decoded = jsonDecode(body as String);
-          expect(decoded['messages'], isA<List>());
-          return http.Response('Hello! I am Shingo AI.', 200);
-        },
-      );
-
-      final response = await client.post(
-        Uri.parse('https://api.example.com/api/shingo-chat'),
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({
-          'messages': [
-            {'role': 'user', 'content': 'Tell me about Galle Fort'}
-          ]
-        }),
-      );
-      expect(response.statusCode, 200);
-      expect(response.body, 'Hello! I am Shingo AI.');
-    });
-
     test('generateArchive sends topic and returns markdown', () async {
       final client = FakeClient(
         onRequest: (method, uri, {headers, body}) async {

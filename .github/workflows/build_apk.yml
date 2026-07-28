@@ -33,7 +33,7 @@ jobs:
         run: flutter analyze --no-pub
 
       - name: Build APK
-        run: flutter build apk --release --dart-define=SUPABASE_URL=${{ secrets.SUPABASE_URL }} --dart-define=SUPABASE_ANON_KEY=${{ secrets.SUPABASE_ANON_KEY }} --dart-define=API_BASE_URL=${{ secrets.API_BASE_URL || 'http://localhost:3000' }} --dart-define=SHINGO_API_KEY=${{ secrets.SHINGO_API_KEY }}
+        run: flutter build apk --release --dart-define=SUPABASE_URL=${{ secrets.SUPABASE_URL }} --dart-define=SUPABASE_ANON_KEY=${{ secrets.SUPABASE_ANON_KEY }} --dart-define=API_BASE_URL=${{ secrets.API_BASE_URL || 'http://localhost:3000' }} --dart-define=GEMINI_API_KEY=${{ secrets.GEMINI_API_KEY }}
 
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
