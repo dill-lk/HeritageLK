@@ -27,8 +27,8 @@ class PhotojournalExportService {
                   children: [
                     pw.Text(
                       'HERITAGE LK — MY JOURNEY',
-                      style: pw.TextStyle(
-                        color: const PdfColor.fromInt(0xFFF4A261),
+                      style: const pw.TextStyle(
+                        color: PdfColor.fromInt(0xFFF4A261),
                         fontSize: 22,
                         fontWeight: pw.FontWeight.bold,
                       ),
@@ -50,8 +50,8 @@ class PhotojournalExportService {
               pw.Row(
                 mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
                 children: [
-                  pw.Text('Total Sites Explored: ${stamps.length}', style: pw.TextStyle(fontWeight: pw.FontWeight.bold)),
-                  pw.Text('Passport Tier: ${PassportService.getTierName(stamps.length)}', style: pw.TextStyle(fontWeight: pw.FontWeight.bold)),
+                  pw.Text('Total Sites Explored: ${stamps.length}', style: const pw.TextStyle(fontWeight: pw.FontWeight.bold)),
+                  pw.Text('Passport Tier: ${PassportService.getTierName(stamps.length)}', style: const pw.TextStyle(fontWeight: pw.FontWeight.bold)),
                 ],
               ),
               pw.Divider(thickness: 1, color: PdfColors.grey300),
@@ -59,7 +59,7 @@ class PhotojournalExportService {
 
               pw.Text(
                 'Recorded Expeditions',
-                style: pw.TextStyle(fontSize: 16, fontWeight: pw.FontWeight.bold, color: const PdfColor.fromInt(0xFF342116)),
+                style: const pw.TextStyle(fontSize: 16, fontWeight: pw.FontWeight.bold, color: PdfColor.fromInt(0xFF342116)),
               ),
               pw.SizedBox(height: 10),
 
@@ -78,7 +78,7 @@ class PhotojournalExportService {
                       pw.Column(
                         crossAxisAlignment: pw.CrossAxisAlignment.start,
                         children: [
-                          pw.Text(stamp.siteName, style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 13)),
+                          pw.Text(stamp.siteName, style: const pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 13)),
                           pw.Text('Verified via: ${stamp.method.toUpperCase()} • ${stamp.category ?? "Heritage Site"}', style: const pw.TextStyle(fontSize: 10, color: PdfColors.grey700)),
                         ],
                       ),

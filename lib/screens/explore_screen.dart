@@ -35,7 +35,7 @@ class _ExploreScreenState extends State<ExploreScreen> {
   bool _detailsExpanded = true;
   String? _weatherTemp;
   String? _weatherWind;
-  String _filterCategory = 'All';
+  final String _filterCategory = 'All';
   String? _offlineTileTemplate;
 
   static const _allSites = [
@@ -441,10 +441,6 @@ class _ExploreScreenState extends State<ExploreScreen> {
         ]),
       ),
     );
-  }
-
-  Widget _iconButton(IconData icon, Color color, [VoidCallback? onTap]) {
-    return GestureDetector(onTap: onTap, child: Container(width: 50, height: 50, decoration: BoxDecoration(color: Colors.white.withValues(alpha:0.05), border: Border.all(color: Colors.white.withValues(alpha:0.08)), borderRadius: BorderRadius.circular(16)), child: Icon(icon, color: color, size: 20)));
   }
 }
 
