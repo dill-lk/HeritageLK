@@ -1,281 +1,332 @@
-# HeritageLK — Proposed Feature Deep-Dive
+# HeritageLK — Feature Proposals (Selected for Deep Dive)
 
-> Audience: hackathon judges, technical reviewers, and future contributors.  
-> Goal: explain the **why**, **what**, and **how** of four selected features in enough detail to build and demo quickly.
+> This document expands on four features marked as **"good"** during the initial brainstorm.  
+> Each section covers **why it matters**, **what it does**, **how to build it** (tech plan), **data models**, **UI/UX hooks**, and **hackathon demo strategy**.  
+> All designs respect the app's existing architecture: Flutter, Supabase, Gemini AI, offline-first, and the dark heritage theme.
 
 ---
 
-## 1. Heritage Audio Guides (`flutter_tts`)
+## 1. Heritage Audio Guides (TTS-based)
 
 ### Why
-- Visitors to Sri Lankan heritage sites often read long placards or miss context entirely.
-- Audio delivery is low-bandwidth, inclusive (visually impaired, elderly, children), and memorable.
-- Differentiates HeritageLK from generic map apps by adding a **curated local narrative layer**.
+- Visitors at Sigiriya, Galle Fort, Anuradhapura, etc., often read a plaque and move on.  
+- Audio narration keeps eyes on the site, works for visually-impaired users, and adds emotional depth.  
+- TTS (text-to-speech) needs **zero audio storage** — scripts are tiny text files.
 
 ### What it does
-- Each heritage site (from the existing `_allSites` list in `explore_screen.dart`) gets an audio narration button.
-- Users tap **"Listen"** on a site card → the app reads aloud a 60–120 second script covering:
-  - Historical significance
-  - Key dates and figures
-  - What to look for when visiting
-  - A cultural tip or local legend
-- Narrations are available in **English, Sinhala, and Tamil**.
-- Users can download narrations for offline use while traveling to remote sites (e.g., Sigiriya, Mihintale).
+- Every heritage site in `_allSites` (explore_screen.dart:40-107) gets a **"Listen" button**.
+- Tap → bottom-sheet player appears with:
+  - Play / pause / 0.8×–1.5× speed
+  - Language picker: **English / Sinhala / Tamil**
+  - Optional: download for offline (caches rendered MP3 or just the script)
+- Scripts are 60–120 seconds: history, key details, what to look for, one local legend.
 
-### Technical approach
-- **TTS engine**: `flutter_tts` (works on Android/iOS, supports Sinhala/Tamil via platform voices).
-- **Script storage**: small JSON/Text files bundled with the app or fetched from Supabase Storage (`heritage-audio/scripts/{siteId}.txt`).
-- **Caching**: save MP3 bytes (if using cloud TTS) or just pre-render scripts locally in `getApplicationDocumentsDirectory()`.
-- **UI**: add a small speaker icon to every `_NearbyCard`, `_archiveTile`, and site detail card.
-- **Playback controls**: mini bottom-sheet with play/pause, speed (0.8x–1.5x), and language selector.
+### Tech plan
+| Piece | Choice | Rationale |
+|-------|--------|-----------|
+| TTS engine | `flutter_tts` | Works Android/iOS, supports `si-LK` & `ta-LK` via platform voices |
+| Script storage | JSON assets + optional Supabase Storage | `assets/audio_scripts/{siteId}_{lang}.json` — ~2 KB each |
+| Offline cache | `getApplicationDocumentsDirectory()` | Save rendered MP3 if user taps "Download" |
+| UI | Reusable `AudioGuidePlayer` widget | Drop into `_NearbyCard`, `_archiveTile`, site detail sheets |
+
+**New dependency:** `flutter_tts: ^4.0.0`
 
 ### Data model (minimal)
 ```dart
-class AudioGuide {
+class AudioScript {
   final String siteId;
-  final String languageCode; // 'en', 'si', 'ta'
-  final String scriptText;
-  final String? remoteAudioUrl; // optional pre-generated MP3
+  final String langCode;      // 'en', 'si', 'ta'
+  final String title;
+  final String bodyText;      // plain text for TTS
+  final Duration approxDuration;
 }
 ```
 
-### Hackathon demo hook
-- Record one high-quality Sinhala narration for **Sigiriya Rock Fortress** as the demo asset.
-- Show the audio player UI and play it on-device during the pitch.
-- Mention that scaling to 70+ sites only requires uploading script text files.
+### Integration points
+1. **Explore screen** — add speaker icon to each marker popup and `_bottomInfoCard`.
+2. **Archive detail** — "Listen to history" button under the hero image.
+3. **Scanner/Journal** — when user saves a visit, offer "Hear about this site".
+4. **Home screen** — "Audio Guide of the Day" card linking to a featured site.
+
+### Hackathon demo script
+1. Pre-bundle **one high-quality Sinhala script for Sigiriya** (recorded via TTS at build time or live).
+2. During pitch: open Explore → tap Sigiriya marker → hit "Listen" → audio plays instantly.
+3. Mention: *"70 sites × 3 languages = 210 scripts. Total asset size < 500 KB. Zero backend cost."*
 
 ### Constraints & mitigations
-- **No internet**: scripts are bundled or cached locally; TTS works offline.
-- **Voice quality**: platform TTS is acceptable for a demo; mention that production can swap in ElevenLabs/AWS Polly for richer voices.
-- **Storage**: script text is ~2KB per site; 70 sites ≈ 140KB — negligible.
+| Risk | Mitigation |
+|------|------------|
+| Platform TTS voice quality varies | Note in pitch: "Production can swap to ElevenLabs/AWS Polly for studio voices — same API." |
+| Sinhala/Tamil not on all devices | Graceful fallback: show script text with "Copy" button if voice unavailable. |
+| Battery drain | TTS is lightweight; player auto-pauses when screen locks. |
 
 ---
 
 ## 2. Digital Heritage Passport (Local-First Gamification)
 
 ### Why
-- The app already has points, ranks, and quests (`quests_screen.dart`).
-- A **passport** gives users a visual, collectible representation of their journey — highly shareable and emotionally resonant.
-- Offline-first is essential because many heritage sites have poor mobile coverage.
+- The app already has **points, ranks, quests, leaderboards** (`quests_screen.dart`, `home_screen.dart`).
+- A **visual passport** turns abstract points into a collectible, shareable artifact.
+- **Offline-only** = zero database cost, works at remote sites (Sinharaja, Knuckles, Jaffna).
 
 ### What it does
-- A dedicated **"My Passport"** tab inside the Profile screen.
-- Displays a grid of **site stamps** (custom icons) that fill in as users:
-  - Physically visit a site (GPS geofence trigger)
-  - Scan a site via the Camera/Scanner screen
-  - Complete a related quest
-- Each stamp shows:
-  - Site name
-  - Visit date
-  - Earning method (visited / scanned / quest)
-- **Tiers**: Bronze (5 sites), Silver (15 sites), Gold (35 sites), Heritage Legend (all 70+).
-- Users can share a **passport summary card** as an image (using `screenshot` + `share_plus`).
+- New **"Passport" tab** in Profile screen (or bottom-nav item).
+- Grid of **stamp slots** — one per heritage site (70+ from `_allSites`).
+- A slot fills when user:
+  - **Visits** (GPS geofence ≤ 200 m from site coords)
+  - **Scans** via Camera/Journal screen
+  - **Completes** a related quest
+- Filled stamp shows: site icon, visit date, method badge (📍 GPS / 📸 Scan / 🏆 Quest).
+- **Tiers**: Bronze (5), Silver (15), Gold (35), **Heritage Legend** (all 70+).
+- **One-tap share** → generates a PNG card (passport cover + tier + stamp count) for Instagram/WhatsApp.
 
-### Technical approach
-- **Storage**: `shared_preferences` or a local JSON file (`passport.json`) — **no cloud database needed**.
-- **Geofence trigger**: use `geolocator` distance check against site lat/lng when the app detects a location update (already implemented in `home_screen.dart`).
-- **Stamp creation**: lightweight local object; no Supabase writes.
-- **UI**: animated grid with `AnimatedContainer` + `Lottie` (optional) for stamp "press" effect.
-- **Share**: `screenshot` package captures the passport widget; `share_plus` exports to Instagram/WhatsApp.
+### Tech plan
+| Piece | Choice | Rationale |
+|-------|--------|-----------|
+| Storage | `shared_preferences` + local JSON (`passport_v1.json`) | No Supabase needed; survives reinstall if user backs up file |
+| Geofence check | Reuse `LocationService.getCurrentPosition()` + Haversine distance | Already in `home_screen.dart:33-42` |
+| Stamp UI | `AnimatedContainer` + `Lottie` (optional) for "stamp press" effect | Matches existing heritage theme |
+| Share image | `screenshot` + `share_plus` packages | Native share sheet, no backend |
+
+**New dependencies:**
+```yaml
+shared_preferences: ^2.3.2   # already in pubspec.yaml
+screenshot: ^3.0.0
+share_plus: ^10.0.0
+lottie: ^3.1.0               # optional, for delight
+```
 
 ### Data model (local-only)
 ```dart
 class PassportStamp {
   final String siteId;
   final String siteName;
-  final DateTime visitedAt;
-  final String method; // 'gps' | 'scan' | 'quest'
+  final DateTime earnedAt;
+  final String method;        // 'gps' | 'scan' | 'quest'
+  final String? photoPath;    // optional: journal photo if method == 'scan'
 }
 
-class Passport {
+class HeritagePassport {
   final List<PassportStamp> stamps;
-  int get bronzeCount => stamps.where((s) => s.method == 'gps').length;
-  String get tier => ... // Bronze / Silver / Gold / Legend
+  int get tierIndex => (stamps.length / 5).floor().clamp(0, 3);
+  String get tierName => ['Bronze', 'Silver', 'Gold', 'Legend'][tierIndex];
+  bool get isLegend => stamps.length >= 70;
 }
 ```
 
-### Hackathon demo hook
-- Pre-seed 5–6 stamps in the demo build so judges see a populated passport immediately.
-- Show the **share-card** generation flow (1-tap export to image).
-- Emphasize **offline-first**: "All your heritage memories live on your device, forever."
+### Integration points
+1. **Home screen** — after `_loadGpsLocation()`, check nearby sites → auto-grant GPS stamp.
+2. **Scanner screen** — when `_captureVisit()` succeeds, grant Scan stamp for nearest site.
+3. **Quests screen** — on `_flowStep == 'completed'`, grant Quest stamp for that quest's site.
+4. **Profile screen** — new "View Passport" button → pushes `PassportScreen`.
+
+### Hackathon demo script
+1. Pre-seed **6 stamps** (Sigiriya, Galle Fort, Temple of Tooth, Nine Arches, Yala, Adam's Peak) in the demo build's `shared_preferences`.
+2. Open Profile → tap "My Passport" → show animated grid with 6 golden stamps.
+3. Tap "Share" → generates a beautiful PNG card → "Look, I'm a **Silver** explorer!"
+4. Say: *"Zero cloud cost. Works on a plane. Works in Sinharaja rainforest. Your heritage journey lives on your phone."*
 
 ### Constraints & mitigations
-- **No heavy database**: passport is purely local JSON; zero backend cost.
-- **GPS spoofing**: for demo purposes, accept manual "Add to Passport" buttons; in production, add a cooldown + distance threshold.
-- **Sync optional**: if Supabase is available, optionally back up stamps to a `user_passport` table — but it's not required for the feature to work.
+| Risk | Mitigation |
+|------|------------|
+| GPS spoofing / fake stamps | Demo only — production adds cooldown + distance threshold + optional photo proof |
+| No cloud backup | Optional: if `AppConfig.hasSupabase`, mirror stamps to `user_passports` table (1 row per user) |
+| Storage bloat | 70 stamps × ~200 bytes = 14 KB. Negligible. |
 
 ---
 
 ## 3. Heritage Feed (Community Social Layer)
 
 ### Why
-- Heritage preservation is inherently communal. Users want to see what others discovered.
-- A feed turns the app from a **tool** into a **community platform**.
-- Drives daily active usage and creates user-generated content that enriches the archive.
+- Heritage preservation is **communal** — locals, tourists, historians all contribute.
+- A feed turns the app from a **tool** into a **platform** → higher retention, UGC for the archive.
+- Reuses existing Supabase auth + storage + realtime.
 
 ### What it does
-- A new **"Feed"** tab (between Home and Explore) showing a scrollable list of community posts.
-- Post types:
-  - **Photo journal entry** (from the Scanner/Camera screen) — user shares a visit photo with notes
-  - **Damage report update** — "I reported damage at Galle Fort; here's the status change"
-  - **Archive contribution** — "I added a story about traditional mask making"
-  - **Quest completion** — "I just earned the Fort Guardian badge!"
-- Each post shows:
-  - Author avatar + name
-  - Timestamp (e.g., "2 hours ago")
-  - Content (photo, text, or both)
-  - Linked heritage site (tap to open map/details)
-  - Like ❤️ and comment count (light engagement, no full social graph needed)
-- **Moderation**: basic keyword filter + admin review queue (reuse existing damage report admin pattern).
+- New **Feed tab** (between Home and Explore in bottom nav).
+- Chronological cards, each linking to a heritage site:
+  - **Journal share** — photo + notes from Scanner screen ("First time at Ritigala — misty and magical 🌫️")
+  - **Damage report update** — "Reported cracks at Galle Fort wall → status: In Review"
+  - **Archive contribution** — "Added my grandmother's Ambalangoda mask-making story"
+  - **Quest completion** — "Just earned the Fort Guardian badge! 🏰"
+- Light engagement: ❤️ like, 💬 comment count (no full comment thread v1).
+- **Moderation**: keyword filter + admin review queue (reuse `ReportAdminScreen` pattern).
 
-### Technical approach
-- **New Supabase table**: `heritage_feed`
-  ```sql
-  create table heritage_feed (
-    id uuid primary key default gen_random_uuid(),
-    user_id uuid references auth.users,
-    type text, -- 'journal' | 'damage' | 'archive' | 'quest'
-    site_id text,
-    content text,
-    image_url text,
-    likes int default 0,
-    created_at timestamp default now()
-  );
-  ```
-- **Row Level Security**: users can insert their own posts; public read access.
-- **Realtime**: subscribe to `INSERT` events on `heritage_feed` for live feed updates (Supabase Realtime).
-- **Image storage**: reuse existing `heritage-media` bucket for uploaded photos.
-- **Feed UI**: `ListView.builder` with a unified `_FeedCard` widget; pull-to-refresh.
+### Tech plan
+| Piece | Choice | Rationale |
+|-------|--------|-----------|
+| DB table | `heritage_feed` (see schema below) | Single table, polymorphic `type` column |
+| Realtime | Supabase Realtime `INSERT` subscription | Live feed without polling |
+| Images | Existing `heritage-media` bucket | Reuse uploader from `scanner_screen.dart` |
+| Auth | Supabase Auth (already integrated) | `user_id` FK, RLS policies |
+| Pagination | Cursor-based (`created_at`, `limit: 20`) | Smooth infinite scroll |
 
-### Data flow
-1. User completes an action in the app (e.g., saves a journal photo).
-2. App prompts: "Share this moment with the HeritageLK community?"
-3. If yes → create a feed post linked to the site + user.
-4. Post appears in everyone's Feed tab instantly via Realtime subscription.
+**New dependencies:** none (uses existing `supabase_flutter`, `go_router` for navigation).
 
-### Hackathon demo hook
-- Pre-seed 8–10 realistic posts with placeholder images (Unsplash) so the feed looks alive on first launch.
-- Show a **live like animation** when tapping the heart icon.
-- Mention scalability: "This is a read-heavy, append-only feed — perfect for Supabase Realtime + CDN images."
+### Database schema
+```sql
+create table heritage_feed (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid references auth.users not null,
+  type text not null check (type in ('journal','damage','archive','quest')),
+  site_id text,                          -- links to _allSites name or archive id
+  content text not null,                 -- caption / story
+  image_url text,                        -- optional, from heritage-media bucket
+  likes int default 0,
+  created_at timestamptz default now()
+);
 
-### Constraints & mitigations
-- **No heavy moderation AI**: use a simple blocklist + admin flag button; judges will accept this for a demo.
-- **Storage costs**: images are thumbnails (200–400px) using `image_picker` quality compression; CDN costs stay low.
-- **Feed fatigue**: cap at 50 posts locally + infinite scroll with `LIMIT 20` queries.
+-- RLS
+alter table heritage_feed enable row level security;
+create policy "public read" on heritage_feed for select using (true);
+create policy "own insert" on heritage_feed for insert with check (auth.uid() = user_id);
+create policy "own update" on heritage_feed for update using (auth.uid() = user_id);
 
----
+-- Realtime publication
+alter publication supabase_realtime add table heritage_feed;
+```
 
-## 4. Photojournal Export (`pdf` + `share_plus`)
-
-### Why
-- Users accumulate rich journal data (photos, GPS coordinates, notes, timestamps) in the Scanner screen.
-- Exporting this into a **beautiful PDF** gives tangible value and a shareable artifact.
-- Perfect for travelers, researchers, and school projects — extends the app's utility beyond the phone.
-
-### What it does
-- A **"Export Journal"** button in the Profile / Scanner screen.
-- Generates a multi-page PDF containing:
-  - **Cover page**: "My HeritageLK Journal" + user name + date range
-  - **Table of Contents**: list of visited sites
-  - **Visit pages**: one per journal entry, each with:
-    - Full-bleed photo
-    - Site name & GPS coordinates
-    - Visit date & time
-    - User notes
-    - Small embedded map snippet (optional static image from `flutter_map` screenshot)
-  - **Summary page**: total visits, countries/regions visited, top sites
-- Output options:
-  - Save to device Files app
-  - Share via WhatsApp / Email / AirDrop
-  - Print directly
-
-### Technical approach
-- **PDF generation**: `pdf` package (pub.dev) — renders Dart widgets to PDF natively.
-- **Map snapshot**: optional; use `flutter_map` controller + `screenshot` package, or skip for speed.
-- **Image handling**: resize images to 1200px width before embedding to keep PDF under 10MB.
-- **Sharing**: `share_plus` with `XFile` from `path_provider`.
-- **Styling**: use the same HeritageLK color palette (`HeritageColors`) and fonts (`Plus Jakarta Sans`, `Playfair Display`) for brand consistency.
-
-### Implementation sketch
+### Feed card widget (reusable)
 ```dart
-Future<void> _exportJournalPdf(List<_Visit> visits) async {
-  final pdf = Document();
-  pdf.addPage(MdpdfPage.build(
-    cover: 'My HeritageLK Journal',
-    pages: visits.map((visit) {
-      return PageBuild(
-        image: File(visit.imagePath),
-        title: visit.title,
-        subtitle: '${visit.latitude.toStringAsFixed(4)}°, ${visit.longitude.toStringAsFixed(4)}°',
-        notes: visit.notes,
-        date: DateFormat.yMMMd().add_jm().format(visit.timestamp),
-      );
-    }).toList(),
-  ));
-  final file = File('${(await getApplicationDocumentsDirectory()).path}/heritage_journal.pdf');
-  await file.writeAsBytes(await pdf.save());
-  await Share.shareXFiles([XFile(file.path)], text: 'My HeritageLK Journal');
+class FeedCard extends StatelessWidget {
+  final FeedItem item;
+  const FeedCard({required this.item});
+
+  // Renders: avatar | name | time | type badge | content | image | site link | like button
 }
 ```
 
-### Hackathon demo hook
-- Have 3–4 pre-seeded journal entries in the demo.
-- Tap **Export** → show the generated PDF preview in a bottom sheet → share.
-- Judges see a polished, branded document generated in real time — extremely impressive.
+### Integration points
+1. **Scanner screen** — after saving a visit, show "Share to Feed" bottom sheet.
+2. **Damage report** — on submit success, "Post update to community?".
+3. **Contribute screen** — after archive submission, "Share your contribution?".
+4. **Quests screen** — on completion, "Tell everyone you earned this badge!".
+5. **Bottom nav** — add Feed as index 1 (Home → Feed → Explore → Scanner → Archive → Profile).
+
+### Hackathon demo script
+1. Log in as two demo users (pre-created in Supabase).
+2. User A posts a journal photo from Sigiriya → appears instantly on User B's feed (Realtime).
+3. User B taps the site link → opens Explore screen centered on Sigiriya.
+4. Say: *"Every photo, report, and story strengthens the collective memory of Sri Lanka's heritage."*
 
 ### Constraints & mitigations
-- **Large images**: compress with `flutter_image_compress` before embedding.
-- **Font licensing**: `Plus Jakarta Sans` and `Playfair Display` are open-source (OFL) — safe to bundle.
-- **iOS sharing**: `share_plus` handles UIActivityViewController automatically.
-- **No cloud dependency**: everything runs on-device; no uploads needed.
-
----
-
-## Implementation Priority for Hackathon
-
-| Feature | Effort | Impact | Recommended Order |
-|---------|--------|--------|-------------------|
-| Audio Guides | 1–2 days | High (emotional + inclusive) | **2nd** |
-| Heritage Passport | 2–3 days | High (gamification hook) | **3rd** |
-| Heritage Feed | 2–3 days | High (social virality) | **4th** |
-| Photojournal Export | 1 day | Medium-High (tangible deliverable) | **1st** |
-
-### Suggested 3-day sprint plan
-
-**Day 1**
-- Implement Photojournal Export (`pdf` package).
-- Add Export button to Scanner screen.
-- Test PDF generation with 5 sample visits.
-
-**Day 2**
-- Build Heritage Passport screen + local JSON storage.
-- Add GPS-based stamping logic.
-- Pre-seed 5 demo stamps.
-
-**Day 3**
-- Build Audio Guide player widget.
-- Add Sinhala narration for Sigiriya as the demo audio.
-- Polish UI animations and add share-card screenshot.
-
----
-
-## Risks & Mitigations
-
 | Risk | Mitigation |
 |------|------------|
-| TTS voices unavailable for Sinhala/Tamil on test devices | Bundle a pre-rendered MP3 for demo; mention cloud-TTS fallback in pitch |
-| PDF generation crashes on large images | Compress images to max 1200px before embedding |
-| Passport feels empty on first launch | Pre-seed 5–6 stamps in demo build |
-| Feed looks ghost-town without real users | Seed 12+ realistic placeholder posts |
+| Spam / low-quality posts | Type-specific required fields; keyword blocklist; admin queue |
+| Image storage cost | Reuse existing bucket; compress client-side (already 88% quality) |
+| No comments v1 | Keep v1 minimal — likes only. Comments = v2 with separate `feed_comments` table |
 
 ---
 
-## Closing Note
+## 4. Photojournal Export (PDF / Ebook)
 
-These four features are chosen because they:
-1. **Reuse existing data** (sites, visits, user profile)
-2. **Avoid heavy backend costs** (local-first passport, optional cloud sync)
-3. **Deliver visible demo value** (shareable PDF, audio playback, stamp collection)
-4. **Align with the app's core mission**: protect, discover, and celebrate Sri Lankan heritage.
+### Why
+- The **Scanner/Journal** (`scanner_screen.dart`) already stores: photos, GPS, timestamps, notes, titles.
+- Travellers want a **keepsake** — a printable PDF or shareable ebook of their heritage journey.
+- Zero backend: pure client-side generation.
 
-Build one, demo it well, and the judges will remember the experience.
+### What it does
+- In **Journal/Scanner screen** (or Profile → "My Journal"), new button: **"Export Journey"**.
+- Options dialog:
+  - Date range (all / last 30 days / custom)
+  - Include: photos, notes, map thumbnails, site descriptions
+  - Format: **PDF** (print-ready) or **EPUB** (ebook reader)
+- Output saved to `Downloads/HeritageLK_Journey_YYYY-MM-DD.pdf` → system share sheet.
+
+### Tech plan
+| Piece | Choice | Rationale |
+|-------|--------|-----------|
+| PDF engine | `pdf: ^3.11.0` + `printing: ^5.13.0` | Pure Dart, works offline, supports images/fonts |
+| EPUB (optional) | `epub: ^3.0.0` | If time permits; PDF is MVP |
+| Fonts | `google_fonts` (already in pubspec) for Playfair/Plus Jakarta | Brand consistency |
+| Map thumbnails | `flutter_map` static image export or `google_static_maps` | Show visit location per entry |
+
+**New dependencies:**
+```yaml
+pdf: ^3.11.0
+printing: ^5.13.0
+path_provider: ^2.1.2   # already in pubspec
+permission_handler: ^11.3.0  # for storage permission on Android 13+
+```
+
+### PDF structure (per visit entry)
+```
+┌─────────────────────────────────────┐
+│  HERITAGE LK — MY JOURNEY           │  ← Cover page: user name, date range, tier
+│  [User Avatar]  Sanul Randisa       │
+│  12 sites • 47 photos • 1,250 pts   │
+├─────────────────────────────────────┤
+│  SIGIRIYA ROCK FORTRESS             │  ← Entry header: site name + date + GPS
+│  2026-07-15  06:42  7.957°N 80.760°E│
+│  [Photo full-width]                 │
+│  "Climbed at sunrise. The frescoes  │  ← User notes
+│   are breathtaking..."              │
+│  [Mini map thumbnail]               │  ← 200×200 map with pin
+│  AI Insight: "Built by King         │  ← Optional: Shingo AI summary
+│   Kashyapa in 477 AD..."            │
+├─────────────────────────────────────┤
+│  GALLE DUTCH FORT                   │  ← Next entry...
+│  ...
+└─────────────────────────────────────┘
+```
+
+### Integration points
+1. **Scanner screen** — add `IconButton(Icons.picture_as_pdf)` in app bar.
+2. **Profile screen** — "Export My Journey" list tile.
+3. **Passport screen** (if built) — "Create Journey Book" button.
+
+### Hackathon demo script
+1. Open Scanner → Journal has 3–4 pre-seeded visits (Sigiriya, Galle, Nine Arches, Temple of Tooth).
+2. Tap "Export Journey" → choose "All time" → "Generate PDF".
+3. PDF opens in system viewer → scroll through beautiful pages.
+4. Tap Share → send to WhatsApp/Email.
+5. Say: *"Works offline. No server. Your heritage story, yours forever."*
+
+### Constraints & mitigations
+| Risk | Mitigation |
+|------|------------|
+| Large PDFs (many photos) | Downsample images to 1200 px max; show file size estimate before generation |
+| Android 13+ storage permission | Use `permission_handler` + `MediaStore` API; fallback to app-specific `Downloads/` |
+| Font licensing | `google_fonts` bundles OFL fonts — safe for embedding |
+
+---
+
+## Implementation Priority (Hackathon Timeline)
+
+| Day | Focus | Deliverable |
+|-----|-------|-------------|
+| **Day 1** | Audio Guide + Passport (core logic) | TTS plays for 1 site; Passport grid shows 6 pre-seeded stamps |
+| **Day 2** | Feed (DB + Realtime) + UI | Two demo users post → live cross-device feed |
+| **Day 3** | Photojournal Export + Polish | PDF generates from 4 journal entries; share sheet works |
+| **Day 4** | Integration & Demo Recording | All 4 features accessible from bottom nav; record 90-sec demo video |
+
+---
+
+## Shared Design Tokens (Reuse Existing)
+
+| Token | Value | Used in |
+|-------|-------|---------|
+| `HeritageColors.cream` | `0xFFFEFAE0` | Text, icons |
+| `HeritageColors.orange` | `0xFFF4A261` | Primary actions, accents |
+| `HeritageColors.brown` | `0xFF342116` | Card backgrounds |
+| `HeritageColors.background` | `0xFF100E0A` | Scaffold bg |
+| Font: `Playfair Display` | Headlines, serif | Passport cover, PDF headers |
+| Font: `Plus Jakarta Sans` | UI, body | Buttons, cards, PDF body |
+
+All four features use **only these tokens** — zero new design debt.
+
+---
+
+## Appendix: Quick-start Commands
+
+```bash
+# Add new deps (run once)
+flutter pub add flutter_tts screenshot share_plus lottie pdf printing permission_handler
+
+# Generate PDF fonts (if using custom TTF)
+# Place .ttf files in assets/fonts/ and declare in pubspec.yaml
+```
+
+---
+
+*End of document. Each feature is independently shippable — pick any subset for the hackathon.*

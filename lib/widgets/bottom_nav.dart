@@ -13,14 +13,16 @@ class HeritageBottomNav extends StatelessWidget {
       case 0:
         return HeritageIcons.home(color: color, size: 22);
       case 1:
-        return HeritageIcons.explore(color: color, size: 22);
+        return Icon(Icons.hub_outlined, color: color, size: 22);
       case 2:
-        return HeritageIcons.camera(color: color, size: 22);
+        return HeritageIcons.explore(color: color, size: 22);
       case 3:
-        return Icon(Icons.hotel_rounded, color: color, size: 22);
+        return HeritageIcons.camera(color: color, size: 22);
       case 4:
-        return HeritageIcons.archive(color: color, size: 22);
+        return Icon(Icons.hotel_rounded, color: color, size: 22);
       case 5:
+        return HeritageIcons.archive(color: color, size: 22);
+      case 6:
         return HeritageIcons.shingo(color: color, size: 22);
       default:
         return HeritageIcons.home(color: color, size: 22);
@@ -29,6 +31,7 @@ class HeritageBottomNav extends StatelessWidget {
 
   static const _items = [
     ('Home', '/home'),
+    ('Feed', '/feed'),
     ('Explore', '/explore'),
     ('Camera', '/scanner'),
     ('Hotels', '/hotels'),

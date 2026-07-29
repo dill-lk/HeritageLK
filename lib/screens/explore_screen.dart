@@ -14,6 +14,7 @@ import '../services/heritage_api.dart';
 import '../services/heritage_site_repository.dart';
 import '../services/offline_sri_lanka_map_cache.dart';
 import '../theme/heritage_colors.dart';
+import '../widgets/audio_guide_sheet.dart';
 import '../widgets/bottom_nav.dart';
 
 class ExploreScreen extends StatefulWidget {
@@ -154,6 +155,18 @@ class _ExploreScreenState extends State<ExploreScreen> {
     _mapController.move(LatLng(site.lat, site.lon), 11.0);
     _loadWeather(site.lat, site.lon);
     _loadAiDetails(site.name);
+  }
+
+  void _openAudioGuide(_SiteData site) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => AudioGuideSheet(
+        siteId: site.name.toLowerCase().replaceAll(' ', '_'),
+        siteName: site.name,
+      ),
+    );
   }
 
   Future<void> _loadWeather(double lat, double lon) async {
@@ -352,70 +365,6 @@ class _ExploreScreenState extends State<ExploreScreen> {
               }),
             ),
           const SizedBox(height: 12),
-          Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-            _filterChip('All', _filterCategory == 'All', () => setState(() => _filterCategory = 'All')),
-            const SizedBox(width: 12),
-            _filterChip('History', _filterCategory == 'History', () => setState(() => _filterCategory = 'History')),
-            const SizedBox(width: 12),
-            _filterChip('Nature', _filterCategory == 'Nature', () => setState(() => _filterCategory = 'Nature')),
-          ]),
-        ]),
-      ),
-    );
-  }
-
-  Widget _filterChip(String label, bool selected, VoidCallback onTap) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(30),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-        decoration: BoxDecoration(color: const Color(0xE61A1311), borderRadius: BorderRadius.circular(30), border: Border.all(color: Colors.white.withValues(alpha:0.05))),
-        child: Row(mainAxisSize: MainAxisSize.min, children: [
-          Icon(selected ? Icons.check_circle : Icons.circle_outlined, color: selected ? HeritageColors.orange : Colors.white38, size: 14),
-          const SizedBox(width: 8),
-          Text(label, style: TextStyle(color: selected ? Colors.white : Colors.white70, fontSize: 14, fontWeight: FontWeight.bold)),
-        ]),
-      ),
-    );
-  }
-
-  Widget _bottomInfoCard(_SiteData site) {
-    return Positioned(
-      bottom: 108,
-      left: 24,
-      right: 24,
-      child: Container(
-        padding: const EdgeInsets.all(24),
-        decoration: BoxDecoration(color: const Color(0xF00F0C0A), borderRadius: BorderRadius.circular(32), border: Border.all(color: Colors.white.withValues(alpha:0.05)), boxShadow: [BoxShadow(color: Colors.black.withValues(alpha:0.4), blurRadius: 24)]),
-        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-            Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Text('${site.name} 🏰', style: const TextStyle(color: Colors.white, fontSize: 26, fontWeight: FontWeight.bold, height: 1.2)),
-              const SizedBox(height: 4),
-              Row(children: [Icon(Icons.public, color: Colors.green.shade400, size: 12), const SizedBox(width: 6), Text('UNESCO WORLD HERITAGE SITE', style: TextStyle(color: Colors.green.shade400, fontSize: 10, fontWeight: FontWeight.bold, letterSpacing: 0.8))]),
-            ])),
-            GestureDetector(onTap: () => setState(() => _detailsExpanded = !_detailsExpanded), child: Container(width: 44, height: 44, decoration: BoxDecoration(border: Border.all(color: Colors.white.withValues(alpha:0.05)), shape: BoxShape.circle), child: Icon(_detailsExpanded ? Icons.keyboard_arrow_down : Icons.keyboard_arrow_up, color: Colors.white70, size: 22))),
-          ]),
-          if (_detailsExpanded) ...[
-            const SizedBox(height: 16),
-            Row(children: [
-              Expanded(child: _actionButton('Scan Site', HeritageColors.orange, Icons.camera_alt, () => Navigator.of(context).pushNamed('/scanner'))),
-              const SizedBox(width: 10),
-              Expanded(child: _actionButton('Ride There', const Color(0xFF22C55E), Icons.local_taxi_rounded, () => _rideToSite(site))),
-              const SizedBox(width: 10),
-              _iconButton(Icons.refresh, HeritageColors.orange, () => _select(site)),
-            ]),
-            const SizedBox(height: 20),
-            Container(height: 1, color: Colors.white.withValues(alpha:0.05)),
-            const SizedBox(height: 16),
-            Row(children: [
-              Container(width: 6, height: 6, decoration: const BoxDecoration(color: HeritageColors.orange, shape: BoxShape.circle)),
-              const SizedBox(width: 8),
-              const Text('AI QUICK INSIGHTS', style: TextStyle(color: HeritageColors.orange, fontSize: 11, fontWeight: FontWeight.bold, letterSpacing: 2)),
-              const Spacer(),
-              if (_weatherTemp != null) Text('🌡️ $_weatherTemp  💨 ${_weatherWind ?? ""}', style: const TextStyle(color: Colors.white70, fontSize: 12, fontWeight: FontWeight.bold)),
-            ]),
             const SizedBox(height: 12),
             Row(children: [
               _detailPill(Icons.confirmation_number_outlined, site.ticketPrice),

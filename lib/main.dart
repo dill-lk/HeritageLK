@@ -19,6 +19,8 @@ import 'screens/hotels_screen.dart';
 import 'screens/settings_detail_screen.dart';
 import 'screens/generate_archive_screen.dart';
 import 'screens/report_admin_screen.dart';
+import 'screens/heritage_feed_screen.dart';
+import 'screens/passport_screen.dart';
 import 'screens/profile_screen.dart';
 import 'screens/auth_callback_screen.dart';
 import 'theme/heritage_theme.dart';
@@ -92,6 +94,10 @@ class _HeritageLkAppState extends State<HeritageLkApp> {
         builder = (_) => const AuthCallbackScreen();
       case '/home':
         builder = (_) => const HomeScreen();
+      case '/feed':
+        builder = (_) => const HeritageFeedScreen();
+      case '/passport':
+        builder = (_) => const PassportScreen();
       case '/explore':
         builder = (_) => const ExploreScreen();
       case '/scanner':

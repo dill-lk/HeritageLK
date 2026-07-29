@@ -10,6 +10,7 @@ import '../models/user_quest.dart';
 import '../services/damage_report_repository.dart';
 import '../services/profile_repository.dart';
 import '../services/quest_repository.dart';
+import '../services/photojournal_export_service.dart';
 import '../theme/heritage_colors.dart';
 import '../widgets/bottom_nav.dart';
 
@@ -338,20 +339,26 @@ class _ProfileScreenState extends State<ProfileScreen>
     );
   }
 
-  Widget _buildHeader() {
+  Widget _buildTopBar() {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        _round(Icons.arrow_back,
-            () => Navigator.of(context).pushReplacementNamed('/home')),
         Text(
-          'My Profile',
+          'Explorer Profile',
           style: GoogleFonts.playfairDisplay(
               color: HeritageColors.cream,
               fontSize: 20,
               fontWeight: FontWeight.bold),
         ),
-        _round(Icons.edit, _showEditProfileDialog),
+        Row(
+          children: [
+            _round(Icons.badge_outlined, () => Navigator.pushNamed(context, '/passport')),
+            const SizedBox(width: 8),
+            _round(Icons.picture_as_pdf_outlined, () => PhotojournalExportService.exportJourneyPdf()),
+            const SizedBox(width: 8),
+            _round(Icons.edit, _showEditProfileDialog),
+          ],
+        ),
       ],
     );
   }
