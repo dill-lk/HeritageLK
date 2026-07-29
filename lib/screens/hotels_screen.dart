@@ -13,8 +13,8 @@ class _HotelData {
   final String imageUrl;
   final String bookingUrl;
   final String region;
-  final bool isFeatured;
   final bool isPartner;
+  final String description;
 
   const _HotelData(
     this.name,
@@ -24,8 +24,8 @@ class _HotelData {
     this.stars,
     this.imageUrl,
     this.bookingUrl,
-    this.region, {
-    this.isFeatured = false,
+    this.region,
+    this.description, {
     this.isPartner = false,
   });
 }
@@ -35,109 +35,145 @@ const List<_HotelData> _kHotels = [
       'The Fort Printers',
       'Galle Dutch Fort',
       4.9,
-      '\$120–\$280/night',
+      '\$140/night',
       5,
-      'https://images.unsplash.com/photo-1566073771259-6a8506099945?q=80&w=600',
-      'https://www.booking.com/hotel/lk/the-fort-printers.html',
+      'https://images.unsplash.com/photo-1566073771259-6a8506099945?q=80&w=800',
+      'https://www.booking.com/searchresults.html?ss=The+Fort+Printers+Galle',
       'Galle',
-      isFeatured: true,
+      '18th-century mansion turned boutique hotel located right inside the historic UNESCO ramparts of Galle Fort.',
       isPartner: true),
   _HotelData(
       'Amangalla',
       'Galle Dutch Fort',
       4.8,
-      '\$400–\$900/night',
+      '\$450/night',
       5,
-      'https://images.unsplash.com/photo-1551882547-ff40c63fe5fa?q=80&w=600',
-      'https://www.booking.com/hotel/lk/amangalla.html',
+      'https://images.unsplash.com/photo-1551882547-ff40c63fe5fa?q=80&w=800',
+      'https://www.booking.com/searchresults.html?ss=Amangalla+Galle',
       'Galle',
+      'Grand colonial heritage resort with 300 years of history overlooking Galle Fort lighthouse & ocean.',
       isPartner: true),
   _HotelData(
       'Jetwing Lighthouse',
-      'Galle Fort',
+      'Galle Fort Coast',
       4.7,
-      '\$180–\$350/night',
+      '\$190/night',
       5,
-      'https://images.unsplash.com/photo-1520250497591-112f2f40a3f4?q=80&w=600',
-      'https://www.booking.com/hotel/lk/jetwing-lighthouse.html',
-      'Galle'),
+      'https://images.unsplash.com/photo-1520250497591-112f2f40a3f4?q=80&w=800',
+      'https://www.booking.com/searchresults.html?ss=Jetwing+Lighthouse+Galle',
+      'Galle',
+      'Iconic cliffside tropical modernist masterpiece designed by legendary architect Geoffrey Bawa.',
+      isPartner: false),
+  _HotelData(
+      'Heritance Kandalama',
+      'Sigiriya & Dambulla',
+      4.9,
+      '\$160/night',
+      5,
+      'https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?q=80&w=800',
+      'https://www.booking.com/searchresults.html?ss=Heritance+Kandalama+Sigiriya',
+      'Sigiriya',
+      'World-renowned eco-hotel built into the cliff face overlooking Sigiriya rock fortress and Kandalama lake.',
+      isPartner: true),
   _HotelData(
       'Cinnamon Lodge Habarana',
       'Sigiriya Rock',
       4.6,
-      '\$90–\$220/night',
+      '\$110/night',
       4,
-      'https://images.unsplash.com/photo-1571896349842-33c89424de2d?q=80&w=600',
-      'https://www.booking.com/hotel/lk/cinnamon-lodge-habarana.html',
+      'https://images.unsplash.com/photo-1571896349842-33c89424de2d?q=80&w=800',
+      'https://www.booking.com/searchresults.html?ss=Cinnamon+Lodge+Habarana',
       'Sigiriya',
-      isPartner: true),
+      'Sprawling 27-acre sanctuary surrounded by lush forest and lakes, minutes away from Sigiriya.',
+      isPartner: false),
   _HotelData(
-      'Heritance Kandalama',
-      'Sigiriya & Dambulla',
-      4.8,
-      '\$150–\$300/night',
-      5,
-      'https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?q=80&w=600',
-      'https://www.booking.com/hotel/lk/heritance-kandalama.html',
-      'Sigiriya'),
+      'Aliya Resort & Spa',
+      'Sigiriya Citadel',
+      4.7,
+      '\$130/night',
+      4,
+      'https://images.unsplash.com/photo-1540555700478-4be289fbecef?q=80&w=800',
+      'https://www.booking.com/searchresults.html?ss=Aliya+Resort+Sigiriya',
+      'Sigiriya',
+      'Theme resort featuring breathtaking infinity pool views facing the dramatic Sigiriya Lion Rock.',
+      isPartner: true),
   _HotelData(
       'The Kandy House',
       'Temple of Tooth Relic',
-      4.7,
-      '\$160–\$320/night',
+      4.8,
+      '\$180/night',
       5,
-      'https://images.unsplash.com/photo-1564501049412-61c2a3083791?q=80&w=600',
-      'https://www.booking.com/hotel/lk/the-kandy-house.html',
+      'https://images.unsplash.com/photo-1564501049412-61c2a3083791?q=80&w=800',
+      'https://www.booking.com/searchresults.html?ss=The+Kandy+House',
       'Kandy',
+      'Exclusive 1804 ancestral manor turned luxury boutique hotel surrounded by tropical gardens near Kandy.',
       isPartner: true),
   _HotelData(
       'Amaya Hills Kandy',
       'Temple of Tooth Relic',
       4.5,
-      '\$80–\$180/night',
+      '\$90/night',
       4,
-      'https://images.unsplash.com/photo-1611892440504-42a792e24d32?q=80&w=600',
-      'https://www.booking.com/hotel/lk/amaya-hills.html',
-      'Kandy'),
+      'https://images.unsplash.com/photo-1611892440504-42a792e24d32?q=80&w=800',
+      'https://www.booking.com/searchresults.html?ss=Amaya+Hills+Kandy',
+      'Kandy',
+      'Kandyan palace-inspired resort perched atop the Heerassagala hills with panoramic valley vistas.',
+      isPartner: false),
+  _HotelData(
+      'Earl\'s Regency Hotel',
+      'Kandy Sacred City',
+      4.6,
+      '\$120/night',
+      5,
+      'https://images.unsplash.com/photo-1566073771259-6a8506099945?q=80&w=800',
+      'https://www.booking.com/searchresults.html?ss=Earls+Regency+Kandy',
+      'Kandy',
+      'Five-star luxury nestled along the Mahaweli River valley close to the Temple of the Sacred Tooth Relic.',
+      isPartner: false),
+  _HotelData(
+      '98 Acres Resort & Spa',
+      'Nine Arches Bridge',
+      4.9,
+      '\$210/night',
+      5,
+      'https://images.unsplash.com/photo-1586116104802-d1e86c5d9f6e?q=80&w=800',
+      'https://www.booking.com/searchresults.html?ss=98+Acres+Resort+Ella',
+      'Ella',
+      'Scenic eco-luxury chalet resort built on a 98-acre tea estate overlooking Little Adam\'s Peak.',
+      isPartner: true),
+  _HotelData(
+      'Ella Grand Peak',
+      'Ella Gap & Rock',
+      4.5,
+      '\$65/night',
+      4,
+      'https://images.unsplash.com/photo-1504215680853-026ed2a45def?q=80&w=800',
+      'https://www.booking.com/searchresults.html?ss=Ella+Grand+Peak',
+      'Ella',
+      'Cozy mountain retreat with direct views of Ella Gap and easy access to Nine Arches Bridge.',
+      isPartner: false),
   _HotelData(
       'Cinnamon Grand Colombo',
       'Galle Face Green',
-      4.6,
-      '\$130–\$260/night',
+      4.7,
+      '\$150/night',
       5,
-      'https://images.unsplash.com/photo-1455587734955-081b22074882?q=80&w=600',
-      'https://www.booking.com/hotel/lk/cinnamon-grand-colombo.html',
+      'https://images.unsplash.com/photo-1455587734955-081b22074882?q=80&w=800',
+      'https://www.booking.com/searchresults.html?ss=Cinnamon+Grand+Colombo',
       'Colombo',
+      'Premier 5-star city resort in the heart of Colombo near historic Dutch Hospital & Galle Face Green.',
       isPartner: true),
   _HotelData(
-      'Galadari Hotel Colombo',
-      'Colombo City',
-      4.4,
-      '\$80–\$160/night',
-      4,
-      'https://images.unsplash.com/photo-1542314831-068cd1dbfeeb?q=80&w=600',
-      'https://www.booking.com/hotel/lk/galadari.html',
-      'Colombo'),
-  _HotelData(
-      '98 Acres Resort Ella',
-      'Nine Arches Bridge',
+      'Galle Face Hotel',
+      'Galle Face Promenade',
       4.8,
-      '\$100–\$250/night',
+      '\$180/night',
       5,
-      'https://images.unsplash.com/photo-1586116104802-d1e86c5d9f6e?q=80&w=600',
-      'https://www.booking.com/hotel/lk/98-acres.html',
-      'Ella',
-      isFeatured: false,
+      'https://images.unsplash.com/photo-1542314831-068cd1dbfeeb?q=80&w=800',
+      'https://www.booking.com/searchresults.html?ss=Galle+Face+Hotel+Colombo',
+      'Colombo',
+      'Founded in 1864, one of Asia\'s most iconic oceanfront heritage hotels located on Colombo\'s promenade.',
       isPartner: true),
-  _HotelData(
-      'Ella Dream Cabana',
-      'Ella Rock',
-      4.5,
-      '\$40–\$100/night',
-      4,
-      'https://images.unsplash.com/photo-1504215680853-026ed2a45def?q=80&w=600',
-      'https://www.booking.com/searchresults.html?ss=Ella+Sri+Lanka',
-      'Ella'),
 ];
 
 class HotelsScreen extends StatefulWidget {
@@ -150,13 +186,13 @@ class HotelsScreen extends StatefulWidget {
 class _HotelsScreenState extends State<HotelsScreen> {
   String _selectedRegion = 'All';
 
-  final List<String> _regions = [
+  final List<String> _regions = const [
     'All',
     'Galle',
+    'Sigiriya',
     'Kandy',
-    'Colombo',
     'Ella',
-    'Sigiriya'
+    'Colombo',
   ];
 
   Future<void> _launchUrl(String urlString) async {
@@ -166,7 +202,8 @@ class _HotelsScreenState extends State<HotelsScreen> {
     }
   }
 
-  Future<void> _launchMaps(String query) async {
+  Future<void> _launchMaps(String name, String region) async {
+    final query = '$name, $region, Sri Lanka';
     final uri = Uri.parse('https://www.google.com/maps/search/?api=1&query=${Uri.encodeComponent(query)}');
     if (!await launchUrl(uri, mode: LaunchMode.externalApplication)) {
       debugPrint('Could not launch maps');
@@ -179,93 +216,114 @@ class _HotelsScreenState extends State<HotelsScreen> {
         ? _kHotels
         : _kHotels.where((h) => h.region == _selectedRegion).toList();
 
-    final List<_HotelData> featuredHotels =
-        filteredHotels.where((h) => h.isFeatured).toList();
-    final List<_HotelData> regularHotels =
-        filteredHotels.where((h) => !h.isFeatured).toList();
-
     return Scaffold(
-      backgroundColor: const Color(0xFF100E0A),
-      appBar: AppBar(
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Color(0xFFFEFAE0)),
-          onPressed: () => Navigator.pushReplacementNamed(context, '/home'),
-        ),
-        title: Text(
-          'Hotels & Stays',
-          style: GoogleFonts.playfairDisplay(
-            color: const Color(0xFFFEFAE0),
-            fontSize: 24,
-            fontWeight: FontWeight.w600,
-          ),
-        ),
-        centerTitle: true,
-      ),
-      body: CustomScrollView(
-        slivers: [
-          SliverToBoxAdapter(
-            child: _buildFilterChips(),
-          ),
-          if (featuredHotels.isNotEmpty)
-            SliverToBoxAdapter(
-              child: _buildFeaturedCard(featuredHotels.first),
+      backgroundColor: HeritageColors.background,
+      body: SafeArea(
+        child: Stack(
+          children: [
+            CustomScrollView(
+              slivers: [
+                SliverToBoxAdapter(child: _buildTopHeader()),
+                SliverToBoxAdapter(child: _buildRegionFilter()),
+                SliverPadding(
+                  padding: const EdgeInsets.fromLTRB(20, 10, 20, 140),
+                  sliver: SliverList(
+                    delegate: SliverChildBuilderDelegate(
+                      (context, index) {
+                        return _buildFullHotelCard(filteredHotels[index]);
+                      },
+                      childCount: filteredHotels.length,
+                    ),
+                  ),
+                ),
+              ],
             ),
-          SliverPadding(
-            padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
-            sliver: SliverList(
-              delegate: SliverChildBuilderDelegate(
-                (context, index) {
-                  return _buildRegularCard(regularHotels[index]);
-                },
-                childCount: regularHotels.length,
-              ),
+            const Align(
+              alignment: Alignment.bottomCenter,
+              child: HeritageBottomNav(currentIndex: 3),
             ),
-          ),
-          SliverToBoxAdapter(
-            child: _buildFooter(context),
-          ),
-        ],
+          ],
+        ),
       ),
-      bottomNavigationBar: const HeritageBottomNav(currentIndex: 3),
     );
   }
 
-  Widget _buildFilterChips() {
+  Widget _buildTopHeader() {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(20, 16, 20, 12),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          InkWell(
+            onTap: () => Navigator.pushReplacementNamed(context, '/home'),
+            borderRadius: BorderRadius.circular(20),
+            child: Container(
+              width: 40,
+              height: 40,
+              decoration: BoxDecoration(
+                color: Colors.white.withValues(alpha: 0.05),
+                shape: BoxShape.circle,
+                border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
+              ),
+              child: const Icon(Icons.arrow_back, color: HeritageColors.orange, size: 18),
+            ),
+          ),
+          Column(
+            children: [
+              const Text(
+                'HERITAGE STAYS',
+                style: TextStyle(
+                  color: HeritageColors.orange,
+                  fontSize: 10,
+                  fontWeight: FontWeight.bold,
+                  letterSpacing: 2,
+                ),
+              ),
+              Text(
+                'Hotels & Resorts',
+                style: GoogleFonts.playfairDisplay(
+                  color: HeritageColors.cream,
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(width: 40),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildRegionFilter() {
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
-      padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
+      padding: const EdgeInsets.fromLTRB(20, 8, 20, 16),
       child: Row(
         children: _regions.map((region) {
           final isSelected = _selectedRegion == region;
           return Padding(
-            padding: const EdgeInsets.only(right: 8.0),
+            padding: const EdgeInsets.only(right: 10),
             child: GestureDetector(
-              onTap: () {
-                setState(() {
-                  _selectedRegion = region;
-                });
-              },
+              onTap: () => setState(() => _selectedRegion = region),
               child: AnimatedContainer(
-                duration: const Duration(milliseconds: 250),
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                duration: const Duration(milliseconds: 200),
+                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
                 decoration: BoxDecoration(
-                  color: isSelected ? const Color(0xFFF4A261) : Colors.transparent,
-                  borderRadius: BorderRadius.circular(20),
+                  color: isSelected ? HeritageColors.orange : const Color(0xFF1A1714),
+                  borderRadius: BorderRadius.circular(24),
                   border: Border.all(
                     color: isSelected
-                        ? const Color(0xFFF4A261)
-                        : const Color(0xFFFEFAE0).withOpacity(0.3),
+                        ? HeritageColors.orange
+                        : Colors.white.withValues(alpha: 0.08),
                   ),
                 ),
                 child: Text(
                   region,
                   style: TextStyle(
-                    color: isSelected
-                        ? const Color(0xFF100E0A)
-                        : const Color(0xFFFEFAE0),
-                    fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                    color: isSelected ? HeritageColors.background : HeritageColors.cream,
+                    fontSize: 13,
+                    fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
                   ),
                 ),
               ),
@@ -276,332 +334,211 @@ class _HotelsScreenState extends State<HotelsScreen> {
     );
   }
 
-  Widget _buildFeaturedCard(_HotelData hotel) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
-      child: GestureDetector(
-        onTap: () => _launchUrl(hotel.bookingUrl),
-        child: Container(
-          height: 240,
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(16),
-            image: DecorationImage(
-              image: NetworkImage(hotel.imageUrl),
-              fit: BoxFit.cover,
-            ),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.5),
-                blurRadius: 10,
-                offset: const Offset(0, 4),
-              ),
-            ],
+  Widget _buildFullHotelCard(_HotelData hotel) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 24),
+      decoration: BoxDecoration(
+        color: const Color(0xFF1A1714),
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.07)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.4),
+            blurRadius: 16,
+            offset: const Offset(0, 6),
           ),
-          child: Container(
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(16),
-              gradient: LinearGradient(
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-                colors: [
-                  Colors.transparent,
-                  const Color(0xFF100E0A).withOpacity(0.9),
-                ],
-              ),
-            ),
-            padding: const EdgeInsets.all(20.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisAlignment: MainAxisAlignment.end,
-              children: [
-                if (hotel.isPartner) _buildPartnerBadge(),
-                const SizedBox(height: 8),
-                Text(
-                  hotel.name,
-                  style: GoogleFonts.playfairDisplay(
-                    color: const Color(0xFFFEFAE0),
-                    fontSize: 26,
-                    fontWeight: FontWeight.w700,
+        ],
+      ),
+      overflow: Clip.antiAlias,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Full-width tall image banner
+          Stack(
+            children: [
+              Image.network(
+                hotel.imageUrl,
+                height: 220,
+                width: double.infinity,
+                fit: BoxFit.cover,
+                errorBuilder: (_, __, ___) => Container(
+                  height: 220,
+                  color: const Color(0xFF2A221C),
+                  child: const Center(
+                    child: Icon(Icons.hotel_rounded, color: HeritageColors.orange, size: 48),
                   ),
                 ),
-                const SizedBox(height: 4),
-                Row(
-                  children: [
-                    const Icon(Icons.location_on,
-                        color: Color(0xFFF4A261), size: 16),
-                    const SizedBox(width: 4),
-                    Text(
-                      hotel.nearSite,
-                      style: TextStyle(
-                        color: const Color(0xFFFEFAE0).withOpacity(0.8),
-                        fontSize: 14,
-                      ),
+              ),
+              // Gradient shadow overlay
+              Positioned.fill(
+                child: DecoratedBox(
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                      colors: [
+                        Colors.black.withValues(alpha: 0.3),
+                        Colors.transparent,
+                        Colors.black.withValues(alpha: 0.7),
+                      ],
                     ),
-                    const Spacer(),
-                    _buildStars(hotel.stars),
-                  ],
+                  ),
                 ),
-                const SizedBox(height: 8),
-                Row(
-                  children: [
-                    Text(
-                      hotel.price,
-                      style: const TextStyle(
-                        color: Color(0xFFFEFAE0),
-                        fontWeight: FontWeight.bold,
-                        fontSize: 14,
-                      ),
+              ),
+              // Partner Badge
+              if (hotel.isPartner)
+                Positioned(
+                  top: 14,
+                  left: 14,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
+                    decoration: BoxDecoration(
+                      color: HeritageColors.orange,
+                      borderRadius: BorderRadius.circular(12),
                     ),
-                    const Spacer(),
-                    Row(
+                    child: const Row(
+                      mainAxisSize: MainAxisSize.min,
                       children: [
-                        const Icon(Icons.star, color: Colors.amber, size: 16),
-                        const SizedBox(width: 4),
+                        Icon(Icons.star, color: HeritageColors.background, size: 12),
+                        SizedBox(width: 4),
                         Text(
-                          hotel.rating.toString(),
-                          style: const TextStyle(
-                            color: Color(0xFFFEFAE0),
-                            fontWeight: FontWeight.w600,
+                          'HERITAGE PARTNER',
+                          style: TextStyle(
+                            color: HeritageColors.background,
+                            fontSize: 10,
+                            fontWeight: FontWeight.bold,
+                            letterSpacing: 0.8,
                           ),
                         ),
                       ],
                     ),
+                  ),
+                ),
+              // Price Tag
+              Positioned(
+                bottom: 14,
+                right: 14,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF100E0A).withValues(alpha: 0.85),
+                    borderRadius: BorderRadius.circular(14),
+                    border: Border.all(color: HeritageColors.orange.withValues(alpha: 0.4)),
+                  ),
+                  child: Text(
+                    hotel.price,
+                    style: const TextStyle(
+                      color: HeritageColors.orange,
+                      fontSize: 14,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+              ),
+              // Rating Badge
+              Positioned(
+                bottom: 14,
+                left: 14,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                  decoration: BoxDecoration(
+                    color: Colors.black.withValues(alpha: 0.75),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(Icons.star_rounded, color: Color(0xFFE9C46A), size: 16),
+                      const SizedBox(width: 4),
+                      Text(
+                        '${hotel.rating} (${hotel.stars}★)',
+                        style: const TextStyle(
+                          color: HeritageColors.cream,
+                          fontSize: 12,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+          // Details content
+          Padding(
+            padding: const EdgeInsets.all(20),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  hotel.name,
+                  style: GoogleFonts.playfairDisplay(
+                    color: HeritageColors.cream,
+                    fontSize: 22,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(height: 6),
+                Row(
+                  children: [
+                    const Icon(Icons.location_on_rounded, color: HeritageColors.orange, size: 15),
+                    const SizedBox(width: 6),
+                    Expanded(
+                      child: Text(
+                        hotel.nearSite,
+                        style: const TextStyle(
+                          color: Color(0xFF52B788),
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 10),
+                Text(
+                  hotel.description,
+                  style: TextStyle(
+                    color: Colors.white.withValues(alpha: 0.7),
+                    fontSize: 13,
+                    height: 1.5,
+                  ),
+                ),
+                const SizedBox(height: 18),
+                // Action Buttons
+                Row(
+                  children: [
+                    Expanded(
+                      child: ElevatedButton.icon(
+                        onPressed: () => _launchUrl(hotel.bookingUrl),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: HeritageColors.orange,
+                          foregroundColor: HeritageColors.background,
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                        ),
+                        icon: const Icon(Icons.hotel_rounded, size: 18),
+                        label: const Text(
+                          'Book Hotel',
+                          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    OutlinedButton.icon(
+                      onPressed: () => _launchMaps(hotel.name, hotel.region),
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: HeritageColors.cream,
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                        side: BorderSide(color: Colors.white.withValues(alpha: 0.2)),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                      ),
+                      icon: const Icon(Icons.map_rounded, size: 18, color: Color(0xFF52B788)),
+                      label: const Text('Map', style: TextStyle(fontSize: 14)),
+                    ),
                   ],
                 ),
               ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildRegularCard(_HotelData hotel) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 16),
-      decoration: BoxDecoration(
-        color: const Color(0xFF1E1B18),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: const Color(0xFF8B5E3C).withOpacity(0.2),
-        ),
-      ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          ClipRRect(
-            borderRadius: const BorderRadius.only(
-              topLeft: Radius.circular(12),
-              bottomLeft: Radius.circular(12),
-            ),
-            child: Image.network(
-              hotel.imageUrl,
-              width: 120,
-              height: 140,
-              fit: BoxFit.cover,
-              errorBuilder: (context, error, stackTrace) => Container(
-                width: 120,
-                height: 140,
-                color: const Color(0xFF8B5E3C).withOpacity(0.3),
-                child: const Icon(Icons.hotel, color: Color(0xFFFEFAE0)),
-              ),
-            ),
-          ),
-          Expanded(
-            child: Padding(
-              padding: const EdgeInsets.all(12.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Expanded(
-                        child: Text(
-                          hotel.name,
-                          style: GoogleFonts.playfairDisplay(
-                            color: const Color(0xFFFEFAE0),
-                            fontSize: 18,
-                            fontWeight: FontWeight.w600,
-                          ),
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ),
-                      if (hotel.isPartner) _buildPartnerBadge(),
-                    ],
-                  ),
-                  const SizedBox(height: 4),
-                  Row(
-                    children: [
-                      const Icon(Icons.location_on,
-                          color: Color(0xFFF4A261), size: 14),
-                      const SizedBox(width: 4),
-                      Expanded(
-                        child: Text(
-                          hotel.nearSite,
-                          style: TextStyle(
-                            color: const Color(0xFFFEFAE0).withOpacity(0.7),
-                            fontSize: 12,
-                          ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 4),
-                  _buildStars(hotel.stars),
-                  const SizedBox(height: 4),
-                  Row(
-                    children: [
-                      Text(
-                        hotel.price,
-                        style: const TextStyle(
-                          color: Color(0xFFFEFAE0),
-                          fontWeight: FontWeight.bold,
-                          fontSize: 12,
-                        ),
-                      ),
-                      const Spacer(),
-                      Row(
-                        children: [
-                          const Icon(Icons.star, color: Colors.amber, size: 14),
-                          const SizedBox(width: 2),
-                          Text(
-                            hotel.rating.toString(),
-                            style: const TextStyle(
-                              color: Color(0xFFFEFAE0),
-                              fontWeight: FontWeight.w600,
-                              fontSize: 12,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 8),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: _buildActionBtn(
-                          'Book',
-                          '🏨',
-                          const Color(0xFFE9C46A),
-                          () => _launchUrl(hotel.bookingUrl),
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: _buildActionBtn(
-                          'Maps',
-                          '📍',
-                          const Color(0xFF52B788),
-                          () => _launchMaps('${hotel.name} ${hotel.region} Sri Lanka'),
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildPartnerBadge() {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-      decoration: BoxDecoration(
-        color: const Color(0xFFF4A261).withOpacity(0.2),
-        borderRadius: BorderRadius.circular(4),
-        border: Border.all(color: const Color(0xFFF4A261)),
-      ),
-      child: const Text(
-        'PARTNER',
-        style: TextStyle(
-          color: Color(0xFFF4A261),
-          fontSize: 8,
-          fontWeight: FontWeight.bold,
-          letterSpacing: 0.5,
-        ),
-      ),
-    );
-  }
-
-  Widget _buildStars(int count) {
-    return Text(
-      '⭐' * count,
-      style: const TextStyle(fontSize: 10),
-    );
-  }
-
-  Widget _buildActionBtn(String text, String emoji, Color color, VoidCallback onTap) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(6),
-      child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 6),
-        decoration: BoxDecoration(
-          color: color.withOpacity(0.15),
-          borderRadius: BorderRadius.circular(6),
-          border: Border.all(color: color.withOpacity(0.5)),
-        ),
-        alignment: Alignment.center,
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Text(emoji, style: const TextStyle(fontSize: 12)),
-            const SizedBox(width: 4),
-            Text(
-              text,
-              style: TextStyle(
-                color: color,
-                fontSize: 12,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildFooter(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 24, 16, 40),
-      child: Column(
-        children: [
-          ElevatedButton(
-            onPressed: () => _launchUrl(
-                'https://www.booking.com/searchresults.html?ss=Sri+Lanka'),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF8B5E3C),
-              foregroundColor: const Color(0xFFFEFAE0),
-              minimumSize: const Size(double.infinity, 50),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
-            ),
-            child: const Text(
-              'Browse All Hotels',
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
-                letterSpacing: 0.5,
-              ),
-            ),
-          ),
-          const SizedBox(height: 16),
-          Text(
-            'Hotel links are affiliate partners. Booking fees support heritage preservation.',
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              color: const Color(0xFFFEFAE0).withOpacity(0.5),
-              fontSize: 12,
-              fontStyle: FontStyle.italic,
             ),
           ),
         ],

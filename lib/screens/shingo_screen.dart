@@ -411,7 +411,7 @@ class _ShingoScreenState extends State<ShingoScreen> {
 
   Widget _buildCustomHeader() {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
       decoration: BoxDecoration(
         color: const Color(0xFF161210),
         border: Border(bottom: BorderSide(color: Colors.white.withValues(alpha: 0.08))),
@@ -428,94 +428,14 @@ class _ShingoScreenState extends State<ShingoScreen> {
             },
             icon: const Icon(Icons.arrow_back, color: HeritageColors.cream),
           ),
-          const SizedBox(width: 4),
-          Stack(
-            children: [
-              Container(
-                width: 42,
-                height: 42,
-                decoration: BoxDecoration(
-                  gradient: const LinearGradient(
-                    colors: [Color(0x33E9C46A), Color(0x11E9C46A)],
-                  ),
-                  shape: BoxShape.circle,
-                  border: Border.all(color: const Color(0x66E9C46A)),
-                ),
-                child: const Center(
-                  child: Icon(Icons.auto_awesome, color: Color(0xFFE9C46A), size: 22),
-                ),
-              ),
-              Positioned(
-                bottom: 2,
-                right: 2,
-                child: Container(
-                  width: 11,
-                  height: 11,
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF52B788),
-                    shape: BoxShape.circle,
-                    border: Border.all(color: const Color(0xFF161210), width: 2),
-                  ),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(width: 12),
-          const Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Shingo AI',
-                  style: TextStyle(
-                    color: HeritageColors.cream,
-                    fontSize: 17,
-                    fontWeight: FontWeight.bold,
-                    letterSpacing: 0.3,
-                  ),
-                ),
-                SizedBox(height: 2),
-                Row(
-                  children: [
-                    Icon(Icons.bolt, color: Color(0xFF52B788), size: 12),
-                    SizedBox(width: 4),
-                    Text(
-                      'Heritage AI Assistant',
-                      style: TextStyle(
-                        color: Color(0xFF52B788),
-                        fontSize: 11,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ],
-                ),
-              ],
+          const SizedBox(width: 8),
+          Text(
+            'Shingo AI Guide',
+            style: GoogleFonts.playfairDisplay(
+              color: HeritageColors.cream,
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
             ),
-          ),
-          Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Icon(Icons.save_outlined, color: Color(0xFF52B788), size: 11),
-              const SizedBox(width: 3),
-              Text(
-                'Saved',
-                style: TextStyle(
-                  color: const Color(0xFF52B788).withValues(alpha: 0.8),
-                  fontSize: 10,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-            ],
-          ),
-          IconButton(
-            onPressed: _showInfoSheet,
-            icon: const Icon(Icons.info_outline, color: Color(0xB3FFFFFF), size: 20),
-            tooltip: 'About Shingo',
-          ),
-          IconButton(
-            onPressed: _clearChat,
-            icon: const Icon(Icons.delete_outline, color: Color(0xB3FFFFFF), size: 20),
-            tooltip: 'Clear chat',
           ),
         ],
       ),
