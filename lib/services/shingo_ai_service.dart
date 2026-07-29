@@ -1,329 +1,305 @@
 import 'dart:developer';
 import 'package:google_generative_ai/google_generative_ai.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'package:http/http.dart' as http;
 import '../config/app_config.dart';
-import '../models/heritage_site.dart';
 import 'wikipedia_service.dart';
 
-/// Shingo AI — RAG-powered heritage guide.
-/// Retrieves live data from Supabase + Wikipedia, then sends to Gemini.
-/// The API key is completely hidden from the user.
+/// Shingo — RAG-powered, personality-driven AI heritage guide.
+/// Gemini API is fully embedded. Users never see or configure it.
 class ShingoAiService {
+  // Shingo's personality — short, punchy, human. Gemini listens to short prompts better.
   static const String _systemPrompt = '''
-You are **Shingo**, a warm, knowledgeable, and deeply passionate AI travel and heritage guide for **HeritageLK** — Sri Lanka's premier heritage exploration app.
+You are Shingo — a fun, passionate, local Sri Lankan heritage guide inside the HeritageLK app.
 
-Your personality:
-- Enthusiastic, caring, and inspiring — like a local expert friend who loves their country
-- Highly knowledgeable about Sri Lankan history, UNESCO sites, Buddhist culture, colonial history, wildlife, and travel logistics
-- Always encouraging users to explore, preserve, and appreciate Sri Lanka's heritage
+PERSONALITY:
+- Talk like a knowledgeable local friend, NOT a boring textbook or robot
+- Be warm, enthusiastic, occasionally throw in a Sri Lankan phrase or expression
+- Use storytelling — paint a picture of what the user will experience
+- Show genuine excitement about Sri Lanka's history and nature
+- Ask follow-up questions to keep the conversation going naturally
+- Use light humour when appropriate
 
-Your knowledge covers:
-- All UNESCO World Heritage Sites in Sri Lanka (Sigiriya, Polonnaruwa, Anuradhapura, Galle Fort, Kandy, Dambulla, Sinharaja, Central Highlands)
-- Ticket prices, opening hours, dress codes, best visit times
-- Travel routes, distances, transport options (train, bus, tuk-tuk, taxi)
-- Local food, customs, festivals (Esala Perahera, Vesak, Sinhala New Year)
-- Wildlife parks (Yala, Minneriya, Udawalawe, Wilpattu)
-- Heritage app features (damage reporting, quests, XP system, archive records)
-- Weather patterns and best travel seasons
+KNOWLEDGE:
+- Deep expert on all Sri Lanka UNESCO World Heritage Sites
+- Know ticket prices, opening hours, travel tips, local food, wildlife
+- Know the HeritageLK app features (quests, damage reports, XP, archive)
+- Keep facts accurate — if you're not sure, say so honestly
 
-FORMATTING RULES (mandatory):
-- Always respond in clean, beautiful Markdown
-- Use **bold** for site names, prices, important facts
-- Use emoji tastefully at the start of sections (🏰 🛕 🌿 🐘 🚞 etc.)
-- Use bullet points for lists of facts or tips
-- Use > blockquotes for historical quotes or fascinating facts
-- NEVER expose any API keys, technical details, or mention Gemini/AI models
-- Keep responses engaging, warm, and traveler-friendly
-- If RAG context is provided, use it as your primary source and expand on it intelligently
+FORMAT:
+- Use markdown: **bold** for names/prices, • bullets for lists, emojis at section starts
+- Keep responses conversational length — not too short, not an essay
+- For complex topics use clear sections with emoji headers
+- NEVER mention Gemini, AI models, API keys, or any technical backend
+- NEVER be robotic or give dry FAQ-style answers
 ''';
 
-  final WikipediaService _wiki;
+  final WikipediaService _wiki = WikipediaService();
 
-  ShingoAiService({http.Client? httpClient})
-      : _wiki = WikipediaService(client: httpClient);
+  String get _key => AppConfig.effectiveGeminiApiKey;
 
-  String get _apiKey => AppConfig.effectiveGeminiApiKey;
+  // ─── Main chat entry point ─────────────────────────────────────────
+  Future<String> chat(
+    List<Map<String, String>> history,
+    String userMessage,
+  ) async {
+    if (_key.isEmpty) return _richFallback(userMessage);
 
-  /// Builds the RAG context string from Supabase heritage sites
-  Future<String> _fetchRagContext(String query) async {
-    final buffer = StringBuffer();
+    // 1. Fetch RAG context in parallel
+    final ragFuture = _buildContext(userMessage);
 
-    try {
-      final client = Supabase.instance.client;
-      // Search heritage_sites table for relevant sites
-      final rows = await client
-          .from('heritage_sites')
-          .select('title, summary, location_name')
-          .textSearch('title', query, config: 'english')
-          .limit(3);
-
-      if (rows.isNotEmpty) {
-        buffer.writeln('=== HERITAGELK DATABASE CONTEXT ===');
-        for (final row in rows) {
-          final site = HeritageSite.fromMap(row);
-          buffer.writeln('📍 ${site.title}');
-          if (site.locationName != null) buffer.writeln('Location: ${site.locationName}');
-          if (site.summary.isNotEmpty) buffer.writeln('Info: ${site.summary}');
-          buffer.writeln();
-        }
-      }
-    } catch (e) {
-      log('ShingoAiService: Supabase RAG search failed: $e');
-      // Try a broader search if text search fails
-      try {
-        final client = Supabase.instance.client;
-        final words = query.toLowerCase().split(' ').where((w) => w.length > 3).toList();
-        if (words.isNotEmpty) {
-          final rows = await client
-              .from('heritage_sites')
-              .select('title, summary, location_name')
-              .ilike('title', '%${words.first}%')
-              .limit(3);
-
-          if (rows.isNotEmpty) {
-            buffer.writeln('=== HERITAGELK DATABASE CONTEXT ===');
-            for (final row in rows) {
-              final site = HeritageSite.fromMap(row);
-              buffer.writeln('📍 ${site.title}');
-              if (site.locationName != null) buffer.writeln('Location: ${site.locationName}');
-              if (site.summary.isNotEmpty) buffer.writeln('Info: ${site.summary}');
-              buffer.writeln();
-            }
-          }
-        }
-      } catch (_) {}
+    // 2. Build Gemini chat history (proper Content objects, not strings)
+    final geminiHistory = <Content>[];
+    for (final msg in history) {
+      final role = msg['role'] ?? 'user';
+      final content = msg['content'] ?? '';
+      if (content.isEmpty) continue;
+      // Gemini only accepts 'user' and 'model' roles
+      geminiHistory.add(
+        role == 'user' ? Content.text(content) : Content.model([TextPart(content)]),
+      );
     }
 
-    // Always also fetch Wikipedia for extra depth
-    try {
-      final wikiText = await _wiki.search(query);
-      if (wikiText != null && wikiText.trim().isNotEmpty) {
-        buffer.writeln('=== WIKIPEDIA CONTEXT ===');
-        buffer.writeln(wikiText.trim());
-      }
-    } catch (e) {
-      log('ShingoAiService: Wikipedia RAG failed: $e');
-    }
+    // 3. Wait for RAG context
+    final context = await ragFuture;
 
-    return buffer.toString();
-  }
+    // 4. Inject RAG as a system-level note prepended to the user message
+    final enrichedMessage = context.isNotEmpty
+        ? '📚 CONTEXT (use this to inform your answer, do not quote it verbatim):\n$context\n\nUSER: $userMessage'
+        : userMessage;
 
-  /// Main chat method — fully RAG-powered with Gemini
-  Future<String> chat(List<Map<String, String>> history, String userMessage) async {
-    final key = _apiKey;
-    if (key.isEmpty) {
-      return _offlineFallback(userMessage);
-    }
-
-    // Build RAG context
-    String ragContext = '';
-    try {
-      ragContext = await _fetchRagContext(userMessage);
-    } catch (e) {
-      log('ShingoAiService: RAG fetch error: $e');
-    }
-
-    // Build conversation history for Gemini
-    final conversationHistory = history
-        .where((m) => m['content']?.isNotEmpty == true)
-        .map((m) => '${m['role'] == 'user' ? 'User' : 'Shingo'}: ${m['content']}')
-        .join('\n');
-
-    // Compose full prompt with RAG context
-    final promptParts = <String>[];
-    if (ragContext.isNotEmpty) {
-      promptParts.add('RETRIEVED CONTEXT (use this as your primary knowledge source):\n$ragContext');
-    }
-    if (conversationHistory.isNotEmpty) {
-      promptParts.add('CONVERSATION HISTORY:\n$conversationHistory');
-    }
-    promptParts.add('USER QUESTION: $userMessage');
-
-    final fullPrompt = promptParts.join('\n\n---\n\n');
-
-    // Try Gemini models in priority order
-    final models = [
-      'gemini-2.0-flash',
-      'gemini-1.5-flash',
-      'gemini-1.5-pro',
-      'gemini-2.0-flash-exp',
-    ];
+    // 5. Try Gemini models
+    final models = ['gemini-2.0-flash', 'gemini-1.5-flash', 'gemini-1.5-pro'];
 
     for (final modelName in models) {
       try {
-        log('ShingoAiService: trying model=$modelName');
+        log('Shingo: trying $modelName');
         final model = GenerativeModel(
           model: modelName,
-          apiKey: key,
+          apiKey: _key,
           systemInstruction: Content.system(_systemPrompt),
           generationConfig: GenerationConfig(
-            temperature: 0.75,
-            maxOutputTokens: 1024,
+            temperature: 0.85,   // more creative, more human
+            maxOutputTokens: 800,
+            topP: 0.95,
           ),
         );
-        final response = await model.generateContent([Content.text(fullPrompt)]);
+
+        // Use multi-turn chat with proper history
+        final chat = model.startChat(history: geminiHistory);
+        final response = await chat.sendMessage(Content.text(enrichedMessage));
         final reply = response.text;
+
         if (reply != null && reply.trim().isNotEmpty) {
-          log('ShingoAiService: success with $modelName');
+          log('Shingo: success with $modelName');
           return reply.trim();
         }
       } catch (e) {
-        log('ShingoAiService: $modelName failed — $e');
+        log('Shingo: $modelName failed — $e');
       }
     }
 
-    // All Gemini models failed — use offline fallback
-    return _offlineFallback(userMessage);
+    return _richFallback(userMessage);
   }
 
-  /// Rich offline fallback when Gemini is unreachable
-  String _offlineFallback(String query) {
+  // ─── RAG: Supabase + Wikipedia ─────────────────────────────────────
+  Future<String> _buildContext(String query) async {
+    final parts = <String>[];
+
+    // Supabase search (non-blocking)
+    try {
+      final client = Supabase.instance.client;
+      List rows = [];
+
+      // Try full-text search first
+      try {
+        rows = await client
+            .from('heritage_sites')
+            .select('title, summary, location_name')
+            .textSearch('title', query.split(' ').first, config: 'english')
+            .limit(2)
+            .timeout(const Duration(seconds: 4));
+      } catch (_) {
+        // Fallback to ILIKE
+        final keyword = query.split(' ').firstWhere((w) => w.length > 3, orElse: () => query.split(' ').first);
+        rows = await client
+            .from('heritage_sites')
+            .select('title, summary, location_name')
+            .ilike('title', '%$keyword%')
+            .limit(2)
+            .timeout(const Duration(seconds: 4));
+      }
+
+      if (rows.isNotEmpty) {
+        final sb = StringBuffer('From HeritageLK database:\n');
+        for (final row in rows) {
+          sb.writeln('• ${row['title']} (${row['location_name'] ?? 'Sri Lanka'}): ${(row['summary'] ?? '').toString().take(200)}');
+        }
+        parts.add(sb.toString());
+      }
+    } catch (e) {
+      log('Shingo RAG Supabase: $e');
+    }
+
+    // Wikipedia search (non-blocking)
+    try {
+      final wiki = await _wiki.search(query);
+      if (wiki != null && wiki.isNotEmpty) {
+        parts.add('Wikipedia: $wiki');
+      }
+    } catch (e) {
+      log('Shingo RAG Wikipedia: $e');
+    }
+
+    return parts.join('\n\n');
+  }
+
+  // ─── Rich offline fallback ──────────────────────────────────────────
+  String _richFallback(String query) {
     final q = query.toLowerCase();
 
     if (q.contains('sigiriya') || q.contains('lion rock')) {
-      return '''🏰 **Sigiriya — The Eighth Wonder of the World**
+      return '''🏰 **Sigiriya — The Eighth Wonder!**
 
-**Sigiriya Rock Fortress** rises 200 metres above the surrounding jungle in Sri Lanka's Cultural Triangle.
+Bro, Sigiriya is absolutely mind-blowing. Imagine a 5th-century king built his entire palace on TOP of a 200-metre rock in the middle of the jungle. That's King Kashyapa for you — dramatic until the very end.
 
-**Essential Info:**
-- 💵 **Entry:** \$30 USD (foreigners) | 100 LKR (locals)
-- 🕖 **Hours:** 7:00 AM – 5:30 PM daily
-- 📍 **Location:** Matale District, ~170 km from Colombo
+**The essentials:**
+- 💵 Entry: **\$30 USD** foreigners | 100 LKR locals
+- ⏰ Open: 7:00 AM – 5:30 PM
+- 📍 ~170 km from Colombo (about 3.5 hrs)
 
-**What to See:**
-- 🎨 **Sigiriya Frescoes** — 5th-century paintings of heavenly maidens
-- 🪞 **Mirror Wall** — Ancient polished plaster with 8th-century graffiti poems
-- 🦁 **Lion Paw Terrace** — Giant granite lion paws mark the final climb
-- 💧 **Royal Water Gardens** — Sophisticated hydraulic system still functions!
+**What you'll see:**
+- 🎨 **Sigiriya Frescoes** — ancient paintings of heavenly maidens, still vivid after 1,500 years
+- 🪞 **Mirror Wall** — polished plaster with poems scratched by ancient visitors (the world's oldest graffiti!)
+- 🦁 **Lion Paw Terrace** — two giant lion claws mark the start of the final climb
+- 💧 **Water Gardens** — a hydraulic system so clever it still works today!
 
-> *"Sigiriya is not just a rock — it is a statement of royal power, artistic genius, and engineering brilliance from the 5th century AD."*
+> 💡 Go at **7 AM sharp** — cool, quiet, and golden light for photos. The afternoon heat is brutal and crowds are insane by 10 AM.
 
-**💡 Tip:** Arrive by 7 AM to beat the heat and crowds. Wear sturdy shoes for the ~1,200 steps!''';
+What brings you to Sigiriya — day trip or staying nearby?''';
     }
 
     if (q.contains('galle') || q.contains('dutch fort')) {
-      return '''🏛️ **Galle Dutch Fort — A Living Colonial City**
+      return '''🏛️ **Galle Fort — Time Travel to 1663**
 
-Built by the Portuguese in 1588 and expanded by the Dutch in 1663, Galle Fort is the **best-preserved colonial sea fortress in Asia**.
+Okay so Galle Fort is one of those places where you just... wander. No agenda. Just lose yourself in 400-year-old Dutch colonial streets while sea wind hits you from the ramparts.
 
-**Essential Info:**
-- 💵 **Entry:** FREE to walk the ramparts & streets
-- 🏛️ **Museums inside:** ~300–500 LKR each
-- 📍 **Location:** Galle, Southern Coast
+**Quick facts:**
+- 💵 Entry: **FREE** to walk the fort & ramparts
+- 🏛️ Museums inside: 300–500 LKR each
+- 📍 Galle, 2 hrs south of Colombo
 
-**Must-See Spots:**
-- 🌊 **Flag Rock** — Iconic sunset viewpoint
-- 🕯️ **Galle Lighthouse** — Built in 1939, still operational
-- ⛪ **Dutch Reformed Church** (1755) — Gravestones form the floor!
-- 🛍️ Heritage boutiques, gem shops, and cozy cafes
+**Don't miss:**
+- 🌊 **Flag Rock at sunset** — honestly one of the best sunsets in Sri Lanka
+- ⛪ **Dutch Reformed Church (1755)** — the floor is literally made of old gravestones
+- 🕯️ **Galle Lighthouse** — built 1938, still guiding ships
+- ☕ Loads of amazing cafes and boutique shops inside the fort walls
 
-> *UNESCO World Heritage Site since 1988*
+> 💡 Best time: arrive around **5 PM**, watch the sunset, then have dinner at one of the fort restaurants. Magic.
 
-**💡 Best Time:** Visit at **5:30 PM** for a magical sunset over the Indian Ocean from the ramparts.''';
+Have you been to Galle before, or is this your first time?''';
     }
 
     if (q.contains('kandy') || q.contains('tooth') || q.contains('dalada')) {
-      return '''🛕 **Temple of the Sacred Tooth Relic (Sri Dalada Maligawa)**
+      return '''🛕 **Temple of the Sacred Tooth — Sri Lanka's Holiest Site**
 
-Home to Buddhism's most sacred relic — the **tooth of the Buddha** — this golden-roofed temple sits on the shores of Kandy Lake.
+This is THE place. The tooth relic of the Buddha has been kept here for centuries — Sri Lankan kings believed whoever held the tooth had the right to rule the island.
 
-**Essential Info:**
-- 💵 **Entry:** 2,000 LKR (foreigners)
-- 🕔 **Puja Times:** 5:30 AM | 9:30 AM | 6:30 PM
-- 👗 **Dress Code:** Shoulders & knees covered. Shoes off at entrance.
+**Basics:**
+- 💵 Entry: **2,000 LKR** foreigners
+- 🕔 Puja times: **5:30 AM | 9:30 AM | 6:30 PM**
+- 👗 Dress: shoulders & knees covered, shoes off at entrance (they sell sarongs outside if needed)
 
-**Highlights:**
-- 🦷 The sacred tooth relic — visible during special ceremonies
-- 🐘 **Esala Perahera** — Grand procession every August (don't miss it!)
-- 🏛️ **Kandyan Museum** within the complex
-- 🌿 Stunning lakeside setting in Sri Lanka's hill capital
+**Experience:**
+- 🥁 During puja, traditional drums echo through the whole complex — truly spiritual
+- 🐘 August? Catch the **Esala Perahera** — 10 days of the most spectacular procession on earth
+- 🏞️ The temple sits right on **Kandy Lake** — beautiful evening walks
 
-**💡 Tip:** Arrive 30 minutes before puja for the best experience.''';
+> 💡 Arrive 20 mins before puja starts. The atmosphere inside during the ceremony is something you'll never forget.
+
+Are you planning to catch one of the puja ceremonies?''';
     }
 
-    if (q.contains('yala') || q.contains('safari') || q.contains('leopard')) {
-      return '''🐆 **Yala National Park — Leopard Capital of the World**
+    if (q.contains('yala') || q.contains('leopard') || q.contains('safari')) {
+      return '''🐆 **Yala — Where Leopards Rule**
 
-Yala has the **highest leopard density on Earth**, making it the world's best place to spot these magnificent cats in the wild.
+Yala has the **highest leopard density anywhere on Earth**. That's not marketing — it's a legit wildlife fact. You WILL see a leopard if you go at the right time.
 
-**Essential Info:**
-- 💵 **Entry:** ~\$35 USD + Jeep hire (~15,000 LKR/jeep, shared possible)
-- 🕕 **Safari Times:** Morning (6–10 AM) | Evening (3–6 PM)
-- 📍 **Location:** Tissamaharama, Southeast Sri Lanka
+**The deal:**
+- 💵 ~\$35 USD park entry + jeep hire (~15,000 LKR, shared with others = cheaper)
+- 🕕 Morning safari: **6–10 AM** | Evening: **3–6 PM**
+- 📍 Tissamaharama, southeast coast
 
-**Wildlife You'll See:**
-- 🐆 Sri Lankan Leopard (endemic)
-- 🐘 Asian Elephants (herds of 30+)
-- 🐻 Sloth Bears
-- 🐊 Saltwater Crocodiles
-- 🦚 Peacocks & hundreds of bird species
+**What you'll spot:**
+- 🐆 Sri Lankan Leopard (endemic, nowhere else on earth)
+- 🐘 Elephant herds (50+ at waterholes)
+- 🐻 Sloth Bears (rare but Yala has good numbers)
+- 🦅 250+ bird species
+- 🐊 Massive saltwater crocodiles
 
-**💡 Best Months:** February–July (dry season, animals gather near waterholes)''';
+> 💡 **Feb–July** is best (dry season). Waterholes dry up, animals crowd together, sightings go crazy. Avoid monsoon season (Oct–Jan for this region).
+
+Morning or evening safari — which are you going for?''';
     }
 
-    if (q.contains('dambulla') || q.contains('cave')) {
-      return '''🗿 **Dambulla Cave Temple (Golden Temple)**
+    if (q.contains('train') || q.contains('ella') || q.contains('kandy to ella')) {
+      return '''🚞 **Kandy to Ella — The World's Most Scenic Train Ride**
 
-Five sacred cave sanctuaries containing **153 Buddha statues** and some of the most breathtaking ancient murals in Asia — all carved into a single granite rock.
+No exaggeration — travel writers consistently rank this as one of the **top 10 train journeys on the planet**. And it costs almost nothing.
 
-**Essential Info:**
-- 💵 **Entry:** 2,000 LKR (foreigners)
-- 🕖 **Hours:** 7:00 AM – 7:00 PM
-- 📍 **Location:** Dambulla, Central Province
+**The route:**
+- 🗺️ Kandy → Nuwara Eliya → Ella (~7 hours)
+- 💵 2nd class: ~600–800 LKR | 3rd class: ~300 LKR (open doors, hang out!)
+- 🎟️ Book in advance at **eticket.railway.gov.lk** (2nd class reserved seats sell out fast!)
 
-**The 5 Cave Sanctuaries:**
-1. **Cave of the Divine King** — 14m reclining Buddha
-2. **Cave of the Great King** — Largest & most impressive
-3. **Cave of the Great New King** — 50 statues
-4. Cave 4 & 5 — More recent additions
+**What you'll see:**
+- 🌿 Endless tea plantations cascading down hillsides
+- 🌫️ Misty mountain passes at 1,800m altitude
+- 💧 Waterfalls running alongside the track
+- 🌉 Nine Arch Bridge near Ella — the Instagram shot everyone wants
 
-> *UNESCO World Heritage Site since 1991*
+> 💡 Sit on the **RIGHT side** of the train heading from Kandy to Ella for the best valley views. Or just hang in the doorway with the wind in your face — that's the real Sri Lanka experience 🤙
 
-**💡 Tip:** Remove shoes before entering. White socks recommended for comfort on the stone floors.''';
+When are you planning to go?''';
     }
 
-    if (q.contains('damage') || q.contains('report') || q.contains('xp')) {
-      return '''🛡️ **Reporting Heritage Damage on HeritageLK**
+    if (q.contains('damage') || q.contains('report') || q.contains('xp') || q.contains('quest')) {
+      return '''🛡️ **Protecting Heritage with HeritageLK**
 
-You can help protect Sri Lanka's treasures by reporting damage directly in the app!
+You can literally help save Sri Lanka's ancient treasures through the app — and earn rewards doing it!
 
-**How to Report:**
+**Report Heritage Damage:**
 1. Tap **Report Damage** on the home screen
-2. 📸 Take or upload photos of the damage
-3. Describe what you see (cracks, vandalism, water damage, etc.)
-4. Your GPS location is auto-captured
-5. Submit — and earn **+100 Heritage XP**! 🏆
+2. 📸 Photo the damage (cracks, vandalism, flooding, etc.)
+3. Location is auto-captured via GPS
+4. Add a quick description and submit
+5. Earn **+100 XP** instantly! 🏆
 
-**Types of Damage to Report:**
-- Structural cracks or collapse risk
-- Vandalism or graffiti
-- Water damage or flooding
-- Unauthorized construction nearby
-- Illegal excavation
+**Quests & XP System:**
+- Complete quests to unlock badges and climb the leaderboard
+- Visit sites, submit reports, explore the archive — all earn XP
+- Top contributors get featured in the app
 
-Your reports go directly to heritage preservation authorities. **You are the guardian of Sri Lanka's past!**''';
+**Why it matters:**
+Your reports go to Sri Lanka's Central Cultural Fund and conservation authorities. Real people act on them. You're not just using an app — you're an actual heritage guardian 💪
+
+Which site are you at right now?''';
     }
 
-    return '''🏛️ **Ayubowan! Welcome to Shingo AI** 🙏
+    return '''🙏 **Ayubowan! I'm Shingo, your Sri Lanka guide!**
 
-I'm your personal guide to Sri Lanka's magnificent heritage. Here's what I can help with:
+Looks like I'm having a bit of trouble connecting right now, but I've got loads of built-in knowledge ready to go!
 
-**🏰 Heritage Sites**
-- Sigiriya, Polonnaruwa, Anuradhapura, Galle Fort, Kandy, Dambulla
+Ask me about:
+- 🏰 **Heritage sites** — Sigiriya, Galle Fort, Kandy, Polonnaruwa, Dambulla, Anuradhapura
+- 🐆 **Wildlife** — Yala leopards, Minneriya elephants, Wilpattu, Udawalawe
+- 🚞 **Travel** — Kandy to Ella train, routes, distances, transport tips
+- 🍛 **Culture** — festivals, food, customs, dress codes
+- 🛡️ **App features** — damage reporting, quests, XP, archive
 
-**🐘 Wildlife & Nature**  
-- Yala, Minneriya, Udawalawe, Wilpattu national parks
-
-**🚞 Travel & Logistics**
-- Train routes, distances, ticket prices, best times to visit
-
-**🛡️ App Features**
-- Damage reporting, earning XP, quests, archive records
-
-**🍛 Culture & Food**
-- Local customs, festivals, cuisine recommendations
-
-*Just ask me anything about Sri Lanka — I'm here to make your journey unforgettable!*''';
+What do you want to explore? 😊''';
   }
+}
+
+extension on String {
+  String take(int n) => length <= n ? this : substring(0, n);
 }

@@ -21,7 +21,7 @@ class _ShingoScreenState extends State<ShingoScreen> {
 
   final List<_ChatMessage> _messages = [
     const _ChatMessage(
-      text: 'Ayubowan! 🙏 I am **Shingo**, your personal AI guide for Sri Lankan heritage & travel.\n\nAsk me anything about historical sites, ticket prices, weather, travel routes, or wildlife safaris!',
+      text: 'Ayubowan! 🙏 I\'m **Shingo** — your local guide to Sri Lanka\'s incredible heritage.\n\nWhether you want to climb **Sigiriya**, spot leopards in **Yala**, or find the best sunset in **Galle Fort** — I\'ve got you. What do you want to explore?',
       isUser: false,
     ),
   ];
@@ -80,8 +80,8 @@ class _ShingoScreenState extends State<ShingoScreen> {
 
     try {
       final history = _messages
-          .where((m) => !m.isStreaming)
-          .map((m) => {'role': m.isUser ? 'user' : 'assistant', 'content': m.text})
+          .where((m) => !m.isStreaming && m.text.isNotEmpty)
+          .map((m) => {'role': m.isUser ? 'user' : 'model', 'content': m.text})
           .toList();
 
       final reply = await _shingoAi.chat(history, text);
@@ -138,7 +138,7 @@ class _ShingoScreenState extends State<ShingoScreen> {
       _messages
         ..clear()
         ..add(const _ChatMessage(
-          text: 'Ayubowan! 🙏 I am **Shingo**, your personal AI guide for Sri Lankan heritage & travel.\n\nAsk me anything about historical sites, ticket prices, weather, travel routes, or wildlife safaris!',
+          text: 'Ayubowan! 🙏 I\'m **Shingo** — your local guide to Sri Lanka\'s incredible heritage.\n\nWhether you want to climb **Sigiriya**, spot leopards in **Yala**, or find the best sunset in **Galle Fort** — I\'ve got you. What do you want to explore?',
           isUser: false,
         ));
     });
