@@ -252,15 +252,6 @@ class _HomeScreenState extends State<HomeScreen> {
                   bgColor: const Color(0xFFE9C46A),
                   onTap: () => Navigator.of(context).pushNamed('/hotels'),
                 ),
-                const SizedBox(height: 16),
-                _BannerCard(
-                  emoji: '🎮',
-                  title: 'Heritage Quest Challenge',
-                  subtitle: 'Test your knowledge on Sri Lankan ancient history & win bonus XP points!',
-                  borderColor: const Color(0xFF9C6ADE),
-                  bgColor: const Color(0xFF9C6ADE),
-                  onTap: () => Navigator.of(context).pushNamed('/game'),
-                ),
                 const SizedBox(height: 32),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
