@@ -4,8 +4,13 @@ abstract class AppConfig {
   static const apiBaseUrl = String.fromEnvironment('API_BASE_URL', defaultValue: 'http://localhost:3000');
   static const geminiApiKey = String.fromEnvironment('GEMINI_API_KEY');
 
-  // Embedded default Gemini API key for instant out-of-the-box user experience
-  static const String _embeddedDefaultKey = 'AIzaSyBI6mNhWme4EsYoUgYhnNioWkzFw1Ew0VI';
+  // ── Embedded Gemini API keys (users never see these) ──────────────────────
+  // Primary embedded key — replace this with a fresh key if the current one
+  // hits quota limits. Get a free key at: https://aistudio.google.com/apikey
+  static const String _primaryKey = 'AIzaSyBI6mNhWme4EsYoUgYhnNioWkzFw1Ew0VI';
+
+  // Secondary embedded key as backup (set to empty string if not needed)
+  static const String _secondaryKey = '';
 
   static String _userGeminiApiKey = '';
 
@@ -15,11 +20,18 @@ abstract class AppConfig {
     _userGeminiApiKey = key.trim();
   }
 
+  /// Returns the best available Gemini API key.
+  /// Priority: user-provided > env var > primary embedded > secondary embedded
   static String get effectiveGeminiApiKey {
     if (_userGeminiApiKey.isNotEmpty) return _userGeminiApiKey;
     if (geminiApiKey.isNotEmpty) return geminiApiKey;
-    return _embeddedDefaultKey;
+    if (_primaryKey.isNotEmpty) return _primaryKey;
+    if (_secondaryKey.isNotEmpty) return _secondaryKey;
+    return '';
   }
+
+  /// Whether a Gemini key is available at all
+  static bool get hasGeminiKey => effectiveGeminiApiKey.isNotEmpty;
 
   static bool get hasSupabase => supabaseUrl.isNotEmpty && supabaseAnonKey.isNotEmpty;
 }

@@ -1,5 +1,4 @@
 // ignore_for_file: prefer_const_constructors, prefer_const_literals_to_create_immutables
-
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -284,28 +283,47 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
     final rankTitle = _getRankTitle(points);
 
     return Scaffold(
+      backgroundColor: const Color(0xFF100E0A),
       body: SafeArea(
         child: Stack(
           children: [
+            Positioned(
+              top: 0,
+              left: 0,
+              right: 0,
+              height: 300,
+              child: Container(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    colors: [
+                      HeritageColors.orange.withValues(alpha: 0.15),
+                      const Color(0xFF100E0A),
+                    ],
+                  ),
+                ),
+              ),
+            ),
             ListView(
               padding: const EdgeInsets.fromLTRB(20, 16, 20, 140),
               children: [
                 _buildHeader(),
-                const SizedBox(height: 20),
+                const SizedBox(height: 32),
                 _buildHeroProfileCard(level, levelProgress, points, rankTitle),
-                const SizedBox(height: 20),
+                const SizedBox(height: 32),
                 _buildStatsRow(points),
-                const SizedBox(height: 24),
+                const SizedBox(height: 32),
                 _buildGeminiAiCard(),
-                const SizedBox(height: 24),
+                const SizedBox(height: 32),
                 _buildAchievementsSection(),
-                const SizedBox(height: 24),
+                const SizedBox(height: 32),
                 _buildDamageReportsSection(),
-                const SizedBox(height: 24),
+                const SizedBox(height: 32),
                 _buildRecentDiscoveriesSection(),
-                const SizedBox(height: 24),
+                const SizedBox(height: 32),
                 _buildQuickActions(),
-                const SizedBox(height: 20),
+                const SizedBox(height: 32),
                 _buildLogoutButton(_logout),
               ],
             ),
@@ -334,105 +352,102 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
     final nextLevelPoints = (level + 1) * 100;
     final displayName = _getDisplayName();
 
-    return Container(
-      padding: const EdgeInsets.all(22),
-      decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          colors: [Color(0xFF2A201A), Color(0xFF191310)],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        borderRadius: BorderRadius.circular(28),
-        border: Border.all(color: HeritageColors.orange.withValues(alpha: 0.3), width: 1.5),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.4),
-            blurRadius: 16,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Column(
-        children: [
-          Row(
-            children: [
-              ScaleTransition(
-                scale: _avatarScale,
-                child: Container(
-                  width: 80,
-                  height: 80,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    gradient: const LinearGradient(colors: [Color(0xFFF4A261), Color(0xFFE76F51)]),
-                    boxShadow: [
-                      BoxShadow(
-                        color: HeritageColors.orange.withValues(alpha: 0.5),
-                        blurRadius: 12,
-                      ),
-                    ],
-                  ),
-                  child: Center(
-                    child: Text(_selectedAvatarEmoji, style: const TextStyle(fontSize: 42)),
-                  ),
-                ),
+    return Column(
+      children: [
+        ScaleTransition(
+          scale: _avatarScale,
+          child: Container(
+            width: 100,
+            height: 100,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              gradient: const LinearGradient(
+                colors: [HeritageColors.orange, Color(0xFFE76F51)],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
               ),
-              const SizedBox(width: 18),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      displayName,
-                      style: const TextStyle(color: HeritageColors.cream, fontSize: 22, fontWeight: FontWeight.bold),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      rankTitle,
-                      style: const TextStyle(color: Color(0xFFE9C46A), fontSize: 13, fontWeight: FontWeight.w600),
-                    ),
-                    const SizedBox(height: 8),
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                      decoration: BoxDecoration(
-                        color: HeritageColors.orange.withValues(alpha: 0.2),
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: HeritageColors.orange.withValues(alpha: 0.4)),
-                      ),
-                      child: Text(
-                        'LEVEL $level EXPLORER',
-                        style: const TextStyle(color: HeritageColors.orange, fontSize: 10, fontWeight: FontWeight.bold, letterSpacing: 1),
-                      ),
-                    ),
-                  ],
+              boxShadow: [
+                BoxShadow(
+                  color: HeritageColors.orange.withValues(alpha: 0.4),
+                  blurRadius: 24,
+                  spreadRadius: 4,
                 ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 14),
-          Text(
-            '"$_customBio"',
-            style: const TextStyle(color: Colors.white70, fontSize: 12, fontStyle: FontStyle.italic),
-          ),
-          const SizedBox(height: 18),
-          ClipRRect(
-            borderRadius: BorderRadius.circular(10),
-            child: LinearProgressIndicator(
-              value: levelProgress,
-              minHeight: 10,
-              color: HeritageColors.orange,
-              backgroundColor: Colors.white.withValues(alpha: 0.1),
+              ],
+              border: Border.all(color: HeritageColors.cream.withValues(alpha: 0.2), width: 2),
+            ),
+            child: Center(
+              child: Text(_selectedAvatarEmoji, style: const TextStyle(fontSize: 50)),
             ),
           ),
-          const SizedBox(height: 8),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        ),
+        const SizedBox(height: 20),
+        Text(
+          displayName,
+          style: GoogleFonts.playfairDisplay(
+            color: HeritageColors.cream,
+            fontSize: 28,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        const SizedBox(height: 8),
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+          decoration: BoxDecoration(
+            color: HeritageColors.orange.withValues(alpha: 0.15),
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(color: HeritageColors.orange.withValues(alpha: 0.3)),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
             children: [
-              Text('${(levelProgress * 100).toInt()}% to Level ${level + 1}', style: const TextStyle(color: Colors.white60, fontSize: 12)),
-              Text('$points / $nextLevelPoints XP', style: const TextStyle(color: HeritageColors.orange, fontSize: 12, fontWeight: FontWeight.bold)),
+              const Icon(Icons.star, color: HeritageColors.orange, size: 14),
+              const SizedBox(width: 6),
+              Text(
+                rankTitle.toUpperCase(),
+                style: const TextStyle(
+                  color: HeritageColors.orange,
+                  fontSize: 12,
+                  fontWeight: FontWeight.bold,
+                  letterSpacing: 1.2,
+                ),
+              ),
             ],
           ),
-        ],
-      ),
+        ),
+        const SizedBox(height: 16),
+        Text(
+          '"$_customBio"',
+          textAlign: TextAlign.center,
+          style: TextStyle(
+            color: Colors.white.withValues(alpha: 0.7),
+            fontSize: 14,
+            fontStyle: FontStyle.italic,
+          ),
+        ),
+        const SizedBox(height: 24),
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text('Level $level', style: const TextStyle(color: HeritageColors.cream, fontWeight: FontWeight.bold)),
+                Text('$points / $nextLevelPoints XP', style: const TextStyle(color: HeritageColors.orange, fontWeight: FontWeight.bold)),
+              ],
+            ),
+            const SizedBox(height: 8),
+            ClipRRect(
+              borderRadius: BorderRadius.circular(10),
+              child: LinearProgressIndicator(
+                value: levelProgress,
+                minHeight: 8,
+                color: HeritageColors.orange,
+                backgroundColor: Colors.white.withValues(alpha: 0.1),
+              ),
+            ),
+          ],
+        ),
+      ],
     );
   }
 
@@ -528,11 +543,11 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Text('Heritage Badges & Achievements', style: GoogleFonts.playfairDisplay(color: HeritageColors.cream, fontSize: 18, fontWeight: FontWeight.bold)),
-            Text('${badges.where((b) => b['unlocked'] as bool).length}/${badges.length} Unlocked', style: const TextStyle(color: HeritageColors.orange, fontSize: 12, fontWeight: FontWeight.bold)),
+            Text('Heritage Badges', style: GoogleFonts.playfairDisplay(color: HeritageColors.cream, fontSize: 18, fontWeight: FontWeight.bold)),
+            Text('${badges.where((b) => b['unlocked'] as bool).length}/${badges.length}', style: const TextStyle(color: HeritageColors.orange, fontSize: 14, fontWeight: FontWeight.bold)),
           ],
         ),
-        const SizedBox(height: 14),
+        const SizedBox(height: 16),
         SizedBox(
           height: 115,
           child: ListView.separated(
@@ -576,18 +591,21 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
                   );
                 },
                 child: Container(
-                  width: 100,
+                  width: 110,
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
                     color: const Color(0xFF1E1B18),
                     borderRadius: BorderRadius.circular(20),
-                    border: Border.all(color: unlocked ? HeritageColors.orange.withValues(alpha: 0.3) : Colors.white10),
+                    border: Border.all(color: unlocked ? HeritageColors.orange.withValues(alpha: 0.5) : Colors.white10),
+                    boxShadow: unlocked
+                        ? [BoxShadow(color: HeritageColors.orange.withValues(alpha: 0.15), blurRadius: 12, spreadRadius: 1)]
+                        : null,
                   ),
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       Text(b['icon'] as String, style: TextStyle(fontSize: 28, color: unlocked ? null : Colors.grey)),
-                      const SizedBox(height: 6),
+                      const SizedBox(height: 8),
                       Text(
                         b['title'] as String,
                         maxLines: 2,
@@ -619,7 +637,7 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
             ),
           ],
         ),
-        const SizedBox(height: 12),
+        const SizedBox(height: 16),
         if (_userReports.isEmpty)
           Container(
             padding: const EdgeInsets.all(20),
@@ -668,7 +686,7 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text('Top Heritage Discoveries', style: GoogleFonts.playfairDisplay(color: HeritageColors.cream, fontSize: 18, fontWeight: FontWeight.bold)),
-        const SizedBox(height: 12),
+        const SizedBox(height: 16),
         SizedBox(
           height: 140,
           child: ListView.separated(
@@ -688,7 +706,7 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
                         borderRadius: BorderRadius.circular(16),
                         child: Image.network(site['img']!, width: 160, height: 95, fit: BoxFit.cover),
                       ),
-                      const SizedBox(height: 6),
+                      const SizedBox(height: 8),
                       Text(site['name']!, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(color: HeritageColors.cream, fontSize: 13, fontWeight: FontWeight.bold)),
                       Text(site['type']!, style: const TextStyle(color: Colors.white54, fontSize: 11)),
                     ],
@@ -715,11 +733,11 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
           Row(
             children: [
               Expanded(child: _QuickAction(icon: Icons.person_outline, color: const Color(0xFF52B788), label: 'Edit Profile', onTap: _showEditProfileDialog)),
-              Expanded(child: _QuickAction(icon: Icons.map_outlined, color: const Color(0xFF9C6ADE), label: 'My Quests', onTap: () => Navigator.of(context).pushNamed('/quests'))),
+              Expanded(child: _QuickAction(icon: Icons.hotel, color: const Color(0xFF9C6ADE), label: 'Hotels & Stays', onTap: () => Navigator.of(context).pushNamed('/hotels'))),
               Expanded(child: _QuickAction(icon: Icons.auto_awesome, color: const Color(0xFFE9C46A), label: 'Shingo AI', onTap: () => Navigator.of(context).pushNamed('/shingo'))),
             ],
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 16),
           Row(
             children: [
               Expanded(child: _QuickAction(icon: Icons.shield, color: HeritageColors.orange, label: 'Report Damage', onTap: () => Navigator.of(context).pushNamed('/report-damage'))),
@@ -737,18 +755,19 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
       onTap: onLogout,
       borderRadius: BorderRadius.circular(18),
       child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 14),
+        width: double.infinity,
+        padding: const EdgeInsets.symmetric(vertical: 16),
         decoration: BoxDecoration(
-          border: Border.all(color: const Color(0x4DE76F51)),
+          border: Border.all(color: Colors.redAccent.withValues(alpha: 0.5)),
           borderRadius: BorderRadius.circular(18),
-          color: const Color(0x1AE76F51),
+          color: Colors.redAccent.withValues(alpha: 0.1),
         ),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: const [
-            Icon(Icons.logout, color: Color(0xFFE76F51), size: 18),
+            Icon(Icons.logout, color: Colors.redAccent, size: 20),
             SizedBox(width: 8),
-            Text('Log Out', style: TextStyle(color: Color(0xFFE76F51), fontWeight: FontWeight.bold)),
+            Text('Log Out', style: TextStyle(color: Colors.redAccent, fontWeight: FontWeight.bold, fontSize: 16)),
           ],
         ),
       ),
@@ -783,36 +802,37 @@ class _DamageReportCard extends StatelessWidget {
         : (report.status == 'in_review' ? const Color(0xFFE9C46A) : HeritageColors.orange);
 
     return Container(
-      margin: const EdgeInsets.only(bottom: 10),
-      padding: const EdgeInsets.all(14),
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: const Color(0xFF1E1B18),
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(20),
         border: Border.all(color: Colors.white10),
       ),
       child: Row(
         children: [
           Container(
-            padding: const EdgeInsets.all(10),
+            padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(color: statusColor.withValues(alpha: 0.15), shape: BoxShape.circle),
-            child: Icon(Icons.warning_amber, color: statusColor, size: 18),
+            child: Icon(Icons.warning_amber, color: statusColor, size: 20),
           ),
-          const SizedBox(width: 12),
+          const SizedBox(width: 16),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(report.damageType, style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.bold)),
-                Text(report.location, style: const TextStyle(color: Colors.white60, fontSize: 11)),
+                Text(report.damageType, style: const TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.bold)),
+                const SizedBox(height: 4),
+                Text(report.location, style: const TextStyle(color: Colors.white60, fontSize: 12)),
               ],
             ),
           ),
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-            decoration: BoxDecoration(color: statusColor.withValues(alpha: 0.2), borderRadius: BorderRadius.circular(12)),
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+            decoration: BoxDecoration(color: statusColor.withValues(alpha: 0.2), borderRadius: BorderRadius.circular(14)),
             child: Text(
               report.status.toUpperCase(),
-              style: TextStyle(color: statusColor, fontSize: 10, fontWeight: FontWeight.bold),
+              style: TextStyle(color: statusColor, fontSize: 10, fontWeight: FontWeight.bold, letterSpacing: 0.5),
             ),
           ),
         ],
@@ -833,24 +853,32 @@ class _StatCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(14),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: const Color(0xFF1E1B18),
+        color: const Color(0xFF1E1B18).withValues(alpha: 0.6),
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.05)),
+        border: Border.all(color: color.withValues(alpha: 0.3)),
+        boxShadow: [
+          BoxShadow(
+            color: color.withValues(alpha: 0.05),
+            blurRadius: 10,
+            spreadRadius: 1,
+          ),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Container(
-            width: 34,
-            height: 34,
-            decoration: BoxDecoration(color: color.withValues(alpha: 0.15), borderRadius: BorderRadius.circular(10)),
-            child: Icon(icon, color: color, size: 18),
+            width: 36,
+            height: 36,
+            decoration: BoxDecoration(color: color.withValues(alpha: 0.15), borderRadius: BorderRadius.circular(12)),
+            child: Icon(icon, color: color, size: 20),
           ),
-          const SizedBox(height: 10),
-          Text(value, style: const TextStyle(color: HeritageColors.cream, fontSize: 20, fontWeight: FontWeight.bold)),
-          Text(label, style: TextStyle(color: Colors.white.withValues(alpha: 0.5), fontSize: 10, fontWeight: FontWeight.w600, letterSpacing: 0.8)),
+          const SizedBox(height: 12),
+          Text(value, style: const TextStyle(color: HeritageColors.cream, fontSize: 22, fontWeight: FontWeight.bold)),
+          const SizedBox(height: 2),
+          Text(label, style: TextStyle(color: Colors.white.withValues(alpha: 0.6), fontSize: 11, fontWeight: FontWeight.w600, letterSpacing: 0.8)),
         ],
       ),
     );
@@ -871,22 +899,22 @@ class _QuickAction extends StatelessWidget {
       onTap: onTap,
       borderRadius: BorderRadius.circular(16),
       child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 6),
+        padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 8),
         decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.03), borderRadius: BorderRadius.circular(16)),
         child: Column(
           children: [
             Container(
-              width: 38,
-              height: 38,
-              decoration: BoxDecoration(color: color.withValues(alpha: 0.15), borderRadius: BorderRadius.circular(12)),
-              child: Icon(icon, color: color, size: 20),
+              width: 42,
+              height: 42,
+              decoration: BoxDecoration(color: color.withValues(alpha: 0.15), borderRadius: BorderRadius.circular(14)),
+              child: Icon(icon, color: color, size: 22),
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: 10),
             Text(
               label,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
-              style: TextStyle(color: HeritageColors.cream.withValues(alpha: 0.9), fontSize: 11, fontWeight: FontWeight.w600),
+              style: TextStyle(color: HeritageColors.cream.withValues(alpha: 0.9), fontSize: 12, fontWeight: FontWeight.w600),
             ),
           ],
         ),

@@ -245,12 +245,12 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
                 const SizedBox(height: 16),
                 _BannerCard(
-                  emoji: '🎮',
-                  title: 'Quests',
-                  subtitle: 'Complete challenges to earn points and compete with others on the leaderboard.',
-                  borderColor: const Color(0xFFB752B7),
-                  bgColor: const Color(0xFFB752B7),
-                  onTap: () => Navigator.of(context).pushNamed('/quests'),
+                  emoji: '🏨',
+                  title: 'Hotels & Stays',
+                  subtitle: 'Find the best hotels near Sri Lanka\'s iconic heritage sites. Book with one tap.',
+                  borderColor: const Color(0xFFE9C46A),
+                  bgColor: const Color(0xFFE9C46A),
+                  onTap: () => Navigator.of(context).pushNamed('/hotels'),
                 ),
                 const SizedBox(height: 32),
                 Row(

@@ -1,8 +1,10 @@
 import 'dart:async';
+import 'dart:convert';
 import 'dart:math';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../services/shingo_ai_service.dart';
 import '../theme/heritage_colors.dart';
@@ -45,6 +47,52 @@ class _ShingoScreenState extends State<ShingoScreen> {
   void initState() {
     super.initState();
     _shingoAi = ShingoAiService();
+    _loadChatHistory();
+  }
+
+  // ─── Persistence ─────────────────────────────────────────────────────────────
+  static const _prefsKey = 'shingo_chat_history_v1';
+
+  Future<void> _loadChatHistory() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final raw = prefs.getString(_prefsKey);
+      if (raw == null || raw.isEmpty) return;
+      final List<dynamic> decoded = jsonDecode(raw) as List<dynamic>;
+      final loaded = decoded.map((e) {
+        final map = e as Map<String, dynamic>;
+        return _ChatMessage(
+          text: map['text'] as String? ?? '',
+          isUser: map['isUser'] as bool? ?? false,
+        );
+      }).toList();
+      if (loaded.isNotEmpty && mounted) {
+        setState(() {
+          _messages
+            ..clear()
+            ..addAll(loaded);
+        });
+      }
+    } catch (_) {}
+  }
+
+  Future<void> _saveChatHistory() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      // Only save completed messages (not streaming ones), max 60 messages
+      final toSave = _messages
+          .where((m) => !m.isStreaming)
+          .toList()
+          .reversed
+          .take(60)
+          .toList()
+          .reversed
+          .toList();
+      final encoded = jsonEncode(
+        toSave.map((m) => {'text': m.text, 'isUser': m.isUser}).toList(),
+      );
+      await prefs.setString(_prefsKey, encoded);
+    } catch (_) {}
   }
 
   @override
@@ -88,11 +136,13 @@ class _ShingoScreenState extends State<ShingoScreen> {
 
       if (!mounted) return;
       await _streamReply(reply);
+      // Save after AI responds successfully
+      await _saveChatHistory();
     } catch (_) {
       if (mounted) {
         setState(() {
           _messages.add(const _ChatMessage(
-            text: 'I could not connect right now. Please try again in a moment.',
+            text: 'Connection hiccup — tap the **retry arrow** or try again in a moment.',
             isUser: false,
           ));
         });
@@ -142,6 +192,8 @@ class _ShingoScreenState extends State<ShingoScreen> {
           isUser: false,
         ));
     });
+    // Clear saved history too
+    SharedPreferences.getInstance().then((p) => p.remove(_prefsKey));
   }
 
   void _showInfoSheet() {
@@ -439,6 +491,21 @@ class _ShingoScreenState extends State<ShingoScreen> {
                 ),
               ],
             ),
+          ),
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Icon(Icons.save_outlined, color: Color(0xFF52B788), size: 11),
+              const SizedBox(width: 3),
+              Text(
+                'Saved',
+                style: TextStyle(
+                  color: const Color(0xFF52B788).withValues(alpha: 0.8),
+                  fontSize: 10,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ],
           ),
           IconButton(
             onPressed: _showInfoSheet,

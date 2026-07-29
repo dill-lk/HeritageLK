@@ -1,27 +1,65 @@
-// ignore_for_file: prefer_const_constructors, prefer_const_literals_to_create_immutables
-
+// ignore_for_file: prefer_const_constructors
+import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:path_provider/path_provider.dart';
-import 'package:path/path.dart' as path;
+import 'package:path/path.dart' as p;
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../config/app_config.dart';
 import '../theme/heritage_colors.dart';
 import '../widgets/bottom_nav.dart';
 
+// ── Data model ───────────────────────────────────────────────────────────────
 class _Visit {
   final String id;
-  final String imagePath;
-  final double latitude;
-  final double longitude;
-  final DateTime timestamp;
+  String imagePath;
+  double latitude;
+  double longitude;
+  DateTime timestamp;
+  String title;
+  String notes;
+  bool uploaded;
 
-  _Visit({required this.id, required this.imagePath, required this.latitude, required this.longitude, required this.timestamp});
+  _Visit({
+    required this.id,
+    required this.imagePath,
+    required this.latitude,
+    required this.longitude,
+    required this.timestamp,
+    this.title = 'Heritage Visit',
+    this.notes = '',
+    this.uploaded = false,
+  });
+
+  Map<String, dynamic> toJson() => {
+        'id': id,
+        'imagePath': imagePath,
+        'latitude': latitude,
+        'longitude': longitude,
+        'timestamp': timestamp.toIso8601String(),
+        'title': title,
+        'notes': notes,
+        'uploaded': uploaded,
+      };
+
+  factory _Visit.fromJson(Map<String, dynamic> j) => _Visit(
+        id: j['id'] as String,
+        imagePath: j['imagePath'] as String,
+        latitude: (j['latitude'] as num).toDouble(),
+        longitude: (j['longitude'] as num).toDouble(),
+        timestamp: DateTime.parse(j['timestamp'] as String),
+        title: j['title'] as String? ?? 'Heritage Visit',
+        notes: j['notes'] as String? ?? '',
+        uploaded: j['uploaded'] as bool? ?? false,
+      );
 }
 
+// ── Screen ───────────────────────────────────────────────────────────────────
 class ScannerScreen extends StatefulWidget {
   const ScannerScreen({super.key});
 
@@ -29,193 +67,522 @@ class ScannerScreen extends StatefulWidget {
   State<ScannerScreen> createState() => _ScannerScreenState();
 }
 
-class _ScannerScreenState extends State<ScannerScreen> with SingleTickerProviderStateMixin {
-  final ImagePicker _picker = ImagePicker();
+class _ScannerScreenState extends State<ScannerScreen>
+    with SingleTickerProviderStateMixin {
+  final _picker = ImagePicker();
   final List<_Visit> _visits = [];
   bool _saving = false;
-  bool _flashOn = false;
   bool _isGridView = false;
-  late final AnimationController _cameraController = AnimationController(duration: const Duration(milliseconds: 300), vsync: this);
+  bool _loadingVisits = true;
+
+  late final AnimationController _animController = AnimationController(
+    duration: const Duration(milliseconds: 400),
+    vsync: this,
+  )..forward();
+
+  static const _kJournalFile = 'heritage_journal.json';
 
   @override
   void initState() {
     super.initState();
-    _cameraController.forward();
+    _loadVisits();
   }
 
   @override
   void dispose() {
-    _cameraController.dispose();
+    _animController.dispose();
     super.dispose();
   }
 
-  Future<void> _captureVisit() async {
-    try {
-      final XFile? image = await _picker.pickImage(source: ImageSource.camera, imageQuality: 85);
-      if (image == null) return;
+  // ── Persistence ──────────────────────────────────────────────────────────
+  Future<File> _journalFile() async {
+    final dir = await getApplicationDocumentsDirectory();
+    return File('${dir.path}/$_kJournalFile');
+  }
 
-      Position? position;
-      try {
-        bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
-        if (serviceEnabled) {
-          LocationPermission permission = await Geolocator.checkPermission();
-          if (permission == LocationPermission.denied) {
-            permission = await Geolocator.requestPermission();
-          }
-          if (permission != LocationPermission.denied && permission != LocationPermission.deniedForever) {
-            position = await Geolocator.getCurrentPosition(
-              locationSettings: const LocationSettings(accuracy: LocationAccuracy.high),
-            );
+  Future<void> _loadVisits() async {
+    try {
+      final file = await _journalFile();
+      if (await file.exists()) {
+        final raw = await file.readAsString();
+        final list = jsonDecode(raw) as List<dynamic>;
+        final visits = <_Visit>[];
+        for (final item in list) {
+          final v = _Visit.fromJson(item as Map<String, dynamic>);
+          // Only keep visits with existing image files
+          if (await File(v.imagePath).exists()) {
+            visits.add(v);
           }
         }
-      } catch (_) {}
+        if (mounted) setState(() => _visits.addAll(visits));
+      }
+    } catch (_) {}
+    if (mounted) setState(() => _loadingVisits = false);
+  }
 
-      final directory = await getApplicationDocumentsDirectory();
-      final fileName = 'visit_${DateTime.now().millisecondsSinceEpoch}${path.extension(image.path)}';
-      final savedImage = await File(image.path).copy('${directory.path}/$fileName');
+  Future<void> _saveVisitsLocally() async {
+    try {
+      final file = await _journalFile();
+      final data = jsonEncode(_visits.map((v) => v.toJson()).toList());
+      await file.writeAsString(data);
+    } catch (_) {}
+  }
+
+  // ── Location helper ──────────────────────────────────────────────────────
+  Future<Position?> _getLocation() async {
+    try {
+      if (!await Geolocator.isLocationServiceEnabled()) return null;
+      var perm = await Geolocator.checkPermission();
+      if (perm == LocationPermission.denied) {
+        perm = await Geolocator.requestPermission();
+      }
+      if (perm == LocationPermission.denied || perm == LocationPermission.deniedForever) return null;
+      return await Geolocator.getCurrentPosition(
+        locationSettings: const LocationSettings(accuracy: LocationAccuracy.high),
+      ).timeout(const Duration(seconds: 8));
+    } catch (_) {
+      return null;
+    }
+  }
+
+  // ── Capture ──────────────────────────────────────────────────────────────
+  Future<void> _captureVisit({bool fromGallery = false}) async {
+    try {
+      final xfile = await _picker.pickImage(
+        source: fromGallery ? ImageSource.gallery : ImageSource.camera,
+        imageQuality: 88,
+        maxWidth: 2048,
+      );
+      if (xfile == null) return;
+
+      final position = await _getLocation();
+      final dir = await getApplicationDocumentsDirectory();
+      final fileName = 'visit_${DateTime.now().millisecondsSinceEpoch}${p.extension(xfile.path)}';
+      final saved = await File(xfile.path).copy('${dir.path}/$fileName');
 
       final visit = _Visit(
         id: DateTime.now().millisecondsSinceEpoch.toString(),
-        imagePath: savedImage.path,
+        imagePath: saved.path,
         latitude: position?.latitude ?? 0.0,
         longitude: position?.longitude ?? 0.0,
         timestamp: DateTime.now(),
       );
 
       setState(() => _visits.insert(0, visit));
-      if (mounted) _showSuccessSnack('Visit captured successfully!');
-      if (AppConfig.hasSupabase) {
-        _uploadToSupabase(visit);
-      }
-    } catch (_) {
-      if (mounted) _showErrorSnack('Failed to capture visit. Please try again.');
+      await _saveVisitsLocally();
+      HapticFeedback.mediumImpact();
+
+      if (mounted) _snack('📸 Saved to device! Add a note below.', isError: false);
+
+      // Open note editor immediately after capture
+      if (mounted) await _openNoteEditor(visit);
+
+      // Sync to cloud
+      if (AppConfig.hasSupabase) _syncToCloud(visit);
+    } catch (e) {
+      if (mounted) _snack('Could not capture visit. Please try again.', isError: true);
     }
   }
 
-  Future<void> _pickFromGallery() async {
-    try {
-      final XFile? image = await _picker.pickImage(source: ImageSource.gallery, imageQuality: 85);
-      if (image == null) return;
-
-      Position? position;
-      try {
-        bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
-        if (serviceEnabled) {
-          LocationPermission permission = await Geolocator.checkPermission();
-          if (permission == LocationPermission.denied) {
-            permission = await Geolocator.requestPermission();
-          }
-          if (permission != LocationPermission.denied && permission != LocationPermission.deniedForever) {
-            position = await Geolocator.getCurrentPosition(
-              locationSettings: const LocationSettings(accuracy: LocationAccuracy.high),
-            );
-          }
-        }
-      } catch (_) {}
-
-      final directory = await getApplicationDocumentsDirectory();
-      final fileName = 'visit_${DateTime.now().millisecondsSinceEpoch}${path.extension(image.path)}';
-      final savedImage = await File(image.path).copy('${directory.path}/$fileName');
-
-      final visit = _Visit(
-        id: DateTime.now().millisecondsSinceEpoch.toString(),
-        imagePath: savedImage.path,
-        latitude: position?.latitude ?? 0.0,
-        longitude: position?.longitude ?? 0.0,
-        timestamp: DateTime.now(),
-      );
-
-      setState(() => _visits.insert(0, visit));
-      if (mounted) _showSuccessSnack('Photo added to visits!');
-      if (AppConfig.hasSupabase) {
-        _uploadToSupabase(visit);
-      }
-    } catch (_) {
-      if (mounted) _showErrorSnack('Failed to add photo. Please try again.');
-    }
-  }
-
-  Future<void> _uploadToSupabase(_Visit visit) async {
+  // ── Cloud sync ───────────────────────────────────────────────────────────
+  Future<void> _syncToCloud(_Visit visit) async {
     if (!AppConfig.hasSupabase) return;
     setState(() => _saving = true);
     try {
       final client = Supabase.instance.client;
       final bytes = await File(visit.imagePath).readAsBytes();
-      final fileName = 'heritage_visits/${visit.id}${path.extension(visit.imagePath)}';
-      await client.storage.from('heritage-media').uploadBinary(fileName, bytes);
-      await client.from('heritage_visits').insert({
+      final ext = p.extension(visit.imagePath);
+      final storageKey = 'heritage_visits/${visit.id}$ext';
+
+      await client.storage.from('heritage-media').uploadBinary(storageKey, bytes);
+      await client.from('heritage_visits').upsert({
+        'id': visit.id,
         'user_id': client.auth.currentUser?.id,
-        'image_path': fileName,
+        'image_path': storageKey,
         'latitude': visit.latitude,
         'longitude': visit.longitude,
         'visited_at': visit.timestamp.toIso8601String(),
+        'title': visit.title,
+        'notes': visit.notes,
       });
-      if (mounted) _showSuccessSnack('Synced to cloud');
+
+      visit.uploaded = true;
+      await _saveVisitsLocally();
+      if (mounted) {
+        setState(() {});
+        _snack('Synced to cloud ☁️', isError: false);
+      }
     } catch (_) {
-      if (mounted) _showErrorSnack('Failed to sync. Will retry later.');
+      if (mounted) _snack('Cloud sync failed. Saved locally.', isError: true);
     } finally {
       if (mounted) setState(() => _saving = false);
     }
   }
 
-  void _showSuccessSnack(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message), backgroundColor: const Color(0xFF52B788), behavior: SnackBarBehavior.floating));
-  }
+  // ── Note editor ──────────────────────────────────────────────────────────
+  Future<void> _openNoteEditor(_Visit visit) async {
+    final titleCtrl = TextEditingController(text: visit.title);
+    final notesCtrl = TextEditingController(text: visit.notes);
 
-  void _showErrorSnack(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message), backgroundColor: const Color(0xFFE76F51), behavior: SnackBarBehavior.floating));
-  }
-
-  Future<void> _clearAllVisits() async {
-    final confirm = await showDialog<bool>(
+    await showModalBottomSheet(
       context: context,
-      builder: (context) => AlertDialog(
-        backgroundColor: const Color(0xFF29261E),
-        title: const Text('Clear All Visits?', style: TextStyle(color: HeritageColors.cream)),
-        content: const Text('This will remove all captured visits locally. This action cannot be undone.', style: TextStyle(color: Color(0x99FFFFFF))),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancel', style: TextStyle(color: Color(0x99FFFFFF)))),
-          TextButton(onPressed: () => Navigator.pop(context, true), child: const Text('Clear', style: TextStyle(color: Color(0xFFE76F51), fontWeight: FontWeight.bold))),
-        ],
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => Padding(
+        padding: EdgeInsets.only(bottom: MediaQuery.of(ctx).viewInsets.bottom),
+        child: Container(
+          decoration: const BoxDecoration(
+            color: Color(0xFF1A1714),
+            borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+          ),
+          padding: const EdgeInsets.fromLTRB(24, 8, 24, 32),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Center(
+                child: Container(
+                  width: 40,
+                  height: 4,
+                  margin: const EdgeInsets.only(bottom: 20),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.15),
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+              ),
+              Row(
+                children: [
+                  Container(
+                    width: 38,
+                    height: 38,
+                    decoration: BoxDecoration(
+                      color: HeritageColors.orange.withValues(alpha: 0.15),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: const Icon(Icons.edit_note_rounded, color: HeritageColors.orange, size: 20),
+                  ),
+                  const SizedBox(width: 12),
+                  Text(
+                    'Add Notes',
+                    style: GoogleFonts.plusJakartaSans(
+                      color: HeritageColors.cream,
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 20),
+              _NoteField(
+                controller: titleCtrl,
+                hint: 'Visit title (e.g. Sigiriya Rock)',
+                icon: Icons.title_rounded,
+                maxLines: 1,
+              ),
+              const SizedBox(height: 12),
+              _NoteField(
+                controller: notesCtrl,
+                hint: 'Write your experience, observations, or memories here...',
+                icon: Icons.notes_rounded,
+                maxLines: 5,
+              ),
+              const SizedBox(height: 20),
+              Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton(
+                      onPressed: () => Navigator.pop(ctx),
+                      style: OutlinedButton.styleFrom(
+                        side: BorderSide(color: Colors.white.withValues(alpha: 0.15)),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                      ),
+                      child: Text('Skip', style: TextStyle(color: Colors.white.withValues(alpha: 0.5))),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    flex: 2,
+                    child: ElevatedButton(
+                      onPressed: () {
+                        visit.title = titleCtrl.text.trim().isEmpty ? 'Heritage Visit' : titleCtrl.text.trim();
+                        visit.notes = notesCtrl.text.trim();
+                        _saveVisitsLocally();
+                        setState(() {});
+                        Navigator.pop(ctx);
+                        _snack('Notes saved to device ✓', isError: false);
+                        if (AppConfig.hasSupabase && visit.uploaded) {
+                          _syncToCloud(visit);
+                        }
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: HeritageColors.orange,
+                        foregroundColor: const Color(0xFF1A0F05),
+                        elevation: 0,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                      ),
+                      child: const Text('Save Notes', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
       ),
     );
-    if (confirm == true) {
-      setState(() => _visits.clear());
-      _showSuccessSnack('All visits cleared');
-    }
+
+    titleCtrl.dispose();
+    notesCtrl.dispose();
   }
 
+  // ── Visit detail sheet ───────────────────────────────────────────────────
+  void _openVisitDetail(_Visit visit) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => DraggableScrollableSheet(
+        initialChildSize: 0.75,
+        maxChildSize: 0.95,
+        minChildSize: 0.4,
+        builder: (_, controller) => Container(
+          decoration: const BoxDecoration(
+            color: Color(0xFF1A1714),
+            borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+          ),
+          child: ListView(
+            controller: controller,
+            padding: EdgeInsets.zero,
+            children: [
+              // Drag handle
+              Center(
+                child: Container(
+                  width: 40,
+                  height: 4,
+                  margin: const EdgeInsets.only(top: 10, bottom: 4),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.15),
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+              ),
+              // Image
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(20),
+                  child: Image.file(
+                    File(visit.imagePath),
+                    height: 260,
+                    width: double.infinity,
+                    fit: BoxFit.cover,
+                  ),
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            visit.title,
+                            style: GoogleFonts.plusJakartaSans(
+                              color: HeritageColors.cream,
+                              fontSize: 20,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                        if (visit.uploaded)
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFF52B788).withValues(alpha: 0.15),
+                              borderRadius: BorderRadius.circular(20),
+                              border: Border.all(color: const Color(0xFF52B788).withValues(alpha: 0.4)),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: const [
+                                Icon(Icons.cloud_done_outlined, color: Color(0xFF52B788), size: 13),
+                                SizedBox(width: 4),
+                                Text('Synced', style: TextStyle(color: Color(0xFF52B788), fontSize: 11, fontWeight: FontWeight.w600)),
+                              ],
+                            ),
+                          ),
+                      ],
+                    ),
+                    const SizedBox(height: 10),
+                    _InfoRow(Icons.location_on_outlined, '${visit.latitude.toStringAsFixed(5)}, ${visit.longitude.toStringAsFixed(5)}'),
+                    const SizedBox(height: 6),
+                    _InfoRow(Icons.access_time_rounded, _formatDate(visit.timestamp)),
+                    if (visit.notes.isNotEmpty) ...[
+                      const SizedBox(height: 16),
+                      Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withValues(alpha: 0.04),
+                          borderRadius: BorderRadius.circular(16),
+                          border: Border.all(color: Colors.white.withValues(alpha: 0.06)),
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              children: [
+                                Icon(Icons.notes_rounded, color: HeritageColors.orange, size: 16),
+                                const SizedBox(width: 6),
+                                Text('My Notes', style: TextStyle(color: HeritageColors.orange, fontWeight: FontWeight.bold, fontSize: 13)),
+                              ],
+                            ),
+                            const SizedBox(height: 8),
+                            Text(
+                              visit.notes,
+                              style: TextStyle(color: Colors.white.withValues(alpha: 0.75), fontSize: 14, height: 1.55),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                    const SizedBox(height: 20),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: OutlinedButton.icon(
+                            onPressed: () { Navigator.pop(ctx); _openNoteEditor(visit); },
+                            icon: const Icon(Icons.edit_note_rounded, size: 18),
+                            label: const Text('Edit Notes'),
+                            style: OutlinedButton.styleFrom(
+                              foregroundColor: HeritageColors.cream,
+                              side: BorderSide(color: Colors.white.withValues(alpha: 0.15)),
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                              padding: const EdgeInsets.symmetric(vertical: 14),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        if (AppConfig.hasSupabase && !visit.uploaded)
+                          Expanded(
+                            child: ElevatedButton.icon(
+                              onPressed: () { Navigator.pop(ctx); _syncToCloud(visit); },
+                              icon: const Icon(Icons.cloud_upload_outlined, size: 18),
+                              label: const Text('Sync'),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: HeritageColors.orange,
+                                foregroundColor: const Color(0xFF1A0F05),
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                                padding: const EdgeInsets.symmetric(vertical: 14),
+                              ),
+                            ),
+                          ),
+                        if (!AppConfig.hasSupabase || visit.uploaded)
+                          Expanded(
+                            child: ElevatedButton.icon(
+                              onPressed: () { _deleteVisit(visit); Navigator.pop(ctx); },
+                              icon: const Icon(Icons.delete_outline, size: 18),
+                              label: const Text('Delete'),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: const Color(0xFFE76F51).withValues(alpha: 0.15),
+                                foregroundColor: const Color(0xFFE76F51),
+                                elevation: 0,
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                                padding: const EdgeInsets.symmetric(vertical: 14),
+                              ),
+                            ),
+                          ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _deleteVisit(_Visit visit) {
+    setState(() => _visits.removeWhere((v) => v.id == visit.id));
+    _saveVisitsLocally();
+    _snack('Visit removed', isError: false);
+  }
+
+  void _snack(String msg, {required bool isError}) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(msg),
+        backgroundColor: isError ? const Color(0xFFE76F51) : const Color(0xFF52B788),
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        margin: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+      ),
+    );
+  }
+
+  String _formatDate(DateTime dt) {
+    final local = dt.toLocal();
+    final months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    final time = '${local.hour.toString().padLeft(2,'0')}:${local.minute.toString().padLeft(2,'0')}';
+    return '${local.day} ${months[local.month - 1]} ${local.year}  ·  $time';
+  }
+
+  // ── UI ───────────────────────────────────────────────────────────────────
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: const Color(0xFF0F0C0A),
       body: SafeArea(
         child: Stack(
           children: [
-            ListView(
-              padding: const EdgeInsets.fromLTRB(20, 16, 20, 140),
-              children: [
-                _buildHeader(),
-                const SizedBox(height: 20),
-                _buildCameraCard(),
-                const SizedBox(height: 16),
-                if (_visits.isNotEmpty) ...[
-                  Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-                    Text('${_visits.length} Visit${_visits.length == 1 ? '' : 's'}', style: TextStyle(color: HeritageColors.cream.withValues(alpha: 0.9), fontSize: 18, fontWeight: FontWeight.bold)),
-                    Row(children: [
-                      IconButton(onPressed: () => setState(() => _isGridView = !_isGridView), icon: Icon(_isGridView ? Icons.view_agenda_outlined : Icons.grid_view_outlined, color: HeritageColors.orange, size: 20)),
-                      TextButton.icon(onPressed: _clearAllVisits, icon: const Icon(Icons.delete_outline, size: 16), label: const Text('Clear', style: TextStyle(fontSize: 12))),
-                    ]),
-                  ]),
-                  const SizedBox(height: 12),
-                  _isGridView ? _buildGridView() : _buildListView(),
-                ] else ...[
-                  const SizedBox(height: 40),
-                  _buildEmptyState(),
+            CustomScrollView(
+              slivers: [
+                SliverToBoxAdapter(child: _buildHeader()),
+                SliverToBoxAdapter(child: _buildCaptureCard()),
+                if (_loadingVisits)
+                  const SliverToBoxAdapter(
+                    child: Padding(
+                      padding: EdgeInsets.only(top: 60),
+                      child: Center(child: CircularProgressIndicator(color: HeritageColors.orange, strokeWidth: 2)),
+                    ),
+                  )
+                else if (_visits.isEmpty)
+                  SliverToBoxAdapter(child: _buildEmptyState())
+                else ...[
+                  SliverToBoxAdapter(child: _buildListHeader()),
+                  _isGridView ? _buildGridSliver() : _buildListSliver(),
                 ],
+                const SliverToBoxAdapter(child: SizedBox(height: 120)),
               ],
             ),
             if (_saving)
-              Positioned(top: 16, left: 20, right: 20, child: Container(padding: const EdgeInsets.all(12), decoration: BoxDecoration(color: const Color(0xFF29261E), borderRadius: BorderRadius.circular(12)), child: const Row(children: [SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: HeritageColors.orange)), SizedBox(width: 12), Text('Syncing to cloud...', style: TextStyle(color: HeritageColors.cream))]))),
+              Positioned(
+                top: 12,
+                left: 16,
+                right: 16,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF1E1B18),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: HeritageColors.orange.withValues(alpha: 0.3)),
+                  ),
+                  child: Row(
+                    children: [
+                      SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: HeritageColors.orange)),
+                      const SizedBox(width: 12),
+                      const Text('Syncing to cloud...', style: TextStyle(color: HeritageColors.cream, fontSize: 13)),
+                    ],
+                  ),
+                ),
+              ),
             const Align(alignment: Alignment.bottomCenter, child: HeritageBottomNav(currentIndex: 2)),
           ],
         ),
@@ -224,194 +591,576 @@ class _ScannerScreenState extends State<ScannerScreen> with SingleTickerProvider
   }
 
   Widget _buildHeader() {
-    return Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-      _round(Icons.arrow_back, () => Navigator.of(context).pushReplacementNamed('/home')),
-      Text('Heritage Cam', style: TextStyle(color: HeritageColors.cream.withValues(alpha: 0.9), fontSize: 18, fontWeight: FontWeight.w600)),
-      _round(Icons.info_outline, () => _showInfoDialog()),
-    ]);
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
+      child: Row(
+        children: [
+          GestureDetector(
+            onTap: () => Navigator.of(context).pushReplacementNamed('/home'),
+            child: Container(
+              width: 40,
+              height: 40,
+              decoration: BoxDecoration(
+                color: Colors.white.withValues(alpha: 0.06),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
+              ),
+              child: Icon(Icons.arrow_back, color: HeritageColors.cream, size: 20),
+            ),
+          ),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Heritage Cam',
+                  style: GoogleFonts.plusJakartaSans(
+                    color: HeritageColors.cream,
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                Text(
+                  '${_visits.length} visit${_visits.length == 1 ? '' : 's'} in journal',
+                  style: TextStyle(color: Colors.white.withValues(alpha: 0.4), fontSize: 12),
+                ),
+              ],
+            ),
+          ),
+          if (AppConfig.hasSupabase)
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+              decoration: BoxDecoration(
+                color: const Color(0xFF52B788).withValues(alpha: 0.12),
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(color: const Color(0xFF52B788).withValues(alpha: 0.3)),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: const [
+                  Icon(Icons.cloud_outlined, color: Color(0xFF52B788), size: 13),
+                  SizedBox(width: 4),
+                  Text('Cloud', style: TextStyle(color: Color(0xFF52B788), fontSize: 11, fontWeight: FontWeight.w600)),
+                ],
+              ),
+            ),
+        ],
+      ),
+    );
   }
 
-  Widget _buildCameraCard() {
-    return ScaleTransition(scale: _cameraController, child: Container(
-      height: 240,
+  Widget _buildCaptureCard() {
+    return Container(
+      margin: const EdgeInsets.fromLTRB(20, 16, 20, 20),
+      padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
-        gradient: LinearGradient(colors: [HeritageColors.orange.withValues(alpha: 0.1), HeritageColors.orange.withValues(alpha: 0.02)], begin: Alignment.topLeft, end: Alignment.bottomRight),
+        gradient: LinearGradient(
+          colors: [
+            HeritageColors.orange.withValues(alpha: 0.12),
+            HeritageColors.orange.withValues(alpha: 0.04),
+          ],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
         borderRadius: BorderRadius.circular(24),
         border: Border.all(color: HeritageColors.orange.withValues(alpha: 0.2)),
       ),
-      child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
-        Container(width: 90, height: 90, decoration: BoxDecoration(color: HeritageColors.orange.withValues(alpha: 0.12), shape: BoxShape.circle), child: Icon(Icons.camera_alt, color: HeritageColors.orange, size: 40)),
-        const SizedBox(height: 16),
-        Text(_visits.isEmpty ? 'Capture your journey' : '${_visits.length} visit${_visits.length == 1 ? '' : 's'} logged', style: TextStyle(color: HeritageColors.cream, fontSize: 17, fontWeight: FontWeight.bold)),
-        const SizedBox(height: 6),
-        Text('Document every heritage site you visit', style: TextStyle(color: Colors.white.withValues(alpha: 0.55), fontSize: 12)),
-        const SizedBox(height: 18),
-        Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-          _CameraActionButton(icon: Icons.camera_alt, label: 'Camera', onTap: _captureVisit),
-          const SizedBox(width: 16),
-          _CameraActionButton(icon: Icons.photo_library, label: 'Gallery', onTap: _pickFromGallery),
-          const SizedBox(width: 16),
-          _CameraActionButton(icon: Icons.flash_on, label: 'Flash', onTap: () => setState(() => _flashOn = !_flashOn), active: _flashOn),
-        ]),
-      ]),
-    ));
+      child: Column(
+        children: [
+          Row(
+            children: [
+              Container(
+                width: 52,
+                height: 52,
+                decoration: BoxDecoration(
+                  color: HeritageColors.orange.withValues(alpha: 0.15),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(Icons.camera_alt_rounded, color: HeritageColors.orange, size: 26),
+              ),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Document Your Visit',
+                      style: GoogleFonts.plusJakartaSans(
+                        color: HeritageColors.cream,
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      'Photo · GPS · Notes — saved to device always',
+                      style: TextStyle(color: Colors.white.withValues(alpha: 0.45), fontSize: 12),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 20),
+          Row(
+            children: [
+              Expanded(
+                child: _CaptureButton(
+                  icon: Icons.camera_alt_outlined,
+                  label: 'Camera',
+                  onTap: () => _captureVisit(fromGallery: false),
+                  isPrimary: true,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: _CaptureButton(
+                  icon: Icons.photo_library_outlined,
+                  label: 'Gallery',
+                  onTap: () => _captureVisit(fromGallery: true),
+                  isPrimary: false,
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildListHeader() {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(20, 0, 12, 12),
+      child: Row(
+        children: [
+          Text(
+            'My Journal',
+            style: GoogleFonts.plusJakartaSans(
+              color: HeritageColors.cream.withValues(alpha: 0.9),
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          const Spacer(),
+          IconButton(
+            onPressed: () => setState(() => _isGridView = !_isGridView),
+            icon: Icon(
+              _isGridView ? Icons.view_agenda_outlined : Icons.grid_view_outlined,
+              color: HeritageColors.orange,
+              size: 20,
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
   Widget _buildEmptyState() {
-    return Container(
-      padding: const EdgeInsets.all(32),
-      decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.02), borderRadius: BorderRadius.circular(20), border: Border.all(color: Colors.white.withValues(alpha: 0.04))),
-      child: Column(children: [
-        Icon(Icons.photo_camera_outlined, size: 48, color: Colors.white.withValues(alpha: 0.2)),
-        const SizedBox(height: 16),
-        Text('No visits yet', style: TextStyle(color: HeritageColors.cream.withValues(alpha: 0.7), fontSize: 16, fontWeight: FontWeight.w600)),
-        const SizedBox(height: 8),
-        Text('Start capturing heritage sites to build your travel journal', style: TextStyle(color: Colors.white.withValues(alpha: 0.4), fontSize: 12), textAlign: TextAlign.center),
-      ]),
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(20, 40, 20, 0),
+      child: Container(
+        padding: const EdgeInsets.all(32),
+        decoration: BoxDecoration(
+          color: Colors.white.withValues(alpha: 0.02),
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: Colors.white.withValues(alpha: 0.04)),
+        ),
+        child: Column(
+          children: [
+            Icon(Icons.photo_camera_outlined, size: 52, color: Colors.white.withValues(alpha: 0.15)),
+            const SizedBox(height: 16),
+            Text(
+              'No visits yet',
+              style: TextStyle(color: HeritageColors.cream.withValues(alpha: 0.7), fontSize: 17, fontWeight: FontWeight.w600),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Capture photos, add notes, and build\nyour personal heritage travel journal',
+              textAlign: TextAlign.center,
+              style: TextStyle(color: Colors.white.withValues(alpha: 0.35), fontSize: 13, height: 1.5),
+            ),
+          ],
+        ),
+      ),
     );
   }
 
-  Widget _buildListView() {
-    return Column(children: _visits.map((visit) => Container(
-      margin: const EdgeInsets.only(bottom: 10),
-      decoration: BoxDecoration(color: const Color(0xFF17140F), borderRadius: BorderRadius.circular(16), border: Border.all(color: Colors.white.withValues(alpha: 0.05))),
-      child: InkWell(onTap: () => _showVisitDetail(visit), borderRadius: BorderRadius.circular(16), child: Padding(
-        padding: const EdgeInsets.all(10),
-        child: Row(children: [
-          ClipRRect(borderRadius: BorderRadius.circular(12), child: Image.file(File(visit.imagePath), width: 64, height: 64, fit: BoxFit.cover)),
-          const SizedBox(width: 12),
-          Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Row(children: [
-              Text('Heritage Visit', style: TextStyle(color: HeritageColors.cream, fontSize: 14, fontWeight: FontWeight.w600)),
-              const SizedBox(width: 6),
-              Icon(Icons.public, size: 12, color: Colors.white.withValues(alpha: 0.4)),
-              Text('${visit.latitude.toStringAsFixed(3)}, ${visit.longitude.toStringAsFixed(3)}', style: TextStyle(color: Colors.white.withValues(alpha: 0.4), fontSize: 11)),
-            ]),
-            const SizedBox(height: 4),
-            Text(visit.timestamp.toLocal().toString().substring(0, 19), style: TextStyle(color: Colors.white.withValues(alpha: 0.4), fontSize: 11)),
-          ])),
-          if (AppConfig.hasSupabase)
-            IconButton(onPressed: () => _uploadToSupabase(visit), icon: Icon(_isVisitUploaded(visit) ? Icons.cloud_done_outlined : Icons.cloud_upload_outlined, color: HeritageColors.orange, size: 18)),
-          IconButton(onPressed: () => _showDeleteConfirm(visit), icon: const Icon(Icons.delete_outline, color: Color(0xFFE76F51), size: 18)),
-        ]),
-      )),
-    )).toList());
-  }
-
-  Widget _buildGridView() {
-    return GridView.builder(
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
-      itemCount: _visits.length,
-      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: 2, mainAxisSpacing: 10, crossAxisSpacing: 10, childAspectRatio: 0.85),
-      itemBuilder: (context, index) => _GridVisitCard(visit: _visits[index], onTap: () => _showVisitDetail(_visits[index]), onDelete: () => _showDeleteConfirm(_visits[index])),
+  SliverList _buildListSliver() {
+    return SliverList(
+      delegate: SliverChildBuilderDelegate(
+        (_, i) => _VisitListTile(
+          visit: _visits[i],
+          onTap: () => _openVisitDetail(_visits[i]),
+          onEdit: () => _openNoteEditor(_visits[i]),
+          onDelete: () => _deleteVisit(_visits[i]),
+        ),
+        childCount: _visits.length,
+      ),
     );
   }
 
-  void _showVisitDetail(_Visit visit) {
-    showDialog(context: context, builder: (context) => Dialog(
-      backgroundColor: const Color(0xFF29261E),
-      child: Column(mainAxisSize: MainAxisSize.min, children: [
-        ClipRRect(borderRadius: BorderRadius.circular(16), child: Image.file(File(visit.imagePath), width: double.infinity, height: 280, fit: BoxFit.cover)),
-        Padding(padding: const EdgeInsets.all(16), child: Column(children: [
-          Row(children: [
-            Icon(Icons.location_on, size: 16, color: HeritageColors.orange),
-            const SizedBox(width: 6),
-            Expanded(child: Text('${visit.latitude.toStringAsFixed(5)}, ${visit.longitude.toStringAsFixed(5)}', style: const TextStyle(color: HeritageColors.cream, fontSize: 13))),
-          ]),
-          const SizedBox(height: 4),
-          Row(children: [
-            Icon(Icons.access_time, size: 14, color: Colors.white.withValues(alpha: 0.5)),
-            const SizedBox(width: 6),
-            Text(visit.timestamp.toLocal().toString().substring(0, 19), style: TextStyle(color: Colors.white.withValues(alpha: 0.6), fontSize: 12)),
-          ]),
-          const SizedBox(height: 12),
-          Row(mainAxisAlignment: MainAxisAlignment.end, children: [
-            TextButton(onPressed: () => Navigator.pop(context), child: const Text('Close', style: TextStyle(color: Color(0x99FFFFFF)))),
-            if (AppConfig.hasSupabase) ElevatedButton.icon(onPressed: () { _uploadToSupabase(visit); Navigator.pop(context); }, icon: const Icon(Icons.cloud_upload_outlined, size: 16), label: const Text('Upload'), style: ElevatedButton.styleFrom(backgroundColor: HeritageColors.orange, foregroundColor: HeritageColors.background)),
-          ]),
-        ])),
-      ]),
-    ));
+  SliverGrid _buildGridSliver() {
+    return SliverGrid(
+      delegate: SliverChildBuilderDelegate(
+        (_, i) => _VisitGridCard(
+          visit: _visits[i],
+          onTap: () => _openVisitDetail(_visits[i]),
+          onDelete: () => _deleteVisit(_visits[i]),
+        ),
+        childCount: _visits.length,
+      ),
+      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: 2,
+        mainAxisSpacing: 10,
+        crossAxisSpacing: 10,
+        childAspectRatio: 0.82,
+      ),
+    );
   }
-
-  void _showDeleteConfirm(_Visit visit) {
-    showDialog(context: context, builder: (context) => AlertDialog(
-      backgroundColor: const Color(0xFF29261E),
-      title: const Text('Delete Visit?', style: TextStyle(color: HeritageColors.cream)),
-      content: const Text('This will permanently remove this visit from your journal.', style: TextStyle(color: Color(0x99FFFFFF))),
-      actions: [
-        TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel', style: TextStyle(color: Color(0x99FFFFFF)))),
-        TextButton(onPressed: () { setState(() => _visits.removeWhere((v) => v.id == visit.id)); Navigator.pop(context); _showSuccessSnack('Visit deleted'); }, child: const Text('Delete', style: TextStyle(color: Color(0xFFE76F51), fontWeight: FontWeight.bold))),
-      ],
-    ));
-  }
-
-  void _showInfoDialog() {
-    showDialog(context: context, builder: (context) => AlertDialog(
-      backgroundColor: const Color(0xFF29261E),
-      title: Text('Heritage Cam', style: TextStyle(color: HeritageColors.cream, fontFamily: 'Playfair Display')),
-      content: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
-        Text('Document your heritage journey', style: TextStyle(color: HeritageColors.cream.withValues(alpha: 0.9), fontWeight: FontWeight.w600)),
-        const SizedBox(height: 8),
-        Text('Take photos at heritage sites and automatically log location and timestamp. Sync to cloud when connected.', style: TextStyle(color: Colors.white.withValues(alpha: 0.7), fontSize: 13, height: 1.5)),
-      ]),
-      actions: [TextButton(onPressed: () => Navigator.pop(context), child: const Text('Got it', style: TextStyle(color: HeritageColors.orange)))],
-    ));
-  }
-
-  bool _isVisitUploaded(_Visit visit) {
-    return visit.imagePath.contains('heritage_visits/');
-  }
-
-  Widget _round(IconData icon, VoidCallback action) => InkWell(onTap: action, borderRadius: BorderRadius.circular(24), child: Container(width: 40, height: 40, decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.05), border: Border.all(color: Colors.white.withValues(alpha: 0.08)), shape: BoxShape.circle), child: Icon(icon, color: HeritageColors.orange, size: 18)));
 }
 
-class _CameraActionButton extends StatelessWidget {
+// ── Widgets ──────────────────────────────────────────────────────────────────
+
+class _CaptureButton extends StatelessWidget {
   final IconData icon;
   final String label;
   final VoidCallback onTap;
-  final bool active;
+  final bool isPrimary;
 
-  const _CameraActionButton({required this.icon, required this.label, required this.onTap, this.active = false});
-
-  @override
-  Widget build(BuildContext context) {
-    return InkWell(onTap: onTap, borderRadius: BorderRadius.circular(14), child: Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-      decoration: BoxDecoration(
-        color: active ? HeritageColors.orange.withValues(alpha: 0.2) : Colors.white.withValues(alpha: 0.05),
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: active ? HeritageColors.orange.withValues(alpha: 0.4) : Colors.white.withValues(alpha: 0.08)),
-      ),
-      child: Row(children: [
-        Icon(icon, color: active ? HeritageColors.orange : Colors.white.withValues(alpha: 0.7), size: 16),
-        const SizedBox(width: 6),
-        Text(label, style: TextStyle(color: active ? HeritageColors.orange : Colors.white.withValues(alpha: 0.7), fontSize: 12, fontWeight: FontWeight.w600)),
-      ]),
-    ));
-  }
-}
-
-class _GridVisitCard extends StatelessWidget {
-  final _Visit visit;
-  final VoidCallback onTap;
-  final VoidCallback onDelete;
-
-  const _GridVisitCard({required this.visit, required this.onTap, required this.onDelete});
+  const _CaptureButton({
+    required this.icon,
+    required this.label,
+    required this.onTap,
+    required this.isPrimary,
+  });
 
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        decoration: BoxDecoration(borderRadius: BorderRadius.circular(16), border: Border.all(color: Colors.white.withValues(alpha: 0.05))),
-        child: Stack(children: [
-          ClipRRect(borderRadius: BorderRadius.circular(16), child: Image.file(File(visit.imagePath), width: double.infinity, height: double.infinity, fit: BoxFit.cover)),
-          Positioned(top: 8, right: 8, child: InkWell(onTap: onDelete, child: Container(width: 28, height: 28, decoration: BoxDecoration(color: const Color(0xFF29261E).withValues(alpha: 0.8), shape: BoxShape.circle), child: const Icon(Icons.delete_outline, color: Color(0xFFE76F51), size: 14)))),
-          Positioned(bottom: 8, left: 8, right: 8, child: Container(padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4), decoration: BoxDecoration(color: const Color(0xFF29261E).withValues(alpha: 0.8), borderRadius: BorderRadius.circular(8)), child: Text(visit.timestamp.toLocal().toString().substring(0, 10), style: TextStyle(color: HeritageColors.cream.withValues(alpha: 0.8), fontSize: 10)))),
-        ]),
+        padding: const EdgeInsets.symmetric(vertical: 14),
+        decoration: BoxDecoration(
+          gradient: isPrimary
+              ? const LinearGradient(
+                  colors: [Color(0xFFF4A261), Color(0xFFE9C46A)],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                )
+              : null,
+          color: isPrimary ? null : Colors.white.withValues(alpha: 0.07),
+          borderRadius: BorderRadius.circular(14),
+          border: isPrimary ? null : Border.all(color: Colors.white.withValues(alpha: 0.1)),
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(icon, color: isPrimary ? const Color(0xFF1A0F05) : Colors.white.withValues(alpha: 0.8), size: 18),
+            const SizedBox(width: 8),
+            Text(
+              label,
+              style: TextStyle(
+                color: isPrimary ? const Color(0xFF1A0F05) : Colors.white.withValues(alpha: 0.8),
+                fontWeight: FontWeight.w700,
+                fontSize: 14,
+              ),
+            ),
+          ],
+        ),
       ),
+    );
+  }
+}
+
+class _VisitListTile extends StatelessWidget {
+  final _Visit visit;
+  final VoidCallback onTap;
+  final VoidCallback onEdit;
+  final VoidCallback onDelete;
+
+  const _VisitListTile({
+    required this.visit,
+    required this.onTap,
+    required this.onEdit,
+    required this.onDelete,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(20, 0, 20, 10),
+      child: GestureDetector(
+        onTap: onTap,
+        child: Container(
+          decoration: BoxDecoration(
+            color: const Color(0xFF17140F),
+            borderRadius: BorderRadius.circular(18),
+            border: Border.all(color: Colors.white.withValues(alpha: 0.05)),
+          ),
+          child: Row(
+            children: [
+              Padding(
+                padding: const EdgeInsets.all(10),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(12),
+                  child: Image.file(
+                    File(visit.imagePath),
+                    width: 68,
+                    height: 68,
+                    fit: BoxFit.cover,
+                  ),
+                ),
+              ),
+              Expanded(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              visit.title,
+                              style: const TextStyle(
+                                color: HeritageColors.cream,
+                                fontSize: 14,
+                                fontWeight: FontWeight.w600,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                          if (visit.uploaded)
+                            Padding(
+                              padding: const EdgeInsets.only(right: 4),
+                              child: Icon(Icons.cloud_done_outlined, size: 14, color: const Color(0xFF52B788).withValues(alpha: 0.7)),
+                            ),
+                        ],
+                      ),
+                      const SizedBox(height: 3),
+                      if (visit.notes.isNotEmpty)
+                        Text(
+                          visit.notes,
+                          style: TextStyle(color: Colors.white.withValues(alpha: 0.4), fontSize: 12),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      const SizedBox(height: 4),
+                      Row(
+                        children: [
+                          Icon(Icons.location_on_outlined, size: 11, color: HeritageColors.orange.withValues(alpha: 0.6)),
+                          const SizedBox(width: 3),
+                          Text(
+                            visit.latitude != 0 ? '${visit.latitude.toStringAsFixed(3)}, ${visit.longitude.toStringAsFixed(3)}' : 'Location not available',
+                            style: TextStyle(color: Colors.white.withValues(alpha: 0.3), fontSize: 11),
+                          ),
+                          const Spacer(),
+                          // Always show a local-save badge
+                          if (!visit.uploaded)
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFFF4A261).withValues(alpha: 0.12),
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(Icons.phone_android_outlined, size: 9, color: HeritageColors.orange.withValues(alpha: 0.7)),
+                                  const SizedBox(width: 3),
+                                  Text('On device', style: TextStyle(color: HeritageColors.orange.withValues(alpha: 0.7), fontSize: 9, fontWeight: FontWeight.w600)),
+                                ],
+                              ),
+                            ),
+                          if (visit.uploaded)
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFF52B788).withValues(alpha: 0.12),
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  const Icon(Icons.cloud_done_outlined, size: 9, color: Color(0xFF52B788)),
+                                  const SizedBox(width: 3),
+                                  const Text('Cloud + Device', style: TextStyle(color: Color(0xFF52B788), fontSize: 9, fontWeight: FontWeight.w600)),
+                                ],
+                              ),
+                            ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.only(right: 4),
+                child: IconButton(
+                  onPressed: onEdit,
+                  icon: Icon(Icons.edit_note_rounded, color: HeritageColors.orange.withValues(alpha: 0.7), size: 20),
+                  tooltip: 'Edit notes',
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _VisitGridCard extends StatelessWidget {
+  final _Visit visit;
+  final VoidCallback onTap;
+  final VoidCallback onDelete;
+
+  const _VisitGridCard({required this.visit, required this.onTap, required this.onDelete});
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        margin: const EdgeInsets.only(left: 10, right: 10),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(18),
+          border: Border.all(color: Colors.white.withValues(alpha: 0.06)),
+        ),
+        child: Stack(
+          fit: StackFit.expand,
+          children: [
+            ClipRRect(
+              borderRadius: BorderRadius.circular(18),
+              child: Image.file(File(visit.imagePath), fit: BoxFit.cover),
+            ),
+            // Bottom info
+            Positioned(
+              bottom: 0,
+              left: 0,
+              right: 0,
+              child: Container(
+                padding: const EdgeInsets.fromLTRB(10, 20, 10, 10),
+                decoration: BoxDecoration(
+                  borderRadius: const BorderRadius.vertical(bottom: Radius.circular(18)),
+                  gradient: LinearGradient(
+                    begin: Alignment.bottomCenter,
+                    end: Alignment.topCenter,
+                    colors: [Colors.black.withValues(alpha: 0.85), Colors.transparent],
+                  ),
+                ),
+                child: Text(
+                  visit.title,
+                  style: const TextStyle(color: HeritageColors.cream, fontSize: 12, fontWeight: FontWeight.w600),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+            ),
+            // Cloud badge
+            if (visit.uploaded)
+              Positioned(
+                top: 8,
+                left: 8,
+                child: Container(
+                  width: 24,
+                  height: 24,
+                  decoration: BoxDecoration(
+                    color: Colors.black.withValues(alpha: 0.6),
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(Icons.cloud_done_outlined, color: Color(0xFF52B788), size: 13),
+                ),
+              ),
+            // Delete button
+            Positioned(
+              top: 8,
+              right: 8,
+              child: GestureDetector(
+                onTap: onDelete,
+                child: Container(
+                  width: 28,
+                  height: 28,
+                  decoration: BoxDecoration(
+                    color: Colors.black.withValues(alpha: 0.6),
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(Icons.close_rounded, color: Color(0xFFE76F51), size: 15),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _NoteField extends StatelessWidget {
+  final TextEditingController controller;
+  final String hint;
+  final IconData icon;
+  final int maxLines;
+
+  const _NoteField({
+    required this.controller,
+    required this.hint,
+    required this.icon,
+    this.maxLines = 1,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return TextField(
+      controller: controller,
+      maxLines: maxLines,
+      style: const TextStyle(color: HeritageColors.cream, fontSize: 14, height: 1.5),
+      cursorColor: HeritageColors.orange,
+      decoration: InputDecoration(
+        hintText: hint,
+        hintStyle: TextStyle(color: Colors.white.withValues(alpha: 0.3), fontSize: 13),
+        prefixIcon: Padding(
+          padding: const EdgeInsets.only(left: 14, right: 10, top: 14),
+          child: Icon(icon, color: Colors.white.withValues(alpha: 0.35), size: 18),
+        ),
+        prefixIconConstraints: const BoxConstraints(),
+        filled: true,
+        fillColor: Colors.white.withValues(alpha: 0.05),
+        contentPadding: const EdgeInsets.fromLTRB(14, 14, 14, 14),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(14),
+          borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.08)),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(14),
+          borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.08)),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(14),
+          borderSide: const BorderSide(color: HeritageColors.orange, width: 1.5),
+        ),
+      ),
+    );
+  }
+}
+
+class _InfoRow extends StatelessWidget {
+  final IconData icon;
+  final String text;
+  const _InfoRow(this.icon, this.text);
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        Icon(icon, size: 14, color: HeritageColors.orange.withValues(alpha: 0.7)),
+        const SizedBox(width: 6),
+        Expanded(
+          child: Text(text, style: TextStyle(color: Colors.white.withValues(alpha: 0.5), fontSize: 12)),
+        ),
+      ],
     );
   }
 }

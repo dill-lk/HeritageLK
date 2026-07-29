@@ -1,5 +1,4 @@
 // ignore_for_file: prefer_const_constructors, prefer_const_literals_to_create_immutables
-
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
@@ -25,7 +24,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
           children: [
             const Icon(Icons.key, color: Color(0xFFE9C46A)),
             const SizedBox(width: 10),
-            Text('Gemini AI Settings', style: GoogleFonts.playfairDisplay(color: HeritageColors.cream, fontSize: 20)),
+            Text(
+              'Gemini AI Settings',
+              style: GoogleFonts.playfairDisplay(color: HeritageColors.cream, fontSize: 20),
+            ),
           ],
         ),
         content: Column(
@@ -45,15 +47,24 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 hintText: 'AIzaSy...',
                 hintStyle: const TextStyle(color: Colors.white30),
                 filled: true,
-                fillColor: Colors.white.withValues(alpha: 0.05),
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: const BorderSide(color: Color(0x33E9C46A))),
-                focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: const BorderSide(color: Color(0xFFE9C46A))),
+                fillColor: Colors.white.withOpacity(0.05),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(16),
+                  borderSide: const BorderSide(color: Color(0x33E9C46A)),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(16),
+                  borderSide: const BorderSide(color: Color(0xFFE9C46A)),
+                ),
               ),
             ),
           ],
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel', style: TextStyle(color: Colors.white54))),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Cancel', style: TextStyle(color: Colors.white54)),
+          ),
           ElevatedButton(
             style: ElevatedButton.styleFrom(
               backgroundColor: const Color(0xFFE9C46A),
@@ -65,7 +76,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
               setState(() {});
               Navigator.pop(ctx);
               ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text(keyController.text.isNotEmpty ? 'Gemini API Key saved! ⚡' : 'API Key cleared.')),
+                SnackBar(
+                  content: Text(
+                    keyController.text.isNotEmpty ? 'Gemini API Key saved! ⚡' : 'API Key cleared.',
+                  ),
+                ),
               );
             },
             child: const Text('Save Key', style: TextStyle(fontWeight: FontWeight.bold)),
@@ -76,157 +91,378 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   @override
-  Widget build(BuildContext context) => Scaffold(
-        body: SafeArea(
-          child: Stack(children: [
-            Positioned(
-              top: 0,
-              left: 0,
-              right: 0,
-              height: 220,
-              child: Opacity(
-                opacity: 0.6,
-                child: Image.network(
-                  'https://images.unsplash.com/photo-1586224372551-7f91854580bf?q=80&w=800&auto=format&fit=crop',
-                  fit: BoxFit.cover,
-                  errorBuilder: (_, __, ___) => const ColoredBox(color: HeritageColors.brown),
+  Widget build(BuildContext context) {
+    final bool isKeyActive = AppConfig.effectiveGeminiApiKey.isNotEmpty;
+
+    return Scaffold(
+      backgroundColor: const Color(0xFF100E0A),
+      body: CustomScrollView(
+        slivers: [
+          SliverAppBar(
+            backgroundColor: Colors.transparent,
+            expandedHeight: 180,
+            pinned: true,
+            elevation: 0,
+            automaticallyImplyLeading: false,
+            flexibleSpace: FlexibleSpaceBar(
+              titlePadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+              title: Text(
+                'Settings',
+                style: GoogleFonts.playfairDisplay(
+                  color: HeritageColors.cream,
+                  fontSize: 24,
+                  fontWeight: FontWeight.bold,
                 ),
               ),
-            ),
-            Positioned(
-              top: 0,
-              left: 0,
-              right: 0,
-              height: 220,
-              child: DecoratedBox(
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topCenter,
-                    end: Alignment.bottomCenter,
-                    colors: [HeritageColors.background, HeritageColors.background.withValues(alpha: 0)],
+              background: Stack(
+                fit: StackFit.expand,
+                children: [
+                  Image.network(
+                    'https://images.unsplash.com/photo-1586224372551-7f91854580bf?q=80&w=800&auto=format&fit=crop',
+                    fit: BoxFit.cover,
+                    color: const Color(0xFF100E0A).withOpacity(0.7),
+                    colorBlendMode: BlendMode.darken,
+                    errorBuilder: (_, __, ___) => const ColoredBox(color: HeritageColors.brown),
                   ),
-                ),
-              ),
-            ),
-            ListView(
-              padding: const EdgeInsets.fromLTRB(24, 12, 24, 32),
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    _round(Icons.arrow_back, () => Navigator.of(context).pushReplacementNamed('/profile')),
-                    Text('Settings', style: GoogleFonts.playfairDisplay(color: HeritageColors.cream, fontSize: 24, fontWeight: FontWeight.bold)),
-                    _round(Icons.info_outline, () {}, iconColor: const Color(0xFFE9C46A)),
-                  ],
-                ),
-                const SizedBox(height: 32),
-                const Text('HeritageLK App Settings', style: TextStyle(color: HeritageColors.orange, fontSize: 18, fontWeight: FontWeight.bold)),
-                const SizedBox(height: 24),
-                _section(context, 'AI & EXPLORATION ENGINE', [
-                  _CustomNavItem(
-                    label: 'Gemini AI Configuration',
-                    icon: Icons.auto_awesome,
-                    subtitle: AppConfig.effectiveGeminiApiKey.isNotEmpty ? 'API Key Active ⚡' : 'Configure Key',
-                    onTap: _showGeminiConfigDialog,
-                  ),
-                ]),
-                const SizedBox(height: 32),
-                _section(context, 'ACCOUNT', [
-                  _CustomNavItem(label: 'Personal Information', icon: Icons.person_outline, onTap: () => Navigator.of(context).pushNamed('/settings/personal')),
-                  _CustomNavItem(label: 'Security', icon: Icons.lock_outline, onTap: () => Navigator.of(context).pushNamed('/settings/security')),
-                ]),
-                const SizedBox(height: 32),
-                _section(context, 'PREFERENCES & PRIVACY', [
-                  _CustomNavItem(label: 'Notifications', icon: Icons.notifications_none, onTap: () => Navigator.of(context).pushNamed('/settings/notifications')),
-                  _CustomNavItem(label: 'Privacy & Data', icon: Icons.shield_outlined, onTap: () => Navigator.of(context).pushNamed('/settings/privacy')),
-                ]),
-                const SizedBox(height: 32),
-                _section(context, 'SUPPORT', [
-                  _CustomNavItem(label: 'Help Center', icon: Icons.help_outline, onTap: () => Navigator.of(context).pushNamed('/settings/help')),
-                  _CustomNavItem(label: 'Give Feedback', icon: Icons.message_outlined, onTap: () => Navigator.of(context).pushNamed('/settings/help')),
-                ]),
-                const SizedBox(height: 40),
-                InkWell(
-                  onTap: () => Navigator.of(context).pushReplacementNamed('/login'),
-                  child: Container(
-                    padding: const EdgeInsets.all(18),
-                    decoration: BoxDecoration(color: const Color(0x1AE76F51), border: Border.all(color: const Color(0x33E76F51)), borderRadius: BorderRadius.circular(16)),
-                    child: const Row(children: [Icon(Icons.logout, color: Color(0xFFE76F51)), SizedBox(width: 16), Text('Log Out', style: TextStyle(color: Color(0xFFE76F51), fontWeight: FontWeight.bold))]),
-                  ),
-                ),
-                const SizedBox(height: 48),
-                Center(
-                  child: Column(
-                    children: [
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Container(width: 16, height: 12, decoration: BoxDecoration(color: HeritageColors.orange.withValues(alpha: 0.80), borderRadius: BorderRadius.circular(2))),
-                          const SizedBox(width: 8),
-                          const Text('PRESERVE THE LEGACY', style: TextStyle(color: HeritageColors.orange, fontSize: 12, fontWeight: FontWeight.bold, letterSpacing: 2)),
+                  DecoratedBox(
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.topCenter,
+                        end: Alignment.bottomCenter,
+                        colors: [
+                          const Color(0xFF100E0A).withOpacity(0.1),
+                          const Color(0xFF100E0A),
                         ],
                       ),
-                      const SizedBox(height: 4),
-                      const Text('Version 2.4.1 (Pro Build)', style: TextStyle(color: Colors.white38, fontSize: 10)),
-                    ],
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
-          ]),
-        ),
-      );
-
-  Widget _section(BuildContext context, String title, List<_CustomNavItem> items) => Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(title, style: const TextStyle(color: Color(0x80F4A261), fontSize: 12, fontWeight: FontWeight.bold, letterSpacing: 2)),
-          const SizedBox(height: 12),
-          ...items.map(
-            (item) => Container(
-              margin: const EdgeInsets.only(bottom: 8),
-              child: InkWell(
-                onTap: item.onTap,
-                borderRadius: BorderRadius.circular(16),
-                child: Container(
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.05),
-                    border: Border.all(color: Colors.white.withValues(alpha: 0.05)),
-                    borderRadius: BorderRadius.circular(16),
-                  ),
-                  child: Row(
-                    children: [
-                      Icon(item.icon, color: HeritageColors.orange, size: 20),
-                      const SizedBox(width: 16),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(item.label, style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w500)),
-                            if (item.subtitle != null) Text(item.subtitle!, style: const TextStyle(color: Color(0xFF52B788), fontSize: 11, fontWeight: FontWeight.w600)),
-                          ],
-                        ),
-                      ),
-                      Icon(Icons.arrow_back_ios, color: Colors.white.withValues(alpha: 0.40), size: 14, textDirection: TextDirection.rtl),
-                    ],
-                  ),
-                ),
+            leading: Padding(
+              padding: const EdgeInsets.only(left: 12.0, top: 8.0, bottom: 8.0),
+              child: _round(
+                Icons.arrow_back,
+                () => Navigator.of(context).pushReplacementNamed('/profile'),
+              ),
+            ),
+          ),
+          SliverPadding(
+            padding: const EdgeInsets.fromLTRB(24, 16, 24, 40),
+            sliver: SliverList(
+              delegate: SliverChildListDelegate(
+                [
+                  _sectionHeader('AI & EXPLORATION ENGINE'),
+                  _buildGeminiCard(isKeyActive),
+                  const SizedBox(height: 32),
+                  _sectionHeader('ACCOUNT'),
+                  _buildSettingsGroup([
+                    _CustomNavItem(
+                      label: 'Personal Information',
+                      icon: Icons.person_outline,
+                      onTap: () => Navigator.of(context).pushNamed('/settings/personal'),
+                    ),
+                    _CustomNavItem(
+                      label: 'Security',
+                      icon: Icons.lock_outline,
+                      onTap: () => Navigator.of(context).pushNamed('/settings/security'),
+                    ),
+                  ]),
+                  const SizedBox(height: 32),
+                  _sectionHeader('PREFERENCES & PRIVACY'),
+                  _buildSettingsGroup([
+                    _CustomNavItem(
+                      label: 'Notifications',
+                      icon: Icons.notifications_none,
+                      onTap: () => Navigator.of(context).pushNamed('/settings/notifications'),
+                    ),
+                    _CustomNavItem(
+                      label: 'Privacy & Data',
+                      icon: Icons.shield_outlined,
+                      onTap: () => Navigator.of(context).pushNamed('/settings/privacy'),
+                    ),
+                  ]),
+                  const SizedBox(height: 32),
+                  _sectionHeader('SUPPORT'),
+                  _buildSettingsGroup([
+                    _CustomNavItem(
+                      label: 'Help Center',
+                      icon: Icons.help_outline,
+                      onTap: () => Navigator.of(context).pushNamed('/settings/help'),
+                    ),
+                    _CustomNavItem(
+                      label: 'Give Feedback',
+                      icon: Icons.message_outlined,
+                      onTap: () => Navigator.of(context).pushNamed('/settings/help'),
+                    ),
+                  ]),
+                  const SizedBox(height: 48),
+                  _buildLogoutButton(),
+                  const SizedBox(height: 48),
+                  _buildVersionFooter(),
+                ],
               ),
             ),
           ),
         ],
-      );
+      ),
+    );
+  }
 
-  Widget _round(IconData icon, VoidCallback action, {Color iconColor = HeritageColors.orange}) => InkWell(
+  Widget _sectionHeader(String title) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12.0, left: 4.0),
+      child: Text(
+        title,
+        style: const TextStyle(
+          color: Color(0xFFF4A261),
+          fontSize: 12,
+          fontWeight: FontWeight.w700,
+          letterSpacing: 1.5,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildGeminiCard(bool isKeyActive) {
+    return Container(
+      decoration: BoxDecoration(
+        color: const Color(0xFF1E1B18),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.white.withOpacity(0.05)),
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: _showGeminiConfigDialog,
+          borderRadius: BorderRadius.circular(16),
+          child: Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: HeritageColors.orange.withOpacity(0.1),
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(Icons.auto_awesome, color: HeritageColors.orange, size: 22),
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'Gemini AI Configuration',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 15,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Row(
+                        children: [
+                          Container(
+                            width: 8,
+                            height: 8,
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              color: isKeyActive ? const Color(0xFF52B788) : Colors.amber,
+                            ),
+                          ),
+                          const SizedBox(width: 6),
+                          Text(
+                            isKeyActive ? 'API Key Active ⚡' : 'Configure Key',
+                            style: TextStyle(
+                              color: isKeyActive ? const Color(0xFF52B788) : Colors.amber,
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+                Icon(
+                  Icons.arrow_forward_ios,
+                  color: Colors.white.withOpacity(0.3),
+                  size: 14,
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSettingsGroup(List<_CustomNavItem> items) {
+    return Container(
+      decoration: BoxDecoration(
+        color: const Color(0xFF1E1B18),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.white.withOpacity(0.05)),
+      ),
+      child: Column(
+        children: items.asMap().entries.map((entry) {
+          final int idx = entry.key;
+          final _CustomNavItem item = entry.value;
+
+          return Column(
+            children: [
+              Material(
+                color: Colors.transparent,
+                child: InkWell(
+                  onTap: item.onTap,
+                  borderRadius: BorderRadius.vertical(
+                    top: Radius.circular(idx == 0 ? 16 : 0),
+                    bottom: Radius.circular(idx == items.length - 1 ? 16 : 0),
+                  ),
+                  child: Padding(
+                    padding: const EdgeInsets.all(16.0),
+                    child: Row(
+                      children: [
+                        Icon(item.icon, color: HeritageColors.orange, size: 22),
+                        const SizedBox(width: 16),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                item.label,
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 15,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                              if (item.subtitle != null) ...[
+                                const SizedBox(height: 2),
+                                Text(
+                                  item.subtitle!,
+                                  style: const TextStyle(
+                                    color: Color(0xFF52B788),
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                              ]
+                            ],
+                          ),
+                        ),
+                        Icon(
+                          Icons.arrow_forward_ios,
+                          color: Colors.white.withOpacity(0.3),
+                          size: 14,
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+              if (idx != items.length - 1)
+                Divider(
+                  height: 1,
+                  thickness: 1,
+                  color: Colors.white.withOpacity(0.05),
+                  indent: 54,
+                  endIndent: 16,
+                ),
+            ],
+          );
+        }).toList(),
+      ),
+    );
+  }
+
+  Widget _buildLogoutButton() {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: () => Navigator.of(context).pushReplacementNamed('/login'),
+        borderRadius: BorderRadius.circular(16),
+        child: Container(
+          width: double.infinity,
+          padding: const EdgeInsets.symmetric(vertical: 16),
+          decoration: BoxDecoration(
+            color: const Color(0xFFE76F51).withOpacity(0.1),
+            border: Border.all(color: const Color(0xFFE76F51).withOpacity(0.3)),
+            borderRadius: BorderRadius.circular(16),
+          ),
+          child: const Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(Icons.logout, color: Color(0xFFE76F51), size: 20),
+              SizedBox(width: 12),
+              Text(
+                'Log Out',
+                style: TextStyle(
+                  color: Color(0xFFE76F51),
+                  fontWeight: FontWeight.w600,
+                  fontSize: 15,
+                  letterSpacing: 0.5,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildVersionFooter() {
+    return Center(
+      child: Column(
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Container(
+                width: 12,
+                height: 12,
+                decoration: BoxDecoration(
+                  color: HeritageColors.orange.withOpacity(0.8),
+                  shape: BoxShape.rectangle,
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+              const SizedBox(width: 8),
+              const Text(
+                'PRESERVE THE LEGACY',
+                style: TextStyle(
+                  color: HeritageColors.orange,
+                  fontSize: 12,
+                  fontWeight: FontWeight.bold,
+                  letterSpacing: 2,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'Version 2.4.1 (Pro Build)',
+            style: TextStyle(
+              color: Colors.white.withOpacity(0.4),
+              fontSize: 11,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _round(IconData icon, VoidCallback action, {Color iconColor = HeritageColors.orange}) =>
+      InkWell(
         onTap: action,
         borderRadius: BorderRadius.circular(24),
         child: Container(
           width: 40,
           height: 40,
           decoration: BoxDecoration(
-            color: Colors.white.withValues(alpha: 0.10),
-            border: Border.all(color: Colors.white.withValues(alpha: 0.10)),
+            color: Colors.white.withOpacity(0.1),
             shape: BoxShape.circle,
           ),
           child: Icon(icon, color: iconColor, size: 20),
@@ -239,5 +475,11 @@ class _CustomNavItem {
   final IconData icon;
   final String? subtitle;
   final VoidCallback onTap;
-  const _CustomNavItem({required this.label, required this.icon, this.subtitle, required this.onTap});
+  
+  const _CustomNavItem({
+    required this.label,
+    required this.icon,
+    this.subtitle,
+    required this.onTap,
+  });
 }

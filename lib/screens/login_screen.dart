@@ -1,6 +1,6 @@
-// ignore_for_file: prefer_const_constructors, prefer_const_literals_to_create_immutables
-
+// ignore_for_file: prefer_const_constructors
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -14,310 +14,358 @@ class LoginScreen extends StatefulWidget {
   State<LoginScreen> createState() => _LoginScreenState();
 }
 
-class _LoginScreenState extends State<LoginScreen> {
-  bool _showPassword = false;
-  bool _languageOpen = false;
-  bool _submitting = false;
-  String _language = 'English';
-  String _authMessage = '';
-  bool _resetSent = false;
-
+class _LoginScreenState extends State<LoginScreen>
+    with SingleTickerProviderStateMixin {
+  final _formKey = GlobalKey<FormState>();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
 
+  bool _showPassword = false;
+  bool _submitting = false;
+  bool _resetSent = false;
+  String _authMessage = '';
+
+  late final AnimationController _anim = AnimationController(
+    vsync: this,
+    duration: const Duration(milliseconds: 650),
+  )..forward();
+
   @override
   void dispose() {
+    _anim.dispose();
     _emailController.dispose();
     _passwordController.dispose();
     super.dispose();
   }
 
   Future<void> _signIn() async {
-    setState(() => _authMessage = '');
-    if (!AppConfig.hasSupabase) {
-      setState(() => _authMessage = 'Supabase is not configured. Add SUPABASE_URL and SUPABASE_ANON_KEY.');
-      return;
-    }
-    if (_emailController.text.trim().isEmpty || _passwordController.text.isEmpty) return;
-    setState(() => _submitting = true);
+    if (!(_formKey.currentState?.validate() ?? false)) return;
+    setState(() { _authMessage = ''; _submitting = true; });
+    HapticFeedback.lightImpact();
     try {
-      await Supabase.instance.client.auth.signInWithPassword(email: _emailController.text.trim(), password: _passwordController.text);
+      if (!AppConfig.hasSupabase) throw Exception('Account service not available.');
+      await Supabase.instance.client.auth.signInWithPassword(
+        email: _emailController.text.trim(),
+        password: _passwordController.text,
+      );
       if (mounted) Navigator.of(context).pushReplacementNamed('/home');
-    } on AuthException catch (error) {
-      if (mounted) setState(() => _authMessage = error.message);
-    } catch (error) {
-      if (mounted) setState(() => _authMessage = '$error');
+    } on AuthException catch (e) {
+      if (mounted) setState(() => _authMessage = _friendly(e.message));
+    } catch (e) {
+      if (mounted) setState(() => _authMessage = e.toString().replaceAll('Exception: ', ''));
     } finally {
       if (mounted) setState(() => _submitting = false);
     }
   }
 
   Future<void> _forgotPassword() async {
-    if (!AppConfig.hasSupabase || _emailController.text.trim().isEmpty) {
-      setState(() => _authMessage = 'Enter your email above, then tap Forgot Password.');
+    final email = _emailController.text.trim();
+    if (email.isEmpty) {
+      setState(() => _authMessage = 'Enter your email address first, then tap Forgot password.');
       return;
     }
     try {
-      await Supabase.instance.client.auth.resetPasswordForEmail(_emailController.text.trim());
+      await Supabase.instance.client.auth.resetPasswordForEmail(email);
       if (mounted) setState(() { _resetSent = true; _authMessage = ''; });
-    } on AuthException catch (error) {
-      if (mounted) setState(() => _authMessage = error.message);
-    } catch (error) {
-      if (mounted) setState(() => _authMessage = '$error');
-    }
+    } on AuthException catch (e) {
+      if (mounted) setState(() => _authMessage = _friendly(e.message));
+    } catch (_) {}
+  }
+
+  String _friendly(String msg) {
+    if (msg.contains('Invalid login')) return 'Wrong email or password. Please try again.';
+    if (msg.contains('Email not confirmed')) return 'Please confirm your email first.';
+    if (msg.contains('Too many')) return 'Too many attempts — wait a minute and try again.';
+    return msg;
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Center(
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 440),
-          child: Container(
-            color: HeritageColors.background,
-            child: SingleChildScrollView(
-              child: Column(
-                children: [
-                  _hero(context),
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(24, 0, 24, 48),
-                    child: _form(context),
+      backgroundColor: HeritageColors.background,
+      resizeToAvoidBottomInset: true,
+      body: GestureDetector(
+        onTap: () => FocusScope.of(context).unfocus(),
+        child: Stack(
+          children: [
+            // ── Ambient glows ──────────────────────────────────────────
+            Positioned(
+              top: -100,
+              left: -80,
+              child: _Glow(color: HeritageColors.orange, size: 320, opacity: 0.15),
+            ),
+            Positioned(
+              bottom: -80,
+              right: -60,
+              child: _Glow(color: const Color(0xFF52B788), size: 260, opacity: 0.08),
+            ),
+            // ── Content ────────────────────────────────────────────────
+            SafeArea(
+              child: Center(
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 430),
+                  child: FadeTransition(
+                    opacity: CurvedAnimation(parent: _anim, curve: Curves.easeOut),
+                    child: SlideTransition(
+                      position: Tween<Offset>(begin: const Offset(0, 0.06), end: Offset.zero)
+                          .animate(CurvedAnimation(parent: _anim, curve: Curves.easeOutCubic)),
+                      child: SingleChildScrollView(
+                        padding: const EdgeInsets.fromLTRB(24, 40, 24, 32),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            _buildLogo(),
+                            const SizedBox(height: 44),
+                            _buildHeading(),
+                            const SizedBox(height: 28),
+                            _buildForm(),
+                            const SizedBox(height: 24),
+                            _buildDivider(),
+                            const SizedBox(height: 20),
+                            Row(children: [
+                              _SocialBtn(label: 'Google', icon: Icons.g_mobiledata),
+                              const SizedBox(width: 12),
+                              _SocialBtn(label: 'Apple', icon: Icons.apple),
+                            ]),
+                            const SizedBox(height: 32),
+                            _buildFooter(),
+                          ],
+                        ),
+                      ),
+                    ),
                   ),
-                ],
+                ),
               ),
             ),
-          ),
+          ],
         ),
       ),
     );
   }
 
-  Widget _hero(BuildContext context) {
-    return SizedBox(
-      height: 340,
-      child: Stack(
-        fit: StackFit.expand,
+  Widget _buildLogo() => Column(children: [
+    Container(
+      width: 68,
+      height: 68,
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          colors: [Color(0xFFF4A261), Color(0xFFE9C46A)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [BoxShadow(color: HeritageColors.orange.withValues(alpha: 0.45), blurRadius: 28, offset: const Offset(0, 8))],
+      ),
+      child: const Icon(Icons.account_balance, color: Color(0xFF1A0F05), size: 34),
+    ),
+    const SizedBox(height: 12),
+    Text('HeritageLK', style: GoogleFonts.plusJakartaSans(color: HeritageColors.orange, fontSize: 24, fontWeight: FontWeight.w800, letterSpacing: 0.4)),
+    const SizedBox(height: 4),
+    Text('GUARDIAN OF SRI LANKA', style: TextStyle(color: HeritageColors.brown.withValues(alpha: 0.65), fontSize: 10, fontWeight: FontWeight.w600, letterSpacing: 2.5)),
+  ]);
+
+  Widget _buildHeading() => Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+    Text('Welcome back 👋', style: GoogleFonts.plusJakartaSans(color: HeritageColors.cream, fontSize: 27, fontWeight: FontWeight.bold, height: 1.2)),
+    const SizedBox(height: 6),
+    Text('Sign in to continue your heritage journey', style: TextStyle(color: Colors.white.withValues(alpha: 0.45), fontSize: 14, height: 1.4)),
+  ]);
+
+  Widget _buildForm() {
+    return Form(
+      key: _formKey,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Image.network(
-            'https://api.builder.io/api/v1/image/assets/TEMP/b02856ceecd423ab75d2e1d643e2e881960878b0?width=880',
-            fit: BoxFit.cover,
-            opacity: const AlwaysStoppedAnimation(0.60),
-            errorBuilder: (_, __, ___) => const ColoredBox(
-              color: HeritageColors.background,
+          _Field(
+            controller: _emailController,
+            hint: 'Email address',
+            icon: Icons.email_outlined,
+            keyboardType: TextInputType.emailAddress,
+            validator: (v) {
+              if (v == null || v.trim().isEmpty) return 'Please enter your email';
+              if (!v.contains('@')) return 'Enter a valid email';
+              return null;
+            },
+          ),
+          const SizedBox(height: 14),
+          _Field(
+            controller: _passwordController,
+            hint: 'Password',
+            icon: Icons.lock_outlined,
+            obscureText: !_showPassword,
+            validator: (v) => (v == null || v.isEmpty) ? 'Please enter your password' : null,
+            suffix: IconButton(
+              onPressed: () => setState(() => _showPassword = !_showPassword),
+              icon: Icon(_showPassword ? Icons.visibility_outlined : Icons.visibility_off_outlined,
+                  color: Colors.white.withValues(alpha: 0.35), size: 20),
             ),
           ),
-          const DecoratedBox(
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-                colors: [
-                  Color(0x66100E0A),
-                  Color(0x00100E0A),
-                  HeritageColors.background,
-                ],
-              ),
+          // Error banners
+          if (_authMessage.isNotEmpty) ...[
+            const SizedBox(height: 12),
+            _Banner(text: _authMessage, isError: true),
+          ],
+          if (_resetSent) ...[
+            const SizedBox(height: 12),
+            _Banner(text: 'Password reset sent! Check your inbox.', isError: false),
+          ],
+          Align(
+            alignment: Alignment.centerRight,
+            child: TextButton(
+              onPressed: _forgotPassword,
+              style: TextButton.styleFrom(padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 6)),
+              child: Text('Forgot password?', style: TextStyle(color: HeritageColors.orange.withValues(alpha: 0.8), fontSize: 13, fontWeight: FontWeight.w600)),
             ),
           ),
-          Positioned(
-            top: 56,
-            left: 24,
-            right: 24,
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                _languageSelector(),
-                _roundIcon(Icons.info_outline),
-              ],
-            ),
-          ),
-          const Positioned(
-            left: 24,
-            bottom: 24,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'HeritageLK',
-                  style: TextStyle(
-                    color: HeritageColors.orange,
-                    fontFamily: 'Inter',
-                    fontSize: 32,
-                    height: 1.25,
+          const SizedBox(height: 8),
+          SizedBox(
+            height: 54,
+            child: _submitting
+                ? Center(child: SizedBox(width: 22, height: 22, child: CircularProgressIndicator(color: HeritageColors.orange, strokeWidth: 2.5)))
+                : ElevatedButton(
+                    onPressed: _signIn,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: HeritageColors.orange,
+                      foregroundColor: const Color(0xFF1A0F05),
+                      elevation: 0,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                    ),
+                    child: Text('Sign In', style: GoogleFonts.plusJakartaSans(fontSize: 16, fontWeight: FontWeight.bold, letterSpacing: 0.2)),
                   ),
-                ),
-                Text(
-                  'JOIN THE LEGACY',
-                  style: TextStyle(
-                    color: HeritageColors.brown,
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600,
-                    letterSpacing: 0.7,
-                  ),
-                ),
-              ],
-            ),
           ),
         ],
       ),
     );
   }
 
-  Widget _languageSelector() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        if (_languageOpen)
-          Container(
-            constraints: const BoxConstraints(minWidth: 132),
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 9),
-            decoration: BoxDecoration(
-              color: Colors.black.withValues(alpha:0.58),
-              border: Border.all(color: HeritageColors.orange.withValues(alpha:0.25)),
-              borderRadius: BorderRadius.circular(25),
-            ),
-            child: Column(
-              children: ['English', 'සිංහල', 'தமிழ்']
-                  .map(
-                    (language) => InkWell(
-                      onTap: () => setState(() {
-                        _language = language;
-                        _languageOpen = false;
-                      }),
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(vertical: 2.5),
-                        child: Row(
-                          children: [
-                            const Icon(Icons.language, size: 17, color: HeritageColors.orange),
-                            const SizedBox(width: 8),
-                            Text(language, style: const TextStyle(color: Color(0xFFCA895B))),
-                          ],
-                        ),
-                      ),
-                    ),
-                  )
-                  .toList(),
-            ),
-          )
-        else
-          InkWell(
-            onTap: () => setState(() => _languageOpen = true),
-            borderRadius: BorderRadius.circular(20),
-            child: Container(
-              height: 32,
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              decoration: BoxDecoration(
-                color: HeritageColors.brown.withValues(alpha:0.15),
-                border: Border.all(color: HeritageColors.orange.withValues(alpha:0.20)),
-                borderRadius: BorderRadius.circular(20),
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const Icon(Icons.language, size: 17, color: HeritageColors.orange),
-                  const SizedBox(width: 8),
-                  Text(_language, style: const TextStyle(color: HeritageColors.orange, fontSize: 12, fontWeight: FontWeight.w600)),
-                  const SizedBox(width: 8),
-                  const Icon(Icons.keyboard_arrow_down, size: 14, color: HeritageColors.orange),
-                ],
-              ),
-            ),
-          ),
-      ],
-    );
-  }
+  Widget _buildDivider() => Row(children: [
+    Expanded(child: Divider(color: Colors.white.withValues(alpha: 0.1))),
+    Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 14),
+      child: Text('or continue with', style: TextStyle(color: Colors.white.withValues(alpha: 0.3), fontSize: 12)),
+    ),
+    Expanded(child: Divider(color: Colors.white.withValues(alpha: 0.1))),
+  ]);
 
-  Widget _roundIcon(IconData icon) {
-    return Container(
-      width: 40,
-      height: 40,
-      decoration: BoxDecoration(
-        color: HeritageColors.brown.withValues(alpha:0.15),
-        border: Border.all(color: HeritageColors.orange.withValues(alpha:0.10)),
-        shape: BoxShape.circle,
-      ),
-      child: Icon(icon, size: 16, color: HeritageColors.orange),
-    );
-  }
+  Widget _buildFooter() => Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+    Text("Don't have an account?", style: TextStyle(color: Colors.white.withValues(alpha: 0.4), fontSize: 14)),
+    TextButton(
+      onPressed: () => Navigator.of(context).pushReplacementNamed('/signup'),
+      style: TextButton.styleFrom(padding: const EdgeInsets.symmetric(horizontal: 6)),
+      child: Text('Sign up', style: TextStyle(color: HeritageColors.orange, fontSize: 14, fontWeight: FontWeight.bold)),
+    ),
+  ]);
+}
 
-  Widget _form(BuildContext context) {
-    InputDecoration inputDecoration(String hint, IconData icon) {
-      return InputDecoration(
-            hintText: hint,
-            hintStyle: TextStyle(color: HeritageColors.brown.withValues(alpha:0.50)),
-            prefixIcon: Icon(icon, size: 18, color: HeritageColors.brown),
-            filled: true,
-            fillColor: HeritageColors.brown.withValues(alpha:0.10),
-            enabledBorder: OutlineInputBorder(
-              borderSide: BorderSide(color: HeritageColors.brown.withValues(alpha:0.30)),
-              borderRadius: BorderRadius.circular(16),
-            ),
-            focusedBorder: OutlineInputBorder(
-              borderSide: BorderSide(color: HeritageColors.orange.withValues(alpha:0.50)),
-              borderRadius: BorderRadius.circular(16),
-            ),
-          );
-    }
+// ─── Shared Widgets ───────────────────────────────────────────────────────────
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        Text('Welcome Back', style: GoogleFonts.plusJakartaSans(color: HeritageColors.cream, fontSize: 24, fontWeight: FontWeight.bold, height: 1.5)),
-        const Text('Continue your journey through history.', style: TextStyle(color: HeritageColors.brown, fontSize: 14, height: 1.5)),
-        const SizedBox(height: 24),
-        TextField(controller: _emailController, keyboardType: TextInputType.emailAddress, decoration: inputDecoration('Enter Email', Icons.person_outline)),
-        const SizedBox(height: 16),
-        TextField(
-          controller: _passwordController,
-          obscureText: !_showPassword,
-          decoration: inputDecoration('Enter Password', Icons.lock_outline).copyWith(
-            suffixIcon: IconButton(
-              onPressed: () => setState(() => _showPassword = !_showPassword),
-              color: HeritageColors.brown.withValues(alpha:0.50),
-              icon: Icon(_showPassword ? Icons.visibility : Icons.visibility_off, size: 18),
-            ),
-          ),
-        ),
-        const SizedBox(height: 12),
-        if (_authMessage.isNotEmpty) Padding(padding: const EdgeInsets.only(bottom: 8), child: Text(_authMessage, style: const TextStyle(color: HeritageColors.orange, fontSize: 13))),
-        if (_resetSent) Padding(padding: const EdgeInsets.only(bottom: 8), child: Text('Password reset email sent. Check your inbox.', style: TextStyle(color: const Color(0xFF52B788), fontSize: 13))),
-        Align(alignment: Alignment.centerRight, child: TextButton(onPressed: _forgotPassword, child: const Text('Forgot Password?', style: TextStyle(color: HeritageColors.orange, fontSize: 14, fontWeight: FontWeight.w600)))),
-        const SizedBox(height: 10),
-        SizedBox(
-          height: 56,
-          child: FilledButton(
-            onPressed: _submitting ? null : _signIn,
-            style: FilledButton.styleFrom(backgroundColor: HeritageColors.orange, disabledBackgroundColor: HeritageColors.orange.withValues(alpha:0.55), foregroundColor: HeritageColors.background, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16))),
-            child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [Text(_submitting ? 'Signing In...' : 'Sign In', style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, letterSpacing: 0.5)), const SizedBox(width: 8), const Icon(Icons.arrow_forward, size: 18)]),
-          ),
-        ),
-        const SizedBox(height: 24),
-        Row(children: [Expanded(child: Divider(color: HeritageColors.brown.withValues(alpha:0.20))), const Padding(padding: EdgeInsets.symmetric(horizontal: 16), child: Text('or sign in with', style: TextStyle(color: HeritageColors.brown, fontSize: 12, fontWeight: FontWeight.w600, letterSpacing: 0.6))), Expanded(child: Divider(color: HeritageColors.brown.withValues(alpha:0.20)))]),
-        const SizedBox(height: 24),
-        Row(children: [_socialButton('Google', Icons.g_mobiledata), const SizedBox(width: 16), _socialButton('Apple', Icons.apple)]),
-        const SizedBox(height: 32),
-        Row(mainAxisAlignment: MainAxisAlignment.center, children: [const Text("Don't have an account?", style: TextStyle(color: HeritageColors.brown, fontSize: 14)), TextButton(onPressed: () => Navigator.of(context).pushReplacementNamed('/signup'), child: const Text('Sign up', style: TextStyle(color: HeritageColors.orange, fontSize: 14, fontWeight: FontWeight.bold)))]),
-      ],
-    );
-  }
+class _Field extends StatelessWidget {
+  final TextEditingController controller;
+  final String hint;
+  final IconData icon;
+  final bool obscureText;
+  final TextInputType? keyboardType;
+  final String? Function(String?)? validator;
+  final Widget? suffix;
 
-  Widget _socialButton(String label, IconData icon) {
-    return Expanded(
-      child: SizedBox(
-        height: 56,
-        child: OutlinedButton.icon(
-          onPressed: () {},
-          icon: Icon(icon, color: HeritageColors.cream),
-          label: Text(label, style: const TextStyle(color: HeritageColors.cream, fontSize: 14, fontWeight: FontWeight.w600)),
-          style: OutlinedButton.styleFrom(
-            backgroundColor: HeritageColors.brown.withValues(alpha:0.10),
-            side: BorderSide(color: HeritageColors.brown.withValues(alpha:0.30)),
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-          ),
-        ),
+  const _Field({
+    required this.controller,
+    required this.hint,
+    required this.icon,
+    this.obscureText = false,
+    this.keyboardType,
+    this.validator,
+    this.suffix,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return TextFormField(
+      controller: controller,
+      obscureText: obscureText,
+      keyboardType: keyboardType,
+      validator: validator,
+      style: const TextStyle(color: HeritageColors.cream, fontSize: 15),
+      cursorColor: HeritageColors.orange,
+      decoration: InputDecoration(
+        hintText: hint,
+        hintStyle: TextStyle(color: Colors.white.withValues(alpha: 0.28), fontSize: 14),
+        prefixIcon: Icon(icon, color: Colors.white.withValues(alpha: 0.38), size: 20),
+        suffixIcon: suffix,
+        filled: true,
+        fillColor: Colors.white.withValues(alpha: 0.05),
+        contentPadding: const EdgeInsets.symmetric(horizontal: 18, vertical: 18),
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.08))),
+        enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.08))),
+        focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: const BorderSide(color: HeritageColors.orange, width: 1.5)),
+        errorBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: const BorderSide(color: Color(0xFFE76F51), width: 1.2)),
+        focusedErrorBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: const BorderSide(color: Color(0xFFE76F51), width: 1.5)),
+        errorStyle: const TextStyle(color: Color(0xFFE76F51), fontSize: 12),
       ),
     );
   }
 }
 
+class _Banner extends StatelessWidget {
+  final String text;
+  final bool isError;
+  const _Banner({required this.text, required this.isError});
+
+  @override
+  Widget build(BuildContext context) {
+    final c = isError ? const Color(0xFFE76F51) : const Color(0xFF52B788);
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+      decoration: BoxDecoration(
+        color: c.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: c.withValues(alpha: 0.3)),
+      ),
+      child: Row(children: [
+        Icon(isError ? Icons.error_outline : Icons.check_circle_outline, color: c, size: 16),
+        const SizedBox(width: 8),
+        Expanded(child: Text(text, style: TextStyle(color: c, fontSize: 13))),
+      ]),
+    );
+  }
+}
+
+class _SocialBtn extends StatelessWidget {
+  final String label;
+  final IconData icon;
+  const _SocialBtn({required this.label, required this.icon});
+
+  @override
+  Widget build(BuildContext context) => Expanded(
+    child: Container(
+      height: 50,
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.05),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.09)),
+      ),
+      child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+        Icon(icon, color: Colors.white.withValues(alpha: 0.65), size: 22),
+        const SizedBox(width: 8),
+        Text(label, style: TextStyle(color: Colors.white.withValues(alpha: 0.65), fontSize: 14, fontWeight: FontWeight.w600)),
+      ]),
+    ),
+  );
+}
+
+class _Glow extends StatelessWidget {
+  final Color color;
+  final double size;
+  final double opacity;
+  const _Glow({required this.color, required this.size, required this.opacity});
+
+  @override
+  Widget build(BuildContext context) => Container(
+    width: size,
+    height: size,
+    decoration: BoxDecoration(
+      shape: BoxShape.circle,
+      gradient: RadialGradient(colors: [color.withValues(alpha: opacity), Colors.transparent]),
+    ),
+  );
+}

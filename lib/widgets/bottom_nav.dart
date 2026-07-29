@@ -17,7 +17,7 @@ class HeritageBottomNav extends StatelessWidget {
       case 2:
         return HeritageIcons.camera(color: color, size: 22);
       case 3:
-        return HeritageIcons.quests(color: color, size: 22);
+        return Icon(Icons.hotel_rounded, color: color, size: 22);
       case 4:
         return HeritageIcons.archive(color: color, size: 22);
       case 5:
@@ -31,7 +31,7 @@ class HeritageBottomNav extends StatelessWidget {
     ('Home', '/home'),
     ('Explore', '/explore'),
     ('Camera', '/scanner'),
-    ('Quests', '/quests'),
+    ('Hotels', '/hotels'),
     ('Archive', '/archive'),
     ('Shingo', '/archive/shingo'),
   ];
