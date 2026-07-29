@@ -1,30 +1,12 @@
 // ignore_for_file: prefer_const_constructors, prefer_const_literals_to_create_immutables
 import 'dart:async';
+import 'dart:math';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import '../theme/heritage_colors.dart';
 import '../widgets/bottom_nav.dart';
-
-class HeritageGameQuestion {
-  final String title;
-  final String category;
-  final String image;
-  final String question;
-  final List<String> options;
-  final int correctIndex;
-  final String explanation;
-
-  const HeritageGameQuestion({
-    required this.title,
-    required this.category,
-    required this.image,
-    required this.question,
-    required this.options,
-    required this.correctIndex,
-    required this.explanation,
-  });
-}
 
 class HeritageGameScreen extends StatefulWidget {
   const HeritageGameScreen({super.key});
@@ -33,139 +15,160 @@ class HeritageGameScreen extends StatefulWidget {
   State<HeritageGameScreen> createState() => _HeritageGameScreenState();
 }
 
-class _HeritageGameScreenState extends State<HeritageGameScreen> {
-  int _currentIndex = 0;
+class _HeritageGameScreenState extends State<HeritageGameScreen>
+    with SingleTickerProviderStateMixin {
+  // Game States
+  bool _isPlaying = false;
+  bool _isGameOver = false;
   int _score = 0;
-  int _streak = 0;
-  int _selectedOption = -1;
-  bool _answered = false;
-  int _timerSeconds = 15;
-  Timer? _timer;
-  bool _gameOver = false;
+  int _highScore = 0;
+  int _relicsCollected = 0;
 
-  static const List<HeritageGameQuestion> _questions = [
-    HeritageGameQuestion(
-      title: 'Sigiriya Rock Fortress',
-      category: 'ANCIENT ARCHITECTURE',
-      image: 'https://images.unsplash.com/photo-1586224372551-7f91854580bf?q=80&w=800&auto=format&fit=crop',
-      question: 'Which 5th-century king constructed the royal palace atop Sigiriya Rock?',
-      options: ['King Dutugemunu', 'King Kashyapa', 'King Parakramabahu I', 'King Devanampiya Tissa'],
-      correctIndex: 1,
-      explanation: 'King Kashyapa (477–495 AD) built his capital and citadel on top of the 200m granite rock to defend against potential invasions.',
-    ),
-    HeritageGameQuestion(
-      title: 'Temple of the Tooth',
-      category: 'SACRED HERITAGE',
-      image: 'https://images.unsplash.com/photo-1625805541012-e8ad54933a2a?q=80&w=800&auto=format&fit=crop',
-      question: 'In which kingdom city is the Sri Dalada Maligawa located?',
-      options: ['Anuradhapura', 'Polonnaruwa', 'Kandy', 'Yapahuwa'],
-      correctIndex: 2,
-      explanation: 'The sacred tooth relic of Lord Buddha is housed in Kandy, which was the final royal capital of ancient Sri Lankan kings.',
-    ),
-    HeritageGameQuestion(
-      title: 'Galle Dutch Fort',
-      category: 'COLONIAL HISTORY',
-      image: 'https://images.unsplash.com/photo-1549473889-14f410d83298?q=80&w=800&auto=format&fit=crop',
-      question: 'Which European power originally built the initial fort before the Dutch heavily fortified it in 1663?',
-      options: ['The British', 'The Portuguese', 'The French', 'The Spanish'],
-      correctIndex: 1,
-      explanation: 'The Portuguese first built a basic fortification called Santa Cruz in 1588, which was later captured and extensively rebuilt by the Dutch.',
-    ),
-    HeritageGameQuestion(
-      title: 'Nine Arches Bridge',
-      category: 'ENGINEERING MARVELS',
-      image: 'https://images.unsplash.com/photo-1586116104802-d1e86c5d9f6e?q=80&w=800&auto=format&fit=crop',
-      question: 'What unique structural feature characterizes the construction of Nine Arches Bridge in Ella?',
-      options: ['Built entirely without steel bars', 'Constructed with solid marble blocks', 'Suspended with iron cables', 'Carved out of single bedrock'],
-      correctIndex: 0,
-      explanation: 'Built during WWI, when steel was diverted for war efforts, it was built entirely using bricks, stone blocks, and cement mortar.',
-    ),
-    HeritageGameQuestion(
-      title: 'Dambulla Cave Temple',
-      category: 'UNESCO HERITAGE',
-      image: 'https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?q=80&w=800&auto=format&fit=crop',
-      question: 'How many primary cave sanctuaries compose the Golden Temple complex of Dambulla?',
-      options: ['3 Caves', '5 Caves', '8 Caves', '12 Caves'],
-      correctIndex: 1,
-      explanation: 'The complex features 5 major caves containing over 150 Buddha statues and ancient murals covering 2,100 square meters.',
-    ),
-    HeritageGameQuestion(
-      title: 'Polonnaruwa Vatadage',
-      category: 'ANCIENT CAPITALS',
-      image: 'https://images.unsplash.com/photo-1571896349842-33c89424de2d?q=80&w=800&auto=format&fit=crop',
-      question: 'What was the primary purpose of a "Vatadage" in ancient Sri Lankan architecture?',
-      options: ['A royal palace guardhouse', 'A circular protection shrine for a stupa', 'An ancient reservoir sluice gate', 'A monks\' dining hall'],
-      correctIndex: 1,
-      explanation: 'A Vatadage is a circular Buddhist structure built to enclose and protect small stupas housing sacred relics.',
-    ),
-  ];
+  // Runner Position (0: Left lane, 1: Center lane, 2: Right lane)
+  int _playerLane = 1;
+  bool _isJumping = false;
+
+  // Game Loop
+  Timer? _gameTimer;
+  double _gameSpeed = 1.0;
+
+  // Obstacles and Relics
+  // Y position goes from 0.0 (far away horizon) to 1.0 (player location at bottom)
+  final List<_GameObject> _gameObjects = [];
+  final Random _random = Random();
 
   @override
   void initState() {
     super.initState();
-    _startTimer();
   }
 
   @override
   void dispose() {
-    _timer?.cancel();
+    _gameTimer?.cancel();
     super.dispose();
   }
 
-  void _startTimer() {
-    _timer?.cancel();
-    setState(() => _timerSeconds = 15);
-    _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
-      if (_timerSeconds > 0 && !_answered) {
-        setState(() => _timerSeconds--);
-      } else if (_timerSeconds == 0 && !_answered) {
-        _handleAnswer(-1); // Timeout
-      }
+  void _startGame() {
+    setState(() {
+      _isPlaying = true;
+      _isGameOver = false;
+      _score = 0;
+      _relicsCollected = 0;
+      _playerLane = 1;
+      _isJumping = false;
+      _gameSpeed = 1.0;
+      _gameObjects.clear();
+    });
+
+    _gameTimer?.cancel();
+    _gameTimer = Timer.periodic(const Duration(milliseconds: 30), (timer) {
+      _updateGame();
     });
   }
 
-  void _handleAnswer(int optionIndex) {
-    if (_answered) return;
-    _timer?.cancel();
-
-    final currentQuestion = _questions[_currentIndex];
-    final isCorrect = optionIndex == currentQuestion.correctIndex;
+  void _updateGame() {
+    if (!_isPlaying || _isGameOver) return;
 
     setState(() {
-      _selectedOption = optionIndex;
-      _answered = true;
-      if (isCorrect) {
-        _streak++;
-        _score += 100 + (_streak * 20) + (_timerSeconds * 5);
-      } else {
-        _streak = 0;
+      _score += (_gameSpeed * 2).toInt();
+      _gameSpeed += 0.0005; // Gradually speed up
+
+      // Spawn new obstacles or relics randomly
+      if (_random.nextDouble() < 0.06) {
+        final lane = _random.nextInt(3);
+        final isRelic = _random.nextDouble() > 0.4;
+        final type = isRelic
+            ? _GameObjectType.relic
+            : (_random.nextBool()
+                ? _GameObjectType.boulder
+                : _GameObjectType.ancientGate);
+
+        // Don't spawn if something is already at top of this lane
+        final hasOverlap = _gameObjects.any(
+            (obj) => obj.lane == lane && obj.yPosition < 0.2);
+        if (!hasOverlap) {
+          _gameObjects.add(_GameObject(
+            lane: lane,
+            yPosition: 0.0,
+            type: type,
+            relicIcon: isRelic ? _getRandomRelicEmoji() : '',
+          ));
+        }
+      }
+
+      // Move objects forward
+      for (var i = _gameObjects.length - 1; i >= 0; i--) {
+        final obj = _gameObjects[i];
+        obj.yPosition += 0.02 * _gameSpeed;
+
+        // Collision Check (when object reaches player at yPosition >= 0.85)
+        if (obj.yPosition >= 0.82 && obj.yPosition <= 0.95 && obj.lane == _playerLane) {
+          if (obj.type == _GameObjectType.relic) {
+            _relicsCollected++;
+            _score += 250;
+            _gameObjects.removeAt(i);
+            HapticFeedback.lightImpact();
+            continue;
+          } else {
+            // Obstacle hit
+            if (obj.type == _GameObjectType.ancientGate && _isJumping) {
+              // Jumped over low gate successfully!
+            } else {
+              // Game Over Hit!
+              _triggerGameOver();
+              return;
+            }
+          }
+        }
+
+        // Remove off-screen objects
+        if (obj.yPosition > 1.1) {
+          _gameObjects.removeAt(i);
+        }
       }
     });
   }
 
-  void _nextQuestion() {
-    if (_currentIndex < _questions.length - 1) {
-      setState(() {
-        _currentIndex++;
-        _selectedOption = -1;
-        _answered = false;
-      });
-      _startTimer();
-    } else {
-      setState(() => _gameOver = true);
+  String _getRandomRelicEmoji() {
+    final relics = ['👑', '🛕', '💎', '🏺', '📜', '🪷'];
+    return relics[_random.nextInt(relics.length)];
+  }
+
+  void _triggerGameOver() {
+    _gameTimer?.cancel();
+    HapticFeedback.heavyImpact();
+    setState(() {
+      _isPlaying = false;
+      _isGameOver = true;
+      if (_score > _highScore) {
+        _highScore = _score;
+      }
+    });
+  }
+
+  void _moveLeft() {
+    if (!_isPlaying) return;
+    if (_playerLane > 0) {
+      setState(() => _playerLane--);
+      HapticFeedback.selectionClick();
     }
   }
 
-  void _restartGame() {
-    setState(() {
-      _currentIndex = 0;
-      _score = 0;
-      _streak = 0;
-      _selectedOption = -1;
-      _answered = false;
-      _gameOver = false;
+  void _moveRight() {
+    if (!_isPlaying) return;
+    if (_playerLane < 2) {
+      setState(() => _playerLane++);
+      HapticFeedback.selectionClick();
+    }
+  }
+
+  void _jump() {
+    if (!_isPlaying || _isJumping) return;
+    setState(() => _isJumping = true);
+    HapticFeedback.mediumImpact();
+    Future.delayed(const Duration(milliseconds: 550), () {
+      if (mounted) setState(() => _isJumping = false);
     });
-    _startTimer();
   }
 
   @override
@@ -175,27 +178,52 @@ class _HeritageGameScreenState extends State<HeritageGameScreen> {
       body: SafeArea(
         child: Stack(
           children: [
-            if (_gameOver)
-              _buildGameOverView()
-            else
-              ListView(
-                padding: const EdgeInsets.fromLTRB(20, 16, 20, 140),
-                children: [
-                  _buildHeader(),
-                  const SizedBox(height: 20),
-                  _buildProgressAndTimer(),
-                  const SizedBox(height: 20),
-                  _buildQuestionCard(),
-                  const SizedBox(height: 24),
-                  _buildOptionsList(),
-                  if (_answered) ...[
-                    const SizedBox(height: 20),
-                    _buildExplanationCard(),
-                    const SizedBox(height: 20),
-                    _buildNextButton(),
-                  ],
-                ],
-              ),
+            Column(
+              children: [
+                _buildHeader(),
+                Expanded(
+                  child: GestureDetector(
+                    onHorizontalDragEnd: (details) {
+                      if (details.primaryVelocity != null) {
+                        if (details.primaryVelocity! < 0) {
+                          _moveLeft();
+                        } else if (details.primaryVelocity! > 0) {
+                          _moveRight();
+                        }
+                      }
+                    },
+                    onVerticalDragEnd: (details) {
+                      if (details.primaryVelocity != null &&
+                          details.primaryVelocity! < 0) {
+                        _jump();
+                      }
+                    },
+                    onTapUp: (details) {
+                      // Tap left side to move left, right side to move right, center to jump
+                      final width = MediaQuery.of(context).size.width;
+                      final tapX = details.localPosition.dx;
+                      if (tapX < width * 0.35) {
+                        _moveLeft();
+                      } else if (tapX > width * 0.65) {
+                        _moveRight();
+                      } else {
+                        _jump();
+                      }
+                    },
+                    child: Stack(
+                      children: [
+                        _build3DRunnerTrack(),
+                        _buildGameObjectsLayer(),
+                        _buildPlayerCharacter(),
+                        if (!_isPlaying && !_isGameOver) _buildStartOverlay(),
+                        if (_isGameOver) _buildGameOverOverlay(),
+                      ],
+                    ),
+                  ),
+                ),
+                _buildControlsBar(),
+              ],
+            ),
             const Align(
               alignment: Alignment.bottomCenter,
               child: HeritageBottomNav(currentIndex: 3),
@@ -207,457 +235,459 @@ class _HeritageGameScreenState extends State<HeritageGameScreen> {
   }
 
   Widget _buildHeader() {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        InkWell(
-          onTap: () => Navigator.of(context).pushReplacementNamed('/home'),
-          borderRadius: BorderRadius.circular(20),
-          child: Container(
-            width: 40,
-            height: 40,
-            decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: 0.05),
-              shape: BoxShape.circle,
-              border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
-            ),
-            child: const Icon(Icons.arrow_back, color: HeritageColors.orange, size: 18),
-          ),
-        ),
-        Column(
-          children: [
-            Text(
-              'HERITAGE QUEST GAME',
-              style: TextStyle(
-                color: HeritageColors.orange,
-                fontSize: 10,
-                fontWeight: FontWeight.bold,
-                letterSpacing: 2,
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      decoration: BoxDecoration(
+        color: const Color(0xFF161210),
+        border: Border(bottom: BorderSide(color: Colors.white.withValues(alpha: 0.08))),
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          InkWell(
+            onTap: () => Navigator.of(context).pushReplacementNamed('/home'),
+            borderRadius: BorderRadius.circular(20),
+            child: Container(
+              width: 38,
+              height: 38,
+              decoration: BoxDecoration(
+                color: Colors.white.withValues(alpha: 0.05),
+                shape: BoxShape.circle,
+                border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
               ),
+              child: const Icon(Icons.arrow_back, color: HeritageColors.orange, size: 18),
             ),
-            Text(
-              'Lankan Explorer Challenge',
-              style: GoogleFonts.playfairDisplay(
-                color: HeritageColors.cream,
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-          ],
-        ),
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-          decoration: BoxDecoration(
-            color: const Color(0xFFE9C46A).withValues(alpha: 0.15),
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: const Color(0xFFE9C46A).withValues(alpha: 0.3)),
           ),
-          child: Row(
+          Column(
             children: [
-              const Icon(Icons.bolt, color: Color(0xFFE9C46A), size: 16),
-              const SizedBox(width: 4),
               Text(
-                '$_score',
-                style: const TextStyle(
-                  color: Color(0xFFE9C46A),
-                  fontSize: 14,
+                'HERITAGE RUNNER',
+                style: TextStyle(
+                  color: HeritageColors.orange,
+                  fontSize: 10,
+                  fontWeight: FontWeight.bold,
+                  letterSpacing: 2,
+                ),
+              ),
+              Text(
+                'Escape from Sigiriya',
+                style: GoogleFonts.playfairDisplay(
+                  color: HeritageColors.cream,
+                  fontSize: 16,
                   fontWeight: FontWeight.bold,
                 ),
               ),
             ],
           ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildProgressAndTimer() {
-    final currentQuestion = _questions[_currentIndex];
-    final progress = (_currentIndex + 1) / _questions.length;
-
-    return Column(
-      children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Text(
-              'Question ${_currentIndex + 1} of ${_questions.length}',
-              style: TextStyle(color: Colors.white.withValues(alpha: 0.6), fontSize: 12, fontWeight: FontWeight.bold),
-            ),
-            Row(
-              children: [
-                if (_streak > 1) ...[
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                    decoration: BoxDecoration(
-                      color: HeritageColors.orange.withValues(alpha: 0.2),
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    child: Text(
-                      '🔥 $_streak Streak',
-                      style: const TextStyle(color: HeritageColors.orange, fontSize: 11, fontWeight: FontWeight.bold),
-                    ),
-                  ),
-                  const SizedBox(width: 10),
-                ],
-                Icon(
-                  Icons.timer,
-                  color: _timerSeconds <= 5 ? Colors.redAccent : const Color(0xFF52B788),
-                  size: 16,
-                ),
-                const SizedBox(width: 4),
-                Text(
-                  '${_timerSeconds}s',
-                  style: TextStyle(
-                    color: _timerSeconds <= 5 ? Colors.redAccent : const Color(0xFF52B788),
-                    fontSize: 14,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ],
-            ),
-          ],
-        ),
-        const SizedBox(height: 8),
-        ClipRRect(
-          borderRadius: BorderRadius.circular(6),
-          child: LinearProgressIndicator(
-            value: progress,
-            minHeight: 6,
-            color: HeritageColors.orange,
-            backgroundColor: Colors.white.withValues(alpha: 0.08),
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildQuestionCard() {
-    final q = _questions[_currentIndex];
-    return Container(
-      decoration: BoxDecoration(
-        color: const Color(0xFF1A1714),
-        borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.06)),
-      ),
-      overflow: Clip.antiAlias,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Stack(
-            children: [
-              Image.network(
-                q.image,
-                height: 180,
-                width: double.infinity,
-                fit: BoxFit.cover,
-                errorBuilder: (_, __, ___) => Container(
-                  height: 180,
-                  color: HeritageColors.brown.withValues(alpha: 0.3),
-                  child: const Center(child: Icon(Icons.castle, color: HeritageColors.orange, size: 48)),
-                ),
-              ),
-              Positioned(
-                bottom: 12,
-                left: 12,
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: Colors.black.withValues(alpha: 0.7),
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: HeritageColors.orange.withValues(alpha: 0.4)),
-                  ),
-                  child: Text(
-                    q.category,
-                    style: const TextStyle(
-                      color: HeritageColors.orange,
-                      fontSize: 10,
-                      fontWeight: FontWeight.bold,
-                      letterSpacing: 1,
-                    ),
-                  ),
-                ),
-              ),
-            ],
-          ),
-          Padding(
-            padding: const EdgeInsets.all(20),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  q.title,
-                  style: GoogleFonts.playfairDisplay(
-                    color: HeritageColors.cream,
-                    fontSize: 22,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  q.question,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 15,
-                    height: 1.5,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildOptionsList() {
-    final q = _questions[_currentIndex];
-
-    return Column(
-      children: List.generate(q.options.length, (idx) {
-        final option = q.options[idx];
-        final isSelected = _selectedOption == idx;
-        final isCorrect = idx == q.correctIndex;
-
-        Color borderColor = Colors.white.withValues(alpha: 0.08);
-        Color bgColor = const Color(0xFF1A1714);
-        Color textColor = Colors.white;
-
-        if (_answered) {
-          if (isCorrect) {
-            borderColor = const Color(0xFF52B788);
-            bgColor = const Color(0xFF52B788).withValues(alpha: 0.15);
-            textColor = const Color(0xFF52B788);
-          } else if (isSelected) {
-            borderColor = Colors.redAccent;
-            bgColor = Colors.redAccent.withValues(alpha: 0.15);
-            textColor = Colors.redAccent;
-          }
-        }
-
-        return Padding(
-          padding: const EdgeInsets.only(bottom: 10),
-          child: InkWell(
-            onTap: () => _handleAnswer(idx),
-            borderRadius: BorderRadius.circular(16),
-            child: AnimatedContainer(
-              duration: const Duration(milliseconds: 200),
-              padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
-              decoration: BoxDecoration(
-                color: bgColor,
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: borderColor, width: _answered && (isCorrect || isSelected) ? 2 : 1),
-              ),
-              child: Row(
-                children: [
-                  Container(
-                    width: 28,
-                    height: 28,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      color: Colors.white.withValues(alpha: 0.05),
-                      border: Border.all(color: borderColor),
-                    ),
-                    child: Center(
-                      child: Text(
-                        String.fromCharCode(65 + idx),
-                        style: TextStyle(
-                          color: textColor,
-                          fontWeight: FontWeight.bold,
-                          fontSize: 13,
-                        ),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 14),
-                  Expanded(
-                    child: Text(
-                      option,
-                      style: TextStyle(
-                        color: textColor,
-                        fontSize: 14,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ),
-                  if (_answered && isCorrect)
-                    const Icon(Icons.check_circle, color: Color(0xFF52B788), size: 20),
-                  if (_answered && isSelected && !isCorrect)
-                    const Icon(Icons.cancel, color: Colors.redAccent, size: 20),
-                ],
-              ),
-            ),
-          ),
-        );
-      }),
-    );
-  }
-
-  Widget _buildExplanationCard() {
-    final q = _questions[_currentIndex];
-    final isCorrect = _selectedOption == q.correctIndex;
-
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: (isCorrect ? const Color(0xFF52B788) : Colors.redAccent).withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: (isCorrect ? const Color(0xFF52B788) : Colors.redAccent).withValues(alpha: 0.3),
-        ),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
           Row(
             children: [
-              Icon(
-                isCorrect ? Icons.lightbulb : Icons.info_outline,
-                color: isCorrect ? const Color(0xFF52B788) : Colors.redAccent,
-                size: 18,
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFE9C46A).withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: const Color(0xFFE9C46A).withValues(alpha: 0.3)),
+                ),
+                child: Text(
+                  '💎 $_relicsCollected',
+                  style: const TextStyle(
+                    color: Color(0xFFE9C46A),
+                    fontSize: 12,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
               ),
               const SizedBox(width: 8),
-              Text(
-                isCorrect ? 'Correct! Heritage Insight:' : 'Incorrect! Did you know?',
-                style: TextStyle(
-                  color: isCorrect ? const Color(0xFF52B788) : Colors.redAccent,
-                  fontWeight: FontWeight.bold,
-                  fontSize: 13,
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF52B788).withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: const Color(0xFF52B788).withValues(alpha: 0.3)),
+                ),
+                child: Text(
+                  '$_score',
+                  style: const TextStyle(
+                    color: Color(0xFF52B788),
+                    fontSize: 12,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 8),
-          Text(
-            q.explanation,
-            style: const TextStyle(
-              color: Colors.white70,
-              fontSize: 13,
-              height: 1.4,
-            ),
-          ),
         ],
       ),
     );
   }
 
-  Widget _buildNextButton() {
-    final isLast = _currentIndex == _questions.length - 1;
-    return SizedBox(
+  Widget _build3DRunnerTrack() {
+    return Container(
       width: double.infinity,
-      child: ElevatedButton(
-        style: ElevatedButton.styleFrom(
-          backgroundColor: HeritageColors.orange,
-          foregroundColor: HeritageColors.background,
-          padding: const EdgeInsets.symmetric(vertical: 16),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      height: double.infinity,
+      decoration: const BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: [
+            Color(0xFF2C1E14), // Horizon sky/jungle
+            Color(0xFF16110D), // Track floor
+          ],
         ),
-        onPressed: _nextQuestion,
-        child: Text(
-          isLast ? 'View Challenge Results 🎉' : 'Next Question ➔',
-          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
-        ),
+      ),
+      child: CustomPaint(
+        painter: _TrackPainter(),
       ),
     );
   }
 
-  Widget _buildGameOverView() {
-    final maxPossible = _questions.length * 200;
-    final percentage = ((_score / maxPossible) * 100).clamp(0, 100).toInt();
+  Widget _buildGameObjectsLayer() {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final width = constraints.maxWidth;
+        final height = constraints.maxHeight;
 
-    return Padding(
-      padding: const EdgeInsets.all(24),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Container(
-            padding: const EdgeInsets.all(24),
-            decoration: BoxDecoration(
-              color: const Color(0xFF1A1714),
-              borderRadius: BorderRadius.circular(32),
-              border: Border.all(color: HeritageColors.orange.withValues(alpha: 0.3)),
-              boxShadow: [
-                BoxShadow(
-                  color: HeritageColors.orange.withValues(alpha: 0.1),
-                  blurRadius: 30,
-                  spreadRadius: 2,
-                ),
-              ],
+        return Stack(
+          children: _gameObjects.map((obj) {
+            // Perspective calculations
+            final y = obj.yPosition;
+            final scale = 0.2 + (y * 0.8); // Smaller near horizon, bigger near bottom
+            final posX = (width / 2) + ((obj.lane - 1) * (width * 0.32) * y);
+            final posY = height * (0.2 + (y * 0.75));
+
+            return Positioned(
+              left: posX - (24 * scale),
+              top: posY - (24 * scale),
+              child: Transform.scale(
+                scale: scale,
+                child: _buildObjectWidget(obj),
+              ),
+            );
+          }).toList(),
+        );
+      },
+    );
+  }
+
+  Widget _buildObjectWidget(_GameObject obj) {
+    if (obj.type == _GameObjectType.relic) {
+      return Container(
+        padding: const EdgeInsets.all(8),
+        decoration: BoxDecoration(
+          color: const Color(0xFFE9C46A).withValues(alpha: 0.3),
+          shape: BoxShape.circle,
+          boxShadow: [
+            BoxShadow(
+              color: const Color(0xFFE9C46A).withValues(alpha: 0.6),
+              blurRadius: 12,
+              spreadRadius: 2,
             ),
-            child: Column(
-              children: [
-                const Text('🏆', style: TextStyle(fontSize: 64)),
-                const SizedBox(height: 16),
-                Text(
-                  'Challenge Completed!',
-                  style: GoogleFonts.playfairDisplay(
-                    color: HeritageColors.cream,
-                    fontSize: 26,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  'You scored $_score XP ($percentage% Accuracy)',
-                  style: const TextStyle(
-                    color: HeritageColors.orange,
-                    fontSize: 15,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                const SizedBox(height: 24),
-                Container(
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.04),
-                    borderRadius: BorderRadius.circular(16),
-                  ),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceAround,
-                    children: [
-                      _resultStat('Questions', '${_questions.length}'),
-                      _resultStat('Final Score', '$_score XP'),
-                      _resultStat('Badge Earned', '🥇 Master'),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 24),
-                SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton(
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: HeritageColors.orange,
-                      foregroundColor: HeritageColors.background,
-                      padding: const EdgeInsets.symmetric(vertical: 16),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          ],
+        ),
+        child: Text(obj.relicIcon, style: const TextStyle(fontSize: 32)),
+      );
+    } else if (obj.type == _GameObjectType.boulder) {
+      return Container(
+        width: 50,
+        height: 50,
+        decoration: const BoxDecoration(
+          color: Color(0xFF7A5C45),
+          shape: BoxShape.circle,
+          boxShadow: [
+            BoxShadow(color: Colors.black45, blurRadius: 8, offset: Offset(0, 4)),
+          ],
+        ),
+        child: const Center(
+          child: Text('🪨', style: TextStyle(fontSize: 30)),
+        ),
+      );
+    } else {
+      // Ancient Gate
+      return Container(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+        decoration: BoxDecoration(
+          color: const Color(0xFFE76F51),
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(color: HeritageColors.cream, width: 2),
+        ),
+        child: const Text('🚪 JUMP!', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14)),
+      );
+    }
+  }
+
+  Widget _buildPlayerCharacter() {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final width = constraints.maxWidth;
+        final height = constraints.maxHeight;
+
+        final lanePositions = [width * 0.18, width * 0.5 - 28, width * 0.82 - 56];
+        final currentX = lanePositions[_playerLane];
+        final currentY = height * 0.78 - (_isJumping ? 70 : 0);
+
+        return AnimatedPositioned(
+          duration: const Duration(milliseconds: 120),
+          curve: Curves.easeOutCubic,
+          left: currentX,
+          top: currentY,
+          child: Column(
+            children: [
+              AnimatedContainer(
+                duration: const Duration(milliseconds: 150),
+                transform: Matrix4.rotationZ(_isJumping ? -0.1 : 0),
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: HeritageColors.orange.withValues(alpha: 0.2),
+                  border: Border.all(color: HeritageColors.orange, width: 2),
+                  boxShadow: [
+                    BoxShadow(
+                      color: HeritageColors.orange.withValues(alpha: 0.4),
+                      blurRadius: 16,
+                      spreadRadius: 2,
                     ),
-                    onPressed: _restartGame,
-                    child: const Text('Play Again 🔄', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
-                  ),
+                  ],
                 ),
-                const SizedBox(height: 12),
-                SizedBox(
-                  width: double.infinity,
-                  child: TextButton(
-                    onPressed: () => Navigator.of(context).pushReplacementNamed('/home'),
-                    child: const Text('Back to Home', style: TextStyle(color: Colors.white60)),
-                  ),
+                child: const Text('🏃', style: TextStyle(fontSize: 38)),
+              ),
+              const SizedBox(height: 4),
+              // Shadow under player
+              Container(
+                width: 36,
+                height: 8,
+                decoration: BoxDecoration(
+                  color: Colors.black.withValues(alpha: _isJumping ? 0.15 : 0.5),
+                  borderRadius: BorderRadius.circular(10),
                 ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildControlsBar() {
+    return Container(
+      padding: const EdgeInsets.fromLTRB(20, 10, 20, 100),
+      decoration: BoxDecoration(
+        color: const Color(0xFF161210),
+        border: Border(top: BorderSide(color: Colors.white.withValues(alpha: 0.08))),
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+        children: [
+          ElevatedButton(
+            onPressed: _moveLeft,
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFF2A221C),
+              foregroundColor: HeritageColors.orange,
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+            ),
+            child: const Icon(Icons.arrow_back_ios_new, size: 20),
+          ),
+          ElevatedButton(
+            onPressed: _jump,
+            style: ElevatedButton.styleFrom(
+              backgroundColor: HeritageColors.orange,
+              foregroundColor: HeritageColors.background,
+              padding: const EdgeInsets.symmetric(horizontal: 36, vertical: 14),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+            ),
+            child: const Row(
+              children: [
+                Icon(Icons.arrow_upward, size: 20),
+                SizedBox(width: 6),
+                Text('JUMP', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
               ],
             ),
+          ),
+          ElevatedButton(
+            onPressed: _moveRight,
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFF2A221C),
+              foregroundColor: HeritageColors.orange,
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+            ),
+            child: const Icon(Icons.arrow_forward_ios, size: 20),
           ),
         ],
       ),
     );
   }
 
-  Widget _resultStat(String label, String value) {
-    return Column(
-      children: [
-        Text(value, style: const TextStyle(color: HeritageColors.cream, fontSize: 16, fontWeight: FontWeight.bold)),
-        const SizedBox(height: 2),
-        Text(label, style: TextStyle(color: Colors.white.withValues(alpha: 0.5), fontSize: 11)),
-      ],
+  Widget _buildStartOverlay() {
+    return Container(
+      color: Colors.black.withValues(alpha: 0.75),
+      child: Center(
+        child: Container(
+          margin: const EdgeInsets.all(24),
+          padding: const EdgeInsets.all(28),
+          decoration: BoxDecoration(
+            color: const Color(0xFF1A1714),
+            borderRadius: BorderRadius.circular(28),
+            border: Border.all(color: HeritageColors.orange.withValues(alpha: 0.3)),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text('🗿', style: TextStyle(fontSize: 56)),
+              const SizedBox(height: 12),
+              Text(
+                'Sigiriya Ancient Run',
+                style: GoogleFonts.playfairDisplay(
+                  color: HeritageColors.cream,
+                  fontSize: 24,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: 8),
+              const Text(
+                'Run through ancient Lankan ruins! Swipe or tap sides to switch lanes, tap center or swipe up to JUMP over gates.',
+                textAlign: TextAlign.center,
+                style: TextStyle(color: Colors.white70, fontSize: 13, height: 1.4),
+              ),
+              const SizedBox(height: 20),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: HeritageColors.orange,
+                    foregroundColor: HeritageColors.background,
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                  ),
+                  onPressed: _startGame,
+                  child: const Text('START RUNNING 🏃', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
+
+  Widget _buildGameOverOverlay() {
+    return Container(
+      color: Colors.black.withValues(alpha: 0.8),
+      child: Center(
+        child: Container(
+          margin: const EdgeInsets.all(24),
+          padding: const EdgeInsets.all(28),
+          decoration: BoxDecoration(
+            color: const Color(0xFF1A1714),
+            borderRadius: BorderRadius.circular(28),
+            border: Border.all(color: Colors.redAccent.withValues(alpha: 0.4)),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text('💥', style: TextStyle(fontSize: 56)),
+              const SizedBox(height: 12),
+              Text(
+                'Run Ended!',
+                style: GoogleFonts.playfairDisplay(
+                  color: Colors.white,
+                  fontSize: 26,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'Score: $_score XP  |  Relics: 💎 $_relicsCollected',
+                style: const TextStyle(color: HeritageColors.orange, fontSize: 15, fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                'High Score: $_highScore XP',
+                style: const TextStyle(color: Color(0xFF52B788), fontSize: 12, fontWeight: FontWeight.w600),
+              ),
+              const SizedBox(height: 24),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: HeritageColors.orange,
+                    foregroundColor: HeritageColors.background,
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                  ),
+                  onPressed: _startGame,
+                  child: const Text('PLAY AGAIN 🔄', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _GameObject {
+  int lane; // 0, 1, 2
+  double yPosition; // 0.0 to 1.0
+  _GameObjectType type;
+  String relicIcon;
+
+  _GameObject({
+    required this.lane,
+    required this.yPosition,
+    required this.type,
+    this.relicIcon = '',
+  });
+}
+
+enum _GameObjectType {
+  boulder,
+  ancientGate,
+  relic,
+}
+
+class _TrackPainter extends CustomPainter {
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = Colors.white.withValues(alpha: 0.15)
+      ..strokeWidth = 2
+      ..style = PaintingStyle.stroke;
+
+    final width = size.width;
+    final height = size.height;
+    final horizonY = height * 0.2;
+
+    // Center vanishing point
+    final vanishingX = width / 2;
+
+    // Draw 3 lanes dividing lines
+    canvas.drawLine(
+      Offset(vanishingX, horizonY),
+      Offset(0, height),
+      paint,
+    );
+
+    canvas.drawLine(
+      Offset(vanishingX, horizonY),
+      Offset(width * 0.33, height),
+      paint,
+    );
+
+    canvas.drawLine(
+      Offset(vanishingX, horizonY),
+      Offset(width * 0.67, height),
+      paint,
+    );
+
+    canvas.drawLine(
+      Offset(vanishingX, horizonY),
+      Offset(width, height),
+      paint,
+    );
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }
