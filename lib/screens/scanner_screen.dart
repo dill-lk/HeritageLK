@@ -436,9 +436,9 @@ class _ScannerScreenState extends State<ScannerScreen>
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Row(
-                              children: [
+                              children: const [
                                 Icon(Icons.notes_rounded, color: HeritageColors.orange, size: 16),
-                                const SizedBox(width: 6),
+                                SizedBox(width: 6),
                                 Text('My Notes', style: TextStyle(color: HeritageColors.orange, fontWeight: FontWeight.bold, fontSize: 13)),
                               ],
                             ),
@@ -575,10 +575,10 @@ class _ScannerScreenState extends State<ScannerScreen>
                     border: Border.all(color: HeritageColors.orange.withValues(alpha: 0.3)),
                   ),
                   child: Row(
-                    children: [
+                    children: const [
                       SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: HeritageColors.orange)),
-                      const SizedBox(width: 12),
-                      const Text('Syncing to cloud...', style: TextStyle(color: HeritageColors.cream, fontSize: 13)),
+                      SizedBox(width: 12),
+                      Text('Syncing to cloud...', style: TextStyle(color: HeritageColors.cream, fontSize: 13)),
                     ],
                   ),
                 ),
@@ -983,10 +983,10 @@ class _VisitListTile extends StatelessWidget {
                               ),
                               child: Row(
                                 mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  const Icon(Icons.cloud_done_outlined, size: 9, color: Color(0xFF52B788)),
-                                  const SizedBox(width: 3),
-                                  const Text('Cloud + Device', style: TextStyle(color: Color(0xFF52B788), fontSize: 9, fontWeight: FontWeight.w600)),
+                                children: const [
+                                  Icon(Icons.cloud_done_outlined, size: 9, color: Color(0xFF52B788)),
+                                  SizedBox(width: 3),
+                                  Text('Cloud + Device', style: TextStyle(color: Color(0xFF52B788), fontSize: 9, fontWeight: FontWeight.w600)),
                                 ],
                               ),
                             ),

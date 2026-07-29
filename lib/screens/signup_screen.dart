@@ -124,7 +124,7 @@ class _SignupScreenState extends State<SignupScreen>
                             const SizedBox(height: 24),
                             _buildDivider(),
                             const SizedBox(height: 18),
-                            const Row(children: [
+                            Row(children: [
                               _SocialBtn(label: 'Google', icon: Icons.g_mobiledata),
                               const SizedBox(width: 12),
                               _SocialBtn(label: 'Apple', icon: Icons.apple),

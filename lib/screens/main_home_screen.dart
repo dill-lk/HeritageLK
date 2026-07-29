@@ -85,11 +85,6 @@ class _MainHomeScreenState extends State<MainHomeScreen>
     }
   }
 
-  bool get _hasSession {
-    if (!AppConfig.hasSupabase) return false;
-    return Supabase.instance.client.auth.currentSession != null;
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -97,16 +92,16 @@ class _MainHomeScreenState extends State<MainHomeScreen>
       body: Stack(
         children: [
           // Ambient glow top-left
-          Positioned(
+          const Positioned(
             top: -100,
             left: -80,
-            child: _Glow(color: HeritageColors.orange, size: 340, opacity: 0.18),
+            child: const _Glow(color: HeritageColors.orange, size: 340, opacity: 0.18),
           ),
           // Ambient glow bottom-right
-          Positioned(
+          const Positioned(
             bottom: -80,
             right: -60,
-            child: _Glow(color: const Color(0xFF52B788), size: 280, opacity: 0.10),
+            child: const _Glow(color: const Color(0xFF52B788), size: 280, opacity: 0.10),
           ),
           SafeArea(
             child: FadeTransition(

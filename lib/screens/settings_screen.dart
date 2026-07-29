@@ -47,7 +47,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 hintText: 'AIzaSy...',
                 hintStyle: const TextStyle(color: Colors.white30),
                 filled: true,
-                fillColor: Colors.white.withOpacity(0.05),
+                fillColor: Colors.white.withValues(alpha:0.05),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(16),
                   borderSide: const BorderSide(color: Color(0x33E9C46A)),
@@ -120,7 +120,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   Image.network(
                     'https://images.unsplash.com/photo-1586224372551-7f91854580bf?q=80&w=800&auto=format&fit=crop',
                     fit: BoxFit.cover,
-                    color: const Color(0xFF100E0A).withOpacity(0.7),
+                    color: const Color(0xFF100E0A).withValues(alpha:0.7),
                     colorBlendMode: BlendMode.darken,
                     errorBuilder: (_, __, ___) => const ColoredBox(color: HeritageColors.brown),
                   ),
@@ -130,7 +130,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         begin: Alignment.topCenter,
                         end: Alignment.bottomCenter,
                         colors: [
-                          const Color(0xFF100E0A).withOpacity(0.1),
+                          const Color(0xFF100E0A).withValues(alpha:0.1),
                           const Color(0xFF100E0A),
                         ],
                       ),
@@ -229,7 +229,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       decoration: BoxDecoration(
         color: const Color(0xFF1E1B18),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.white.withOpacity(0.05)),
+        border: Border.all(color: Colors.white.withValues(alpha:0.05)),
       ),
       child: Material(
         color: Colors.transparent,
@@ -243,7 +243,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 Container(
                   padding: const EdgeInsets.all(10),
                   decoration: BoxDecoration(
-                    color: HeritageColors.orange.withOpacity(0.1),
+                    color: HeritageColors.orange.withValues(alpha:0.1),
                     shape: BoxShape.circle,
                   ),
                   child: const Icon(Icons.auto_awesome, color: HeritageColors.orange, size: 22),
@@ -288,7 +288,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 ),
                 Icon(
                   Icons.arrow_forward_ios,
-                  color: Colors.white.withOpacity(0.3),
+                  color: Colors.white.withValues(alpha:0.3),
                   size: 14,
                 ),
               ],
@@ -304,7 +304,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       decoration: BoxDecoration(
         color: const Color(0xFF1E1B18),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.white.withOpacity(0.05)),
+        border: Border.all(color: Colors.white.withValues(alpha:0.05)),
       ),
       child: Column(
         children: items.asMap().entries.map((entry) {
@@ -339,23 +339,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                   fontWeight: FontWeight.w500,
                                 ),
                               ),
-                              if (item.subtitle != null) ...[
-                                const SizedBox(height: 2),
-                                Text(
-                                  item.subtitle!,
-                                  style: const TextStyle(
-                                    color: Color(0xFF52B788),
-                                    fontSize: 12,
-                                    fontWeight: FontWeight.w500,
-                                  ),
-                                ),
-                              ]
                             ],
                           ),
                         ),
                         Icon(
                           Icons.arrow_forward_ios,
-                          color: Colors.white.withOpacity(0.3),
+                          color: Colors.white.withValues(alpha:0.3),
                           size: 14,
                         ),
                       ],
@@ -367,7 +356,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 Divider(
                   height: 1,
                   thickness: 1,
-                  color: Colors.white.withOpacity(0.05),
+                  color: Colors.white.withValues(alpha:0.05),
                   indent: 54,
                   endIndent: 16,
                 ),
@@ -388,8 +377,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
           width: double.infinity,
           padding: const EdgeInsets.symmetric(vertical: 16),
           decoration: BoxDecoration(
-            color: const Color(0xFFE76F51).withOpacity(0.1),
-            border: Border.all(color: const Color(0xFFE76F51).withOpacity(0.3)),
+            color: const Color(0xFFE76F51).withValues(alpha:0.1),
+            border: Border.all(color: const Color(0xFFE76F51).withValues(alpha:0.3)),
             borderRadius: BorderRadius.circular(16),
           ),
           child: const Row(
@@ -424,7 +413,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 width: 12,
                 height: 12,
                 decoration: BoxDecoration(
-                  color: HeritageColors.orange.withOpacity(0.8),
+                  color: HeritageColors.orange.withValues(alpha:0.8),
                   shape: BoxShape.rectangle,
                   borderRadius: BorderRadius.circular(2),
                 ),
@@ -445,7 +434,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           Text(
             'Version 2.4.1 (Pro Build)',
             style: TextStyle(
-              color: Colors.white.withOpacity(0.4),
+              color: Colors.white.withValues(alpha:0.4),
               fontSize: 11,
             ),
           ),
@@ -462,7 +451,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           width: 40,
           height: 40,
           decoration: BoxDecoration(
-            color: Colors.white.withOpacity(0.1),
+            color: Colors.white.withValues(alpha:0.1),
             shape: BoxShape.circle,
           ),
           child: Icon(icon, color: iconColor, size: 20),
@@ -479,7 +468,6 @@ class _CustomNavItem {
   const _CustomNavItem({
     required this.label,
     required this.icon,
-    this.subtitle,
     required this.onTap,
   });
 }

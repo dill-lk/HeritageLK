@@ -219,45 +219,6 @@ FORMATTING RULES:
     return '';
   }
 
-  /// Extract the single most specific keyword from the query for DB search
-  // _extractBestKeyword removed - unused
-
-  String _getHeritageSiteType(String query) {
-    final lower = query.toLowerCase();
-
-    const map = {
-      'sigiriya': 'Sigiriya',
-      'lion rock': 'Sigiriya',
-      'galle': 'Galle',
-      'dutch fort': 'Galle',
-      'kandy': 'Kandy',
-      'tooth': 'Kandy',
-      'dalada': 'Kandy',
-      'dambulla': 'Dambulla',
-      'polonnaruwa': 'Polonnaruwa',
-      'anuradhapura': 'Anuradhapura',
-      'sigiri': 'Sigiriya',
-      'sinharaja': 'Sinharaja',
-      'yala': 'Yala',
-      'minneriya': 'Minneriya',
-      'wilpattu': 'Wilpattu',
-      'udawalawe': 'Udawalawe',
-      'ella': 'Ella',
-      'nuwara': 'Nuwara Eliya',
-      'colombo': 'Colombo',
-      'jaffna': 'Jaffna',
-      'trinco': 'Trincomalee',
-    };
-
-    for (final entry in map.entries) {
-      if (lower.contains(entry.key)) return entry.value;
-    }
-
-    // Fall back to the first word > 3 chars
-    final words = query.split(RegExp(r'\s+')).where((w) => w.length > 3);
-    return words.isNotEmpty ? words.first : query.split(' ').first;
-  }
-
   // ─── Rich offline fallback ──────────────────────────────────────────────────
   String _richFallback(String query) {
     final q = query.toLowerCase();

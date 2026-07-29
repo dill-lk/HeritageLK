@@ -651,7 +651,7 @@ class _ProfileScreenState extends State<ProfileScreen>
   Widget _buildImpactSection() {
     final sitesScanned = (_completed.length + 2).clamp(1, 999);
     final reportsCount = _userReports.length;
-    final totalUsers = 1247;
+    const totalUsers = 1247;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
