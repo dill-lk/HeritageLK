@@ -70,6 +70,10 @@ class _ArchiveDetailScreenState extends State<ArchiveDetailScreen> {
                   Container(padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4), decoration: BoxDecoration(color: HeritageColors.orange.withValues(alpha:0.10), border: Border.all(color: HeritageColors.orange.withValues(alpha:0.20)), borderRadius: BorderRadius.circular(4)), child: Text(record.category.toUpperCase(), style: const TextStyle(color: HeritageColors.orange, fontSize: 9, fontWeight: FontWeight.bold, letterSpacing: 1.5))),
                   const SizedBox(height: 12),
                   Text(record.title, style: const TextStyle(color: Colors.white, fontFamily: 'Playfair Display', fontSize: 36, fontWeight: FontWeight.bold, height: 1.1)),
+                  if ((record.subtitle ?? '').isNotEmpty) ...[
+                    const SizedBox(height: 8),
+                    Text(record.subtitle!, style: const TextStyle(color: Color(0xFFF4A261), fontSize: 12, fontWeight: FontWeight.bold, letterSpacing: 1.2)),
+                  ],
                   const SizedBox(height: 12),
                   Row(children: [const Icon(Icons.location_on, color: HeritageColors.orange, size: 14), const SizedBox(width: 6), Text(record.location.toUpperCase(), style: const TextStyle(color: HeritageColors.orange, fontSize: 10, fontWeight: FontWeight.bold, letterSpacing: 1))]),
                 ])),

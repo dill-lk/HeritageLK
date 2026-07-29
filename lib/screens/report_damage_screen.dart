@@ -1,5 +1,3 @@
-import 'dart:io';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -7,6 +5,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../config/app_config.dart';
 import '../services/damage_report_repository.dart';
 import '../services/location_service.dart';
+import 'report_damage_image_widget.dart';
 import '../theme/heritage_colors.dart';
 
 class ReportDamageScreen extends StatefulWidget {
@@ -62,6 +61,11 @@ class _ReportDamageScreenState extends State<ReportDamageScreen> {
           });
         } else {
           setState(() => _fetchingGps = false);
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('GPS is unavailable right now. You can retry or type the location manually.')),
+            );
+          }
         }
       }
     } catch (_) {
@@ -423,18 +427,7 @@ class _ReportDamageScreenState extends State<ReportDamageScreen> {
       );
 
   Widget _buildImageWidget(String path) {
-    if (path.startsWith('http://') || path.startsWith('https://')) {
-      return Image.network(path, fit: BoxFit.cover);
-    }
-    if (kIsWeb) {
-      return Image.network(path, fit: BoxFit.cover);
-    }
-    return Image.file(File(path), fit: BoxFit.cover, errorBuilder: (_, __, ___) {
-      return Container(
-        color: Colors.white10,
-        child: const Icon(Icons.image, color: Colors.white54),
-      );
-    });
+    return ReportDamageImageWidget(path: path);
   }
 
   Widget _label(String text) => Padding(padding: const EdgeInsets.only(bottom: 10), child: Text(text, style: const TextStyle(color: Color(0x66FFFFFF), fontSize: 11, fontWeight: FontWeight.bold, letterSpacing: 1.5)));

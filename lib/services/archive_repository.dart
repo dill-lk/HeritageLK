@@ -26,6 +26,7 @@ class ArchiveRepository {
     final intro = description.length > 50 ? '${description.substring(0, 50)}...' : '$description...';
     final row = await _client.from('archives').insert({
       'title': title,
+      'subtitle': category,
       'category': category,
       'content': description,
       'intro': intro,

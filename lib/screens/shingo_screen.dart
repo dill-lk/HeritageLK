@@ -226,7 +226,7 @@ class _ShingoScreenState extends State<ShingoScreen> {
     );
 
     return Scaffold(
-      backgroundColor: const Color(0xFF0F0C0A),
+      backgroundColor: HeritageColors.background,
       body: SafeArea(
         child: Column(
           children: [
@@ -348,7 +348,7 @@ class _ShingoScreenState extends State<ShingoScreen> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
       decoration: BoxDecoration(
-        color: const Color(0xFF161210),
+        color: const Color(0xFF1A1311),
         border: Border(bottom: BorderSide(color: Colors.white.withValues(alpha: 0.08))),
       ),
       child: Row(
@@ -364,12 +364,24 @@ class _ShingoScreenState extends State<ShingoScreen> {
             icon: const Icon(Icons.arrow_back, color: HeritageColors.cream),
           ),
           const SizedBox(width: 8),
-          Text(
-            'Shingo AI Guide',
-            style: GoogleFonts.playfairDisplay(
-              color: HeritageColors.cream,
-              fontSize: 20,
-              fontWeight: FontWeight.bold,
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Shingo AI Guide',
+                  style: GoogleFonts.playfairDisplay(
+                    color: HeritageColors.cream,
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                const Text(
+                  'Ask about heritage sites, damage reporting, archives, and travel.',
+                  style: TextStyle(color: Color(0x99FEFAE0), fontSize: 11, height: 1.2),
+                ),
+              ],
             ),
           ),
         ],
@@ -408,7 +420,7 @@ class _ShingoScreenState extends State<ShingoScreen> {
     return Container(
       padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
       decoration: BoxDecoration(
-        color: const Color(0xFF161210),
+        color: const Color(0xFF1A1311),
         border: Border(top: BorderSide(color: Colors.white.withValues(alpha: 0.05))),
       ),
       child: Row(

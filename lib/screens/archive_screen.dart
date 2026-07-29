@@ -24,6 +24,9 @@ class _ArchiveScreenState extends State<ArchiveScreen> {
     ArchiveRecord(id: 'galle-dutch-fort', title: 'Galle Dutch Fort', location: 'GALLE, SRI LANKA', category: 'Ancient Sites', content: 'A living monument to Sri Lanka\'s colonial history.'),
     ArchiveRecord(id: 'sigiriya-rock-fortress', title: 'Sigiriya Rock Fortress', location: 'MATALE, SRI LANKA', category: 'Ancient Sites', content: 'The ancient rock fortress and palace ruin.'),
     ArchiveRecord(id: 'traditional-mask-making', title: 'Traditional Mask Making', location: 'AMBALANGODA, SRI LANKA', category: 'Artifacts', content: 'A craft passed through generations.'),
+    ArchiveRecord(id: 'temple-of-the-tooth', title: 'Temple of the Tooth', location: 'KANDY, SRI LANKA', category: 'Ancient Sites', content: 'One of the most sacred Buddhist sites in Sri Lanka.'),
+    ArchiveRecord(id: 'anuradhapura-sacred-city', title: 'Anuradhapura Sacred City', location: 'ANURADHAPURA, SRI LANKA', category: 'Ancient Sites', content: 'The first great capital of ancient Sri Lanka.'),
+    ArchiveRecord(id: 'jaffna-fort', title: 'Jaffna Fort', location: 'JAFFNA, SRI LANKA', category: 'Ancient Sites', content: 'A star-shaped fortress with Dutch colonial history.'),
   ];
 
   @override
@@ -141,6 +144,10 @@ class _ArchiveScreenState extends State<ArchiveScreen> {
       Row(children: [const Icon(Icons.location_on, color: HeritageColors.orange, size: 12), const SizedBox(width: 4), Text(item.location, style: const TextStyle(color: HeritageColors.orange, fontSize: 10, fontWeight: FontWeight.bold, letterSpacing: 2))]),
       const SizedBox(height: 8),
       Text(item.title, style: const TextStyle(color: Colors.white, fontFamily: 'Playfair Display', fontSize: 28, height: 1.1, fontWeight: FontWeight.w500)),
+      if ((item.subtitle ?? '').isNotEmpty) ...[
+        const SizedBox(height: 6),
+        Text(item.subtitle!, style: const TextStyle(color: Color(0xCCF4A261), fontSize: 12, fontWeight: FontWeight.bold, letterSpacing: 1.1)),
+      ],
       const SizedBox(height: 12),
       Text(_clean(item.content), maxLines: 2, overflow: TextOverflow.ellipsis, style: const TextStyle(color: Color(0xB3FFFFFF), fontSize: 14)),
     ])),
@@ -150,9 +157,13 @@ class _ArchiveScreenState extends State<ArchiveScreen> {
     ClipRRect(borderRadius: BorderRadius.circular(16), child: SizedBox(width: 88, height: 88, child: _recordImage(item.image, small: true))),
     const SizedBox(width: 16),
     Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-      Row(children: [const Icon(Icons.location_on, color: HeritageColors.orange, size: 10), const SizedBox(width: 4), Text(item.location, style: const TextStyle(color: HeritageColors.orange, fontSize: 9, fontWeight: FontWeight.bold, letterSpacing: 1))]),
+    Row(children: [const Icon(Icons.location_on, color: HeritageColors.orange, size: 10), const SizedBox(width: 4), Text(item.location, style: const TextStyle(color: HeritageColors.orange, fontSize: 9, fontWeight: FontWeight.bold, letterSpacing: 1))]),
       const SizedBox(height: 6),
       Text(item.title, style: const TextStyle(color: Colors.white, fontFamily: 'Playfair Display', fontSize: 16)),
+      if ((item.subtitle ?? '').isNotEmpty) ...[
+        const SizedBox(height: 4),
+        Text(item.subtitle!, style: const TextStyle(color: Color(0xCCF4A261), fontSize: 10, fontWeight: FontWeight.bold, letterSpacing: 0.8)),
+      ],
       const SizedBox(height: 6),
       Text(_clean(item.content), maxLines: 2, overflow: TextOverflow.ellipsis, style: const TextStyle(color: Color(0x80FFFFFF), fontSize: 12, height: 1.4)),
     ])),
