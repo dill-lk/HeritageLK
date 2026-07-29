@@ -9,6 +9,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../services/shingo_ai_service.dart';
 import '../theme/heritage_colors.dart';
+import '../widgets/heritage_icons.dart';
 
 class ShingoScreen extends StatefulWidget {
   const ShingoScreen({super.key});
@@ -30,19 +31,6 @@ class _ShingoScreenState extends State<ShingoScreen> {
   ];
 
   bool _loading = false;
-
-  final List<Map<String, String>> _suggestions = const [
-    {'emoji': '🏰', 'text': 'Sigiriya entry fee & best time'},
-    {'emoji': '🌅', 'text': 'Galle Fort sunset spots'},
-    {'emoji': '🛕', 'text': 'Kandy Tooth Temple rules'},
-    {'emoji': '🐆', 'text': 'Yala leopard safari tips'},
-    {'emoji': '🗿', 'text': 'Dambulla cave temple'},
-    {'emoji': '🚞', 'text': 'Colombo to Ella train'},
-    {'emoji': '🐘', 'text': 'Minneriya elephant gathering'},
-    {'emoji': '🏛️', 'text': 'Anuradhapura ancient city'},
-    {'emoji': '🛡️', 'text': 'How to report damage & earn XP'},
-    {'emoji': '🌿', 'text': 'Sinharaja rainforest trek'},
-  ];
 
   @override
   void initState() {
@@ -226,119 +214,111 @@ class _ShingoScreenState extends State<ShingoScreen> {
     );
 
     return Scaffold(
-      backgroundColor: HeritageColors.background,
+      backgroundColor: const Color(0xFF100E0A),
       body: SafeArea(
-        child: Column(
-          children: [
-            _buildCustomHeader(),
-            Expanded(
-              child: ListView.builder(
-                controller: _scrollController,
-                padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
-                itemCount: _messages.length + (_loading ? 1 : 0),
-                itemBuilder: (_, i) {
-                  if (i == _messages.length) {
-                    return const Padding(
-                      padding: EdgeInsets.symmetric(vertical: 12),
-                      child: Align(
-                        alignment: Alignment.centerLeft,
-                        child: _ShingoLoadingBubble(),
-                      ),
-                    );
-                  }
-
-                  final message = _messages[i];
-                  final isUser = message.isUser;
-                  return Align(
-                    alignment: isUser ? Alignment.centerRight : Alignment.centerLeft,
-                    child: Container(
-                      constraints: const BoxConstraints(maxWidth: 340),
-                      margin: const EdgeInsets.only(bottom: 16),
-                      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
-                      decoration: BoxDecoration(
-                        gradient: isUser
-                            ? const LinearGradient(
-                                colors: [Color(0xFFE9C46A), Color(0xFFF4A261)],
-                                begin: Alignment.topLeft,
-                                end: Alignment.bottomRight,
-                              )
-                            : null,
-                        color: isUser ? null : const Color(0xFF1B1714),
-                        borderRadius: BorderRadius.only(
-                          topLeft: const Radius.circular(22),
-                          topRight: const Radius.circular(22),
-                          bottomLeft: isUser ? const Radius.circular(22) : const Radius.circular(4),
-                          bottomRight: isUser ? const Radius.circular(4) : const Radius.circular(22),
-                        ),
-                        border: isUser ? null : Border.all(color: const Color(0x26E9C46A)),
-                        boxShadow: [
-                          BoxShadow(
-                            color: isUser
-                                ? const Color(0x40E9C46A)
-                                : Colors.black.withValues(alpha: 0.3),
-                            blurRadius: isUser ? 10 : 14,
-                            offset: const Offset(0, 4),
-                          ),
-                        ],
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          if (!isUser) ...[
-                            Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Container(
-                                  width: 20,
-                                  height: 20,
-                                  decoration: const BoxDecoration(
-                                    color: Color(0x33E9C46A),
-                                    shape: BoxShape.circle,
-                                  ),
-                                  child: const Center(
-                                    child: Icon(Icons.auto_awesome, color: Color(0xFFE9C46A), size: 12),
-                                  ),
-                                ),
-                                const SizedBox(width: 8),
-                                const Text(
-                                  'Shingo AI',
-                                  style: TextStyle(
-                                    color: Color(0xFFE9C46A),
-                                    fontSize: 11,
-                                    fontWeight: FontWeight.bold,
-                                    letterSpacing: 0.8,
-                                  ),
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: 10),
-                          ],
-                          isUser
-                              ? Text(
-                                  message.text,
-                                  style: const TextStyle(
-                                    color: Color(0xFF140F0A),
-                                    fontSize: 15,
-                                    fontWeight: FontWeight.w600,
-                                    height: 1.4,
-                                  ),
-                                )
-                              : MarkdownBody(
-                                  data: message.text.isEmpty ? '...' : message.text,
-                                  selectable: false,
-                                  styleSheet: assistantMarkdownStyle,
-                                  onTapLink: (_, __, ___) {},
-                                ),
-                        ],
-                      ),
-                    ),
-                  );
-                },
-              ),
+        child: Center(
+          child: Container(
+            constraints: const BoxConstraints(maxWidth: 430),
+            decoration: const BoxDecoration(
+              color: Color(0xFF100E0A),
+              boxShadow: [BoxShadow(color: Color(0x80000000), blurRadius: 40)],
             ),
-            _buildSuggestionsList(),
-            _buildInputArea(),
-          ],
+            child: Column(
+              children: [
+                _buildCustomHeader(),
+                Expanded(
+                  child: ListView.builder(
+                    controller: _scrollController,
+                    padding: const EdgeInsets.fromLTRB(24, 24, 24, 24),
+                    itemCount: _messages.length + (_loading ? 1 : 0),
+                    itemBuilder: (_, i) {
+                      if (i == _messages.length) {
+                        return const Padding(
+                          padding: EdgeInsets.symmetric(vertical: 12),
+                          child: Align(
+                            alignment: Alignment.centerLeft,
+                            child: _ShingoLoadingBubble(),
+                          ),
+                        );
+                      }
+
+                      final message = _messages[i];
+                      final isUser = message.isUser;
+                      return Align(
+                        alignment: isUser ? Alignment.centerRight : Alignment.centerLeft,
+                        child: Container(
+                          constraints: const BoxConstraints(maxWidth: 340),
+                          margin: const EdgeInsets.only(bottom: 16),
+                          padding: const EdgeInsets.all(16),
+                          decoration: BoxDecoration(
+                            color: isUser ? const Color(0xFFF4A261) : const Color(0x1AFFFFFF),
+                            borderRadius: BorderRadius.only(
+                              topLeft: const Radius.circular(24),
+                              topRight: const Radius.circular(24),
+                              bottomLeft: isUser ? const Radius.circular(24) : const Radius.circular(4),
+                              bottomRight: isUser ? const Radius.circular(4) : const Radius.circular(24),
+                            ),
+                            border: isUser ? null : Border.all(color: Colors.white.withValues(alpha: 0.05)),
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              if (!isUser) ...[
+                                Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Container(
+                                      width: 20,
+                                      height: 20,
+                                      decoration: const BoxDecoration(
+                                        color: Color(0x33E9C46A),
+                                        shape: BoxShape.circle,
+                                      ),
+                                      child: Center(
+                                        child: HeritageIcons.shingo(color: const Color(0xFFE9C46A), size: 12),
+                                      ),
+                                    ),
+                                    const SizedBox(width: 8),
+                                    const Text(
+                                      'Shingo AI',
+                                      style: TextStyle(
+                                        color: Color(0xFFE9C46A),
+                                        fontSize: 11,
+                                        fontWeight: FontWeight.bold,
+                                        letterSpacing: 0.8,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                const SizedBox(height: 10),
+                              ],
+                              isUser
+                                  ? Text(
+                                      message.text,
+                                      style: const TextStyle(
+                                        color: Color(0xFF100E0A),
+                                        fontSize: 15,
+                                        fontWeight: FontWeight.w600,
+                                        height: 1.4,
+                                      ),
+                                    )
+                                  : MarkdownBody(
+                                      data: message.text.isEmpty ? '...' : message.text,
+                                      selectable: false,
+                                      styleSheet: assistantMarkdownStyle,
+                                      onTapLink: (_, __, ___) {},
+                                    ),
+                            ],
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                ),
+                _buildInputArea(),
+              ],
+            ),
+          ),
         ),
       ),
     );
@@ -346,9 +326,9 @@ class _ShingoScreenState extends State<ShingoScreen> {
 
   Widget _buildCustomHeader() {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+      padding: const EdgeInsets.fromLTRB(24, 20, 24, 16),
       decoration: BoxDecoration(
-        color: const Color(0xFF1A1311),
+        color: const Color(0xFF100E0A),
         border: Border(bottom: BorderSide(color: Colors.white.withValues(alpha: 0.08))),
       ),
       child: Row(
@@ -361,66 +341,53 @@ class _ShingoScreenState extends State<ShingoScreen> {
                 Navigator.of(context).pushReplacementNamed('/home');
               }
             },
-            icon: const Icon(Icons.arrow_back, color: HeritageColors.cream),
+            icon: const Icon(Icons.arrow_back, color: Color(0xFFE9C46A)),
           ),
-          const SizedBox(width: 8),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Shingo AI Guide',
-                  style: GoogleFonts.playfairDisplay(
-                    color: HeritageColors.cream,
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
-                  ),
+          const Spacer(),
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 32,
+                height: 32,
+                decoration: BoxDecoration(
+                  color: const Color(0x33E9C46A),
+                  shape: BoxShape.circle,
+                  boxShadow: [
+                    BoxShadow(
+                      color: const Color(0x4DE9C46A),
+                      blurRadius: 10,
+                    ),
+                  ],
                 ),
-                const SizedBox(height: 2),
-                const Text(
-                  'Ask about heritage sites, damage reporting, archives, and travel.',
-                  style: TextStyle(color: Color(0x99FEFAE0), fontSize: 11, height: 1.2),
+                child: Center(
+                  child: HeritageIcons.shingo(color: const Color(0xFFE9C46A), size: 16),
                 ),
-              ],
-            ),
+              ),
+              const SizedBox(width: 8),
+              Text(
+                'Shingo AI',
+                style: GoogleFonts.playfairDisplay(
+                  color: const Color(0xFFFEFBE0),
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  letterSpacing: 0.3,
+                ),
+              ),
+              const SizedBox(width: 4),
+              const Icon(Icons.auto_awesome, color: Color(0xFFE9C46A), size: 14),
+            ],
           ),
         ],
       ),
     );
   }
 
-  Widget _buildSuggestionsList() {
-    return Container(
-      height: 48,
-      margin: const EdgeInsets.only(bottom: 6),
-      child: ListView.separated(
-        scrollDirection: Axis.horizontal,
-        padding: const EdgeInsets.symmetric(horizontal: 16),
-        itemCount: _suggestions.length,
-        separatorBuilder: (_, __) => const SizedBox(width: 8),
-        itemBuilder: (_, index) {
-          final suggestion = _suggestions[index];
-          return ActionChip(
-            backgroundColor: const Color(0xFF1A1613),
-            side: BorderSide(color: const Color(0xFFE9C46A).withValues(alpha: 0.25)),
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-            avatar: Text(suggestion['emoji']!, style: const TextStyle(fontSize: 13)),
-            label: Text(
-              suggestion['text']!,
-              style: const TextStyle(color: Color(0xF2FFFFFF), fontSize: 12, fontWeight: FontWeight.w500),
-            ),
-            onPressed: () => _send(suggestion['text']),
-          );
-        },
-      ),
-    );
-  }
-
   Widget _buildInputArea() {
     return Container(
-      padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+      padding: const EdgeInsets.fromLTRB(24, 16, 24, 24),
       decoration: BoxDecoration(
-        color: const Color(0xFF1A1311),
+        color: const Color(0xFF100E0A),
         border: Border(top: BorderSide(color: Colors.white.withValues(alpha: 0.05))),
       ),
       child: Row(
@@ -434,17 +401,17 @@ class _ShingoScreenState extends State<ShingoScreen> {
                 hintText: 'Ask Shingo about Sri Lanka heritage...',
                 hintStyle: const TextStyle(color: Color(0x66FFFFFF), fontSize: 13.5),
                 filled: true,
-                fillColor: const Color(0xFF1F1A17),
+                fillColor: const Color(0x0DFFFFFF),
                 border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(24),
-                  borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.08)),
+                  borderRadius: BorderRadius.circular(28),
+                  borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.10)),
                 ),
                 enabledBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(24),
-                  borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.08)),
+                  borderRadius: BorderRadius.circular(28),
+                  borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.10)),
                 ),
                 focusedBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(24),
+                  borderRadius: BorderRadius.circular(28),
                   borderSide: const BorderSide(color: Color(0xFFE9C46A), width: 1.5),
                 ),
                 contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
@@ -473,7 +440,7 @@ class _ShingoScreenState extends State<ShingoScreen> {
                 ],
               ),
               child: const Center(
-                child: Icon(Icons.send_rounded, color: Color(0xFF140F0A), size: 20),
+                child: Icon(Icons.send_rounded, color: Color(0xFF100E0A), size: 20),
               ),
             ),
           ),
