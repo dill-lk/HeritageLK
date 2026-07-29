@@ -1,4 +1,6 @@
+import 'dart:async';
 import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:http/http.dart' as http;
@@ -10,6 +12,7 @@ import '../config/app_config.dart';
 import '../models/heritage_site.dart';
 import '../services/heritage_api.dart';
 import '../services/heritage_site_repository.dart';
+import '../services/offline_sri_lanka_map_cache.dart';
 import '../theme/heritage_colors.dart';
 import '../widgets/bottom_nav.dart';
 
@@ -21,6 +24,8 @@ class ExploreScreen extends StatefulWidget {
 }
 
 class _ExploreScreenState extends State<ExploreScreen> {
+  static const _networkTileTemplate = 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png';
+
   final _search = TextEditingController();
   final _api = HeritageApi();
   final _mapController = MapController();
@@ -30,6 +35,7 @@ class _ExploreScreenState extends State<ExploreScreen> {
   String? _weatherTemp;
   String? _weatherWind;
   String _filterCategory = 'All';
+  String? _offlineTileTemplate;
 
   static const _allSites = [
     // ── UNESCO & Major Heritage ─────────────────────────────────────────────
@@ -104,6 +110,7 @@ class _ExploreScreenState extends State<ExploreScreen> {
   void initState() {
     super.initState();
     _loadSites();
+    _prepareOfflineTiles();
   }
 
   @override
@@ -126,6 +133,14 @@ class _ExploreScreenState extends State<ExploreScreen> {
         // handle error
       }
     }
+  }
+
+  Future<void> _prepareOfflineTiles() async {
+    final template = await SriLankaOfflineMapCache.instance.ensureLocalTemplate();
+    if (mounted) {
+      setState(() => _offlineTileTemplate = template);
+    }
+    unawaited(SriLankaOfflineMapCache.instance.warmSriLankaTiles());
   }
 
   Future<void> _select(_SiteData site) async {
@@ -247,6 +262,8 @@ class _ExploreScreenState extends State<ExploreScreen> {
   }
 
   Widget _mapBackground(List<_SiteData> filtered, _SiteData current) {
+    final localTileTemplate = _offlineTileTemplate;
+    final useOfflineTiles = localTileTemplate != null && !kIsWeb;
     return Positioned.fill(
       child: FlutterMap(
         mapController: _mapController,
@@ -261,10 +278,12 @@ class _ExploreScreenState extends State<ExploreScreen> {
           ),
         ),
         children: [
-           TileLayer(
-             urlTemplate: 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',
-             userAgentPackageName: 'com.heritage_lk.app',
-           ),
+          TileLayer(
+            urlTemplate: useOfflineTiles ? localTileTemplate! : _networkTileTemplate,
+            fallbackUrl: useOfflineTiles ? _networkTileTemplate : null,
+            tileProvider: useOfflineTiles ? FileTileProvider() : NetworkTileProvider(),
+            userAgentPackageName: 'com.heritage_lk.app',
+          ),
           MarkerLayer(
             markers: filtered.map((site) {
               final isSelected = site.name == current.name;
@@ -443,18 +462,25 @@ class _RidePickerSheet extends StatelessWidget {
   final _SiteData site;
   const _RidePickerSheet({required this.site});
 
-  Future<void> _launch(BuildContext ctx, String appUrl, String fallbackUrl) async {
-    final app = Uri.parse(appUrl);
-    final fallback = Uri.parse(fallbackUrl);
-    try {
-      if (await canLaunchUrl(app)) {
-        await launchUrl(app, mode: LaunchMode.externalApplication);
-      } else {
-        await launchUrl(fallback, mode: LaunchMode.externalApplication);
-      }
-    } catch (_) {
-      await launchUrl(fallback, mode: LaunchMode.externalApplication);
+  Future<void> _launchPreferred(
+    BuildContext ctx,
+    List<Uri> preferred,
+    Uri fallback,
+  ) async {
+    for (final uri in preferred) {
+      try {
+        final launched = await launchUrl(uri, mode: LaunchMode.externalApplication);
+        if (launched) {
+          if (ctx.mounted) Navigator.pop(ctx);
+          return;
+        }
+      } catch (_) {}
     }
+
+    try {
+      await launchUrl(fallback, mode: LaunchMode.externalApplication);
+    } catch (_) {}
+
     if (ctx.mounted) Navigator.pop(ctx);
   }
 
@@ -463,11 +489,14 @@ class _RidePickerSheet extends StatelessWidget {
     final lat = site.lat.toStringAsFixed(6);
     final lon = site.lon.toStringAsFixed(6);
     final name = Uri.encodeComponent(site.name);
-    // PickMe universal link (works even if app not installed via web fallback)
-    _launch(
+    final mapsFallback = Uri.parse('https://www.google.com/maps/dir/?api=1&destination=$lat,$lon&travelmode=driving');
+    _launchPreferred(
       ctx,
-      'pickme://ride?dlat=$lat&dlon=$lon&dname=$name',
-      'https://pickme.lk',
+      [
+        Uri.parse('pickme://ride?destination_lat=$lat&destination_lng=$lon&destination_name=$name'),
+        Uri.parse('intent://ride?destination_lat=$lat&destination_lng=$lon&destination_name=$name#Intent;scheme=pickme;end;'),
+      ],
+      mapsFallback,
     );
   }
 
@@ -475,11 +504,14 @@ class _RidePickerSheet extends StatelessWidget {
     final lat = site.lat.toStringAsFixed(6);
     final lon = site.lon.toStringAsFixed(6);
     final name = Uri.encodeComponent(site.name);
-    // Uber universal deep link: pre-fills drop-off location
-    _launch(
+    final mapsFallback = Uri.parse('https://www.google.com/maps/dir/?api=1&destination=$lat,$lon&travelmode=driving');
+    _launchPreferred(
       ctx,
-      'uber://?action=setPickup&pickup=my_location&dropoff[latitude]=$lat&dropoff[longitude]=$lon&dropoff[nickname]=$name',
-      'https://m.uber.com/ul/?action=setPickup&pickup=my_location&dropoff%5Blatitude%5D=$lat&dropoff%5Blongitude%5D=$lon&dropoff%5Bnickname%5D=$name',
+      [
+        Uri.parse('uber://?action=setPickup&pickup=my_location&dropoff[latitude]=$lat&dropoff[longitude]=$lon&dropoff[nickname]=$name'),
+        Uri.parse('https://m.uber.com/ul/?action=setPickup&pickup=my_location&dropoff%5Blatitude%5D=$lat&dropoff%5Blongitude%5D=$lon&dropoff%5Bnickname%5D=$name'),
+      ],
+      mapsFallback,
     );
   }
 
