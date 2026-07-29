@@ -216,7 +216,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     Expanded(
                       child: _GridCard(
                         emoji: '📸',
-                        title: 'Scanner',
+                        title: 'Camera',
                         subtitle: 'Identify Heritage and Wildlife',
                         borderColor: const Color(0xFF52B788),
                         onTap: () => Navigator.of(context).pushNamed('/scanner'),
