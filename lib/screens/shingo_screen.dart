@@ -29,12 +29,16 @@ class _ShingoScreenState extends State<ShingoScreen> {
   bool _loading = false;
 
   final List<Map<String, String>> _suggestions = const [
-    {'emoji': '🏰', 'text': 'Sigiriya entry fee'},
+    {'emoji': '🏰', 'text': 'Sigiriya entry fee & best time'},
     {'emoji': '🌅', 'text': 'Galle Fort sunset spots'},
     {'emoji': '🛕', 'text': 'Kandy Tooth Temple rules'},
-    {'emoji': '🐆', 'text': 'Yala safari best time'},
-    {'emoji': '🛡️', 'text': 'How to report damage'},
+    {'emoji': '🐆', 'text': 'Yala leopard safari tips'},
+    {'emoji': '🗿', 'text': 'Dambulla cave temple'},
     {'emoji': '🚞', 'text': 'Colombo to Ella train'},
+    {'emoji': '🐘', 'text': 'Minneriya elephant gathering'},
+    {'emoji': '🏛️', 'text': 'Anuradhapura ancient city'},
+    {'emoji': '🛡️', 'text': 'How to report damage & earn XP'},
+    {'emoji': '🌿', 'text': 'Sinharaja rainforest trek'},
   ];
 
   @override
@@ -174,7 +178,7 @@ class _ShingoScreenState extends State<ShingoScreen> {
               ),
               const SizedBox(height: 18),
               const Text(
-                'Shingo AI helps you navigate Sri Lanka\'s rich heritage. Ask questions about UNESCO World Heritage sites, local customs, opening times, ticket prices, and damage reporting.',
+                'Shingo is your intelligent AI guide to Sri Lanka\'s heritage. Powered by live data from the HeritageLK database and AI — ask anything about UNESCO sites, wildlife, travel tips, ticket prices, culture, and more.',
                 style: TextStyle(color: Color(0xCCFFFFFF), fontSize: 13.5, height: 1.5),
               ),
               const SizedBox(height: 20),
