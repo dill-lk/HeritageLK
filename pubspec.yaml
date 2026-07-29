@@ -35,13 +35,11 @@ dev_dependencies:
 flutter:
   uses-material-design: true
   assets:
-    - assets/app-icon.svg
-    - assets/favicon.png
     - assets/icon.png
 
 flutter_launcher_icons:
   android: true
-  ios: true
+  ios: false
   image_path: "assets/icon.png"
   min_sdk_android: 21
   adaptive_icon_background: "#EDEAE0"
