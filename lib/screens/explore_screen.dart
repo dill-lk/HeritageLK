@@ -169,18 +169,6 @@ class _ExploreScreenState extends State<ExploreScreen> {
     );
   }
 
-  void _openAudioGuide(_SiteData site) {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (ctx) => AudioGuideSheet(
-        siteId: site.name.toLowerCase().replaceAll(' ', '_'),
-        siteName: site.name,
-      ),
-    );
-  }
-
   Future<void> _loadWeather(double lat, double lon) async {
     try {
       final res = await http.get(Uri.parse('https://api.open-meteo.com/v1/forecast?latitude=$lat&longitude=$lon&current_weather=true'));
