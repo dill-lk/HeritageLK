@@ -95,13 +95,13 @@ class _MainHomeScreenState extends State<MainHomeScreen>
           const Positioned(
             top: -100,
             left: -80,
-            child: const _Glow(color: HeritageColors.orange, size: 340, opacity: 0.18),
+            child: _Glow(color: HeritageColors.orange, size: 340, opacity: 0.18),
           ),
           // Ambient glow bottom-right
           const Positioned(
             bottom: -80,
             right: -60,
-            child: const _Glow(color: const Color(0xFF52B788), size: 280, opacity: 0.10),
+            child: _Glow(color: Color(0xFF52B788), size: 280, opacity: 0.10),
           ),
           SafeArea(
             child: FadeTransition(
