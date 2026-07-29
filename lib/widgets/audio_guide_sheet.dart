@@ -95,7 +95,7 @@ class _AudioGuideSheetState extends State<AudioGuideSheet> {
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // Handle bar
           Center(
@@ -124,7 +124,7 @@ class _AudioGuideSheetState extends State<AudioGuideSheet> {
               const SizedBox(width: 14),
               Expanded(
                 child: Column(
-                  crossAxisAlignment: CrossAlignment.start,
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
                       widget.siteName,
@@ -203,7 +203,7 @@ class _AudioGuideSheetState extends State<AudioGuideSheet> {
               border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
             ),
             child: Column(
-              crossAxisAlignment: CrossAlignment.start,
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
                   _selectedScript.title,

@@ -169,6 +169,18 @@ class _ExploreScreenState extends State<ExploreScreen> {
     );
   }
 
+  void _openAudioGuide(_SiteData site) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => AudioGuideSheet(
+        siteId: site.name.toLowerCase().replaceAll(' ', '_'),
+        siteName: site.name,
+      ),
+    );
+  }
+
   Future<void> _loadWeather(double lat, double lon) async {
     try {
       final res = await http.get(Uri.parse('https://api.open-meteo.com/v1/forecast?latitude=$lat&longitude=$lon&current_weather=true'));
@@ -365,6 +377,47 @@ class _ExploreScreenState extends State<ExploreScreen> {
               }),
             ),
           const SizedBox(height: 12),
+        ]),
+      ),
+    );
+  }
+
+  Widget _bottomInfoCard(_SiteData site) {
+    return Positioned(
+      bottom: 108,
+      left: 24,
+      right: 24,
+      child: Container(
+        padding: const EdgeInsets.all(24),
+        decoration: BoxDecoration(color: const Color(0xF00F0C0A), borderRadius: BorderRadius.circular(32), border: Border.all(color: Colors.white.withValues(alpha:0.05)), boxShadow: [BoxShadow(color: Colors.black.withValues(alpha:0.4), blurRadius: 24)]),
+        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+            Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Text('${site.name} 🏰', style: const TextStyle(color: Colors.white, fontSize: 26, fontWeight: FontWeight.bold, height: 1.2)),
+              const SizedBox(height: 4),
+              Row(children: [Icon(Icons.public, color: Colors.green.shade400, size: 12), const SizedBox(width: 6), Text('UNESCO WORLD HERITAGE SITE', style: TextStyle(color: Colors.green.shade400, fontSize: 10, fontWeight: FontWeight.bold, letterSpacing: 0.8))]),
+            ])),
+            GestureDetector(onTap: () => setState(() => _detailsExpanded = !_detailsExpanded), child: Container(width: 44, height: 44, decoration: BoxDecoration(border: Border.all(color: Colors.white.withValues(alpha:0.05)), shape: BoxShape.circle), child: Icon(_detailsExpanded ? Icons.keyboard_arrow_down : Icons.keyboard_arrow_up, color: Colors.white70, size: 22))),
+          ]),
+          if (_detailsExpanded) ...[
+            const SizedBox(height: 16),
+            Row(children: [
+              Expanded(child: _actionButton('Listen Audio', HeritageColors.orange, Icons.headphones, () => _openAudioGuide(site))),
+              const SizedBox(width: 8),
+              Expanded(child: _actionButton('Scan Site', const Color(0xFF3B82F6), Icons.camera_alt, () => Navigator.of(context).pushNamed('/scanner'))),
+              const SizedBox(width: 8),
+              Expanded(child: _actionButton('Ride There', const Color(0xFF22C55E), Icons.local_taxi_rounded, () => _rideToSite(site))),
+            ]),
+            const SizedBox(height: 20),
+            Container(height: 1, color: Colors.white.withValues(alpha:0.05)),
+            const SizedBox(height: 16),
+            Row(children: [
+              Container(width: 6, height: 6, decoration: const BoxDecoration(color: HeritageColors.orange, shape: BoxShape.circle)),
+              const SizedBox(width: 8),
+              const Text('AI QUICK INSIGHTS', style: TextStyle(color: HeritageColors.orange, fontSize: 11, fontWeight: FontWeight.bold, letterSpacing: 2)),
+              const Spacer(),
+              if (_weatherTemp != null) Text('🌡️ $_weatherTemp  💨 ${_weatherWind ?? ""}', style: const TextStyle(color: Colors.white70, fontSize: 12, fontWeight: FontWeight.bold)),
+            ]),
             const SizedBox(height: 12),
             Row(children: [
               _detailPill(Icons.confirmation_number_outlined, site.ticketPrice),

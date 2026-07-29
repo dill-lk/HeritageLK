@@ -16,7 +16,7 @@ class PhotojournalExportService {
         pageFormat: PdfPageFormat.a4,
         build: (pw.Context context) {
           return pw.Column(
-            cross: pw.CrossAxisAlignment.start,
+            crossAxisAlignment: pw.CrossAxisAlignment.start,
             children: [
               // Header Banner
               pw.Container(
@@ -26,7 +26,7 @@ class PhotojournalExportService {
                   color: PdfColor.fromInt(0xFF342116),
                 ),
                 child: pw.Column(
-                  cross: pw.CrossAxisAlignment.start,
+                  crossAxisAlignment: pw.CrossAxisAlignment.start,
                   children: [
                     pw.Text(
                       'HERITAGE LK — MY JOURNEY',
@@ -79,7 +79,7 @@ class PhotojournalExportService {
                     mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
                     children: [
                       pw.Column(
-                        cross: pw.CrossAlignment.start,
+                        crossAxisAlignment: pw.CrossAxisAlignment.start,
                         children: [
                           pw.Text(stamp.siteName, style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 13)),
                           pw.Text('Verified via: ${stamp.method.toUpperCase()} • ${stamp.category ?? "Heritage Site"}', style: const pw.TextStyle(fontSize: 10, color: PdfColors.grey700)),

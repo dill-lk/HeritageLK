@@ -308,7 +308,7 @@ class _ProfileScreenState extends State<ProfileScreen>
             ListView(
               padding: const EdgeInsets.fromLTRB(20, 16, 20, 150),
               children: [
-                _buildHeader(),
+                _buildTopBar(),
                 const SizedBox(height: 28),
                 _buildHeroCard(level, levelProgress, points, rankTitle),
                 const SizedBox(height: 24),

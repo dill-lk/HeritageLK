@@ -93,7 +93,7 @@ class _HeritageFeedScreenState extends State<HeritageFeedScreen> {
         border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
       ),
       child: Column(
-        crossAxisAlignment: CrossAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // User & Badge Header
           Row(
@@ -105,7 +105,7 @@ class _HeritageFeedScreenState extends State<HeritageFeedScreen> {
               const SizedBox(width: 12),
               Expanded(
                 child: Column(
-                  crossAxisAlignment: CrossAlignment.start,
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
                       item.userName,
