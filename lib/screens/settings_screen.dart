@@ -462,7 +462,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
 class _CustomNavItem {
   final String label;
   final IconData icon;
-  final String? subtitle;
   final VoidCallback onTap;
   
   const _CustomNavItem({
