@@ -220,10 +220,11 @@ FORMATTING RULES:
   }
 
   /// Extract the single most specific keyword from the query for DB search
-  String _extractBestKeyword(String query) {
+  // _extractBestKeyword removed - unused
+
+  String _getHeritageSiteType(String query) {
     final lower = query.toLowerCase();
 
-    // Priority keyword map
     const map = {
       'sigiriya': 'Sigiriya',
       'lion rock': 'Sigiriya',
@@ -235,6 +236,7 @@ FORMATTING RULES:
       'dambulla': 'Dambulla',
       'polonnaruwa': 'Polonnaruwa',
       'anuradhapura': 'Anuradhapura',
+      'sigiri': 'Sigiriya',
       'sinharaja': 'Sinharaja',
       'yala': 'Yala',
       'minneriya': 'Minneriya',
@@ -468,8 +470,4 @@ I'm having a small hiccup connecting right now — but I've got a massive bank o
 
 What do you want to explore today? I'm all ears! 😊''';
   }
-}
-
-extension on String {
-  String take(int n) => length <= n ? this : substring(0, n);
 }
