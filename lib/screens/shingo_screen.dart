@@ -223,7 +223,7 @@ class _ShingoScreenState extends State<ShingoScreen> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text('Shingo AI Guide', style: TextStyle(color: HeritageColors.cream, fontSize: 18, fontWeight: FontWeight.bold)),
-                      Text('Powered by Gemini Intelligence', style: TextStyle(color: Color(0xFF52B788), fontSize: 12, fontWeight: FontWeight.w600)),
+                      Text('Heritage Intelligence', style: TextStyle(color: Color(0xFF52B788), fontSize: 12, fontWeight: FontWeight.w600)),
                     ],
                   ),
                 ],
@@ -480,7 +480,7 @@ class _ShingoScreenState extends State<ShingoScreen> {
                     Icon(Icons.bolt, color: Color(0xFF52B788), size: 12),
                     SizedBox(width: 4),
                     Text(
-                      'Gemini AI Heritage Guide',
+                      'Heritage AI Assistant',
                       style: TextStyle(
                         color: Color(0xFF52B788),
                         fontSize: 11,
