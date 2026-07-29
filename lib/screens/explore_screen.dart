@@ -264,6 +264,7 @@ class _ExploreScreenState extends State<ExploreScreen> {
   Widget _mapBackground(List<_SiteData> filtered, _SiteData current) {
     final localTileTemplate = _offlineTileTemplate;
     final useOfflineTiles = localTileTemplate != null && !kIsWeb;
+    final tileTemplate = useOfflineTiles ? localTileTemplate : _networkTileTemplate;
     return Positioned.fill(
       child: FlutterMap(
         mapController: _mapController,
@@ -279,7 +280,7 @@ class _ExploreScreenState extends State<ExploreScreen> {
         ),
         children: [
           TileLayer(
-            urlTemplate: useOfflineTiles ? localTileTemplate! : _networkTileTemplate,
+            urlTemplate: tileTemplate,
             fallbackUrl: useOfflineTiles ? _networkTileTemplate : null,
             tileProvider: useOfflineTiles ? FileTileProvider() : NetworkTileProvider(),
             userAgentPackageName: 'com.heritage_lk.app',

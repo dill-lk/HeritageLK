@@ -6,6 +6,7 @@ import '../config/app_config.dart';
 import '../services/damage_report_repository.dart';
 import '../services/location_service.dart';
 import 'report_damage_image_widget.dart';
+import 'report_damage_photo_uploader.dart';
 import '../theme/heritage_colors.dart';
 
 class ReportDamageScreen extends StatefulWidget {
@@ -149,21 +150,12 @@ class _ReportDamageScreenState extends State<ReportDamageScreen> {
     final uploaded = <String>[];
     for (final photoPath in _photos) {
       try {
-        final bytes = await File(photoPath).readAsBytes();
-        final fileName = 'damage_reports/${DateTime.now().millisecondsSinceEpoch}${_photoExt(photoPath)}';
-        await client.storage.from('heritage-media').uploadBinary(fileName, bytes);
-        final publicUrl = client.storage.from('heritage-media').getPublicUrl(fileName);
-        uploaded.add(publicUrl);
+        uploaded.add(await uploadDamagePhoto(client, photoPath));
       } catch (_) {
         uploaded.add(photoPath);
       }
     }
     return uploaded;
-  }
-
-  String _photoExt(String path) {
-    final i = path.lastIndexOf('.');
-    return i >= 0 ? path.substring(i) : '.jpg';
   }
 
   Future<void> _submit() async {
