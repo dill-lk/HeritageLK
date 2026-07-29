@@ -353,7 +353,7 @@ class _ShingoScreenState extends State<ShingoScreen> {
                 decoration: const BoxDecoration(
                   color: Color(0x33E9C46A),
                   shape: BoxShape.circle,
-                  boxShadow: const [
+                  boxShadow: [
                     BoxShadow(
                       color: Color(0x4DE9C46A),
                       blurRadius: 10,
