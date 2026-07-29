@@ -16,6 +16,7 @@ import 'screens/settings_screen.dart';
 import 'screens/explore_screen.dart';
 import 'screens/scanner_screen.dart';
 import 'screens/hotels_screen.dart';
+import 'screens/heritage_game_screen.dart';
 import 'screens/settings_detail_screen.dart';
 import 'screens/generate_archive_screen.dart';
 import 'screens/report_admin_screen.dart';
@@ -98,6 +99,8 @@ class _HeritageLkAppState extends State<HeritageLkApp> {
         builder = (_) => const ScannerScreen();
       case '/hotels':
         builder = (_) => const HotelsScreen();
+      case '/game':
+        builder = (_) => const HeritageGameScreen();
       case '/archive':
         builder = (_) => const ArchiveScreen();
       case '/archive/shingo':
