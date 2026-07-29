@@ -30,9 +30,19 @@ dev_dependencies:
   flutter_lints: ^4.0.0
   mockito: ^5.4.4
   build_runner: ^2.4.13
+  flutter_launcher_icons: ^0.14.3
 
 flutter:
   uses-material-design: true
   assets:
     - assets/app-icon.svg
     - assets/favicon.png
+    - assets/icon.png
+
+flutter_launcher_icons:
+  android: true
+  ios: true
+  image_path: "assets/icon.png"
+  min_sdk_android: 21
+  adaptive_icon_background: "#EDEAE0"
+  adaptive_icon_foreground: "assets/icon.png"

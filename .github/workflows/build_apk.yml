@@ -34,6 +34,9 @@ jobs:
           # Restore our manifest with all required permissions
           cp /tmp/AndroidManifest.xml.bak android/app/src/main/AndroidManifest.xml
 
+      - name: Generate launcher icons
+        run: dart run flutter_launcher_icons
+
       - name: Analyze
         run: flutter analyze --no-pub
 
