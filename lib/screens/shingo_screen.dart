@@ -4,7 +4,6 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
 
-import '../config/app_config.dart';
 import '../services/shingo_ai_service.dart';
 import '../theme/heritage_colors.dart';
 

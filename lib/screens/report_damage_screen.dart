@@ -139,6 +139,29 @@ class _ReportDamageScreenState extends State<ReportDamageScreen> {
     }
   }
 
+  Future<List<String>> _uploadPhotos() async {
+    if (_photos.isEmpty) return [];
+    final client = Supabase.instance.client;
+    final uploaded = <String>[];
+    for (final photoPath in _photos) {
+      try {
+        final bytes = await File(photoPath).readAsBytes();
+        final fileName = 'damage_reports/${DateTime.now().millisecondsSinceEpoch}${_photoExt(photoPath)}';
+        await client.storage.from('heritage-media').uploadBinary(fileName, bytes);
+        final publicUrl = client.storage.from('heritage-media').getPublicUrl(fileName);
+        uploaded.add(publicUrl);
+      } catch (_) {
+        uploaded.add(photoPath);
+      }
+    }
+    return uploaded;
+  }
+
+  String _photoExt(String path) {
+    final i = path.lastIndexOf('.');
+    return i >= 0 ? path.substring(i) : '.jpg';
+  }
+
   Future<void> _submit() async {
     final text = _details.text.trim();
     if (text.isEmpty || _submitting) {
@@ -155,11 +178,12 @@ class _ReportDamageScreenState extends State<ReportDamageScreen> {
           if (mounted) Navigator.of(context).pushReplacementNamed('/login');
           return;
         }
+        final uploadedPhotos = await _uploadPhotos();
         await DamageReportRepository(Supabase.instance.client).submit(
           damageType: _type,
           details: text,
           location: _locationController.text.trim().isEmpty ? _location : _locationController.text.trim(),
-          photos: _photos,
+          photos: uploadedPhotos,
         );
       }
 

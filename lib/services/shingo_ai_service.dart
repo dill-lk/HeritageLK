@@ -5,7 +5,7 @@ import '../config/app_config.dart';
 import 'wikipedia_service.dart';
 
 class ShingoAiService {
-  static const _systemPrompt = '''
+  static const String systemPrompt = '''
 You are Shingo, the warm and knowledgeable AI travel guide for HeritageLK — Sri Lanka's heritage and wildlife exploration app.
 You assist travelers, tourists, and culture lovers with Sri Lankan historical monuments, entry fees, travel routes, weather, culture, and app features.
 
@@ -59,7 +59,7 @@ IMPORTANT FORMATTING & DISPLAY GUIDELINES FOR USERS:
           final model = GenerativeModel(
             model: modelName,
             apiKey: key,
-            systemInstruction: Content.system(_systemPrompt),
+            systemInstruction: Content.system(systemPrompt),
           );
           log('ShingoAiService: attempting Gemini model=$modelName');
           final response = await model.generateContent([Content.text(promptText)]);
