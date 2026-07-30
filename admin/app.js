@@ -14,6 +14,7 @@ let currentReports = [];
 let filteredReports = [];
 let activeStatusFilter = 'all';
 let activeSeverityFilter = 'all';
+let activePriorityFilter = 'all';
 let activeView = 'table'; // 'table' or 'grid'
 let selectedReportId = null;
 let statusChartInstance = null;
@@ -195,6 +196,7 @@ async function loadReports() {
   }
 
   showLoading(false);
+  updateSyncStats(fetchedData ? 'Supabase Live' : 'Offline Demo');
   applyFilters();
 }
 
@@ -219,7 +221,7 @@ function normalizeReport(raw) {
     photosList = raw.photos;
   }
 
-  return {
+  const report = {
     id: raw.id || `DR-${Math.floor(10000 + Math.random() * 90000)}`,
     location: raw.location || 'Unknown Heritage Site',
     damage_type: raw.damage_type || 'General Damage',
@@ -230,6 +232,9 @@ function normalizeReport(raw) {
     photo_url: raw.photo_url || (photosList.length > 0 ? photosList[0] : null),
     notes: raw.notes || ''
   };
+  report.priority = derivePriority(report);
+  report.age_days = getAgeDays(report.created_at);
+  return report;
 }
 
 // ─── FILTERING & RENDERING ──────────────────────────────────────────────────
@@ -242,6 +247,9 @@ function applyFilters() {
     
     // Severity/Type Filter
     if (activeSeverityFilter !== 'all' && r.damage_type !== activeSeverityFilter) return false;
+
+    // Operational Priority Filter
+    if (activePriorityFilter !== 'all' && getReportPriority(r) !== activePriorityFilter) return false;
 
     // Search Query
     if (query) {
@@ -265,11 +273,18 @@ function updateStats() {
   const pending = currentReports.filter(r => r.status === 'pending').length;
   const review = currentReports.filter(r => r.status === 'in_review').length;
   const resolved = currentReports.filter(r => r.status === 'resolved').length;
+  const openReports = currentReports.filter(r => ['pending', 'in_review'].includes(r.status));
+  const critical = openReports.filter(r => getReportPriority(r) === 'critical').length;
+  const withEvidence = currentReports.filter(r => r.photos && r.photos.length > 0).length;
+  const oldestOpen = openReports.reduce((max, r) => Math.max(max, getAgeDays(r.created_at)), 0);
 
   document.getElementById('statTotal').textContent = total;
   document.getElementById('statPending').textContent = pending;
   document.getElementById('statReview').textContent = review;
   document.getElementById('statResolved').textContent = resolved;
+  document.getElementById('statCritical').textContent = critical;
+  document.getElementById('statEvidence').textContent = total ? `${Math.round((withEvidence / total) * 100)}%` : '0%';
+  document.getElementById('statOldestOpen').textContent = `${oldestOpen}d`;
 }
 
 function renderReports() {
@@ -296,6 +311,10 @@ function renderReports() {
         <td>
           <div class="site-title">${escapeHtml(r.location)}</div>
           <div class="site-sub">ID: ${r.id}</div>
+          <span class="age-chip">${getAgeDays(r.created_at)} days old</span>
+        </td>
+        <td>
+          ${renderPriority(r)}
         </td>
         <td>
           <span class="damage-tag"><i class="fa-solid fa-triangle-exclamation"></i> ${escapeHtml(r.damage_type)}</span>
@@ -330,6 +349,7 @@ function renderReports() {
           <div>
             <span class="badge badge-${r.status}">${formatStatus(r.status)}</span>
             <h3 style="margin-top:8px; font-size:16px;">${escapeHtml(r.location)}</h3>
+            <div style="margin-top:8px;">${renderPriority(r)}</div>
           </div>
           <span class="damage-tag"><i class="fa-solid fa-triangle-exclamation"></i> ${escapeHtml(r.damage_type)}</span>
         </div>
@@ -626,6 +646,11 @@ function bindEvents() {
     applyFilters();
   });
 
+  document.getElementById('prioritySelect').addEventListener('change', (e) => {
+    activePriorityFilter = e.target.value;
+    applyFilters();
+  });
+
   // Stat Card Quick Filter
   document.querySelectorAll('.stat-card').forEach(card => {
     card.addEventListener('click', () => {
@@ -739,6 +764,42 @@ function formatStatus(status) {
     case 'rejected': return 'Rejected';
     default: return status;
   }
+}
+
+function updateSyncStats(source) {
+  const now = new Date();
+  document.getElementById('statLastSync').textContent = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  document.getElementById('statDataSource').textContent = source;
+}
+
+function getAgeDays(isoStr) {
+  if (!isoStr) return 0;
+  const created = new Date(isoStr);
+  if (Number.isNaN(created.getTime())) return 0;
+  return Math.max(0, Math.floor((Date.now() - created.getTime()) / 86400000));
+}
+
+function derivePriority(report) {
+  const type = String(report.damage_type || '').toLowerCase();
+  const details = String(report.details || '').toLowerCase();
+  const age = getAgeDays(report.created_at);
+  const highRisk = ['structural', 'crack', 'water', 'leak', 'flood', 'erosion'];
+  const urgentWords = ['urgent', 'deep', 'collapse', 'seepage', 'foundation', 'mural', 'shift'];
+
+  if (report.status === 'resolved' || report.status === 'rejected') return 'standard';
+  if (highRisk.some(term => type.includes(term)) && (age >= 2 || urgentWords.some(term => details.includes(term)))) return 'critical';
+  if (highRisk.some(term => type.includes(term)) || age >= 5 || urgentWords.some(term => details.includes(term))) return 'high';
+  return 'standard';
+}
+
+function getReportPriority(report) {
+  return report.priority || derivePriority(report);
+}
+
+function renderPriority(report) {
+  const priority = getReportPriority(report);
+  const icon = priority === 'critical' ? 'fa-fire-flame-curved' : priority === 'high' ? 'fa-arrow-trend-up' : 'fa-shield-heart';
+  return `<span class="priority-pill priority-${priority}"><i class="fa-solid ${icon}"></i>${priority}</span>`;
 }
 
 function escapeHtml(str) {

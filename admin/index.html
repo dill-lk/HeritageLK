@@ -4,6 +4,9 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>HeritageLK Admin — Damage Reports Management Portal</title>
+  <link rel="icon" type="image/png" href="icon.png">
+  <link rel="apple-touch-icon" href="icon.png">
+  <meta name="theme-color" content="#0D0B08">
   
   <!-- Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -27,7 +30,7 @@
     <header class="navbar">
       <div class="nav-brand">
         <div class="brand-icon">
-          <i class="fa-solid fa-shield-halved"></i>
+          <img src="icon.png" alt="HeritageLK">
         </div>
         <div class="brand-text">
           <h1>HeritageLK <span>Admin</span></h1>
@@ -61,6 +64,36 @@
 
     <!-- MAIN CONTENT AREA -->
     <main class="main-content">
+      <section class="command-center">
+        <div class="command-copy">
+          <span class="eyebrow"><i class="fa-solid fa-satellite-dish"></i> Conservation Command Center</span>
+          <h2>Damage intelligence for Sri Lanka's heritage sites</h2>
+          <p>Prioritize field inspections, review visual evidence, and track restoration throughput from one operational dashboard.</p>
+        </div>
+
+        <div class="ops-panel">
+          <div class="ops-item urgent">
+            <span class="ops-label">Critical Queue</span>
+            <strong id="statCritical">0</strong>
+            <small>pending high-risk reports</small>
+          </div>
+          <div class="ops-item">
+            <span class="ops-label">Evidence Rate</span>
+            <strong id="statEvidence">0%</strong>
+            <small>reports with photos</small>
+          </div>
+          <div class="ops-item">
+            <span class="ops-label">Oldest Open</span>
+            <strong id="statOldestOpen">0d</strong>
+            <small>pending / review age</small>
+          </div>
+          <div class="ops-item">
+            <span class="ops-label">Last Sync</span>
+            <strong id="statLastSync">--:--</strong>
+            <small id="statDataSource">waiting for data</small>
+          </div>
+        </div>
+      </section>
       
       <!-- ANALYTICS CARDS -->
       <section class="stats-grid">
@@ -154,6 +187,15 @@
               <option value="Water Leakage">Water Leakage</option>
             </select>
           </div>
+
+          <div class="select-wrapper">
+            <select id="prioritySelect">
+              <option value="all">All Priorities</option>
+              <option value="critical">Critical</option>
+              <option value="high">High</option>
+              <option value="standard">Standard</option>
+            </select>
+          </div>
         </div>
 
         <div class="toolbar-actions">
@@ -186,6 +228,7 @@
             <thead>
               <tr>
                 <th>Site Location</th>
+                <th>Priority</th>
                 <th>Damage Type</th>
                 <th>Details Preview</th>
                 <th>Date Reported</th>
