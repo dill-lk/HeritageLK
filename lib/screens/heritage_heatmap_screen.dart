@@ -33,6 +33,7 @@ class _HeritageHeatmapScreenState extends State<HeritageHeatmapScreen> {
   String _selectedFilter = 'All';
   String? _offlineTileTemplate;
   bool _tilesReady = false;
+  bool _mapPreparing = true;
   OfflineTileProgress? _tileProgress;
   StreamSubscription<OfflineTileProgress>? _progressSub;
 
@@ -50,6 +51,11 @@ class _HeritageHeatmapScreenState extends State<HeritageHeatmapScreen> {
   }
 
   Future<void> _prepareOfflineTiles() async {
+    if (kIsWeb) {
+      if (mounted) setState(() => _mapPreparing = false);
+      return;
+    }
+
     final template = await SriLankaOfflineMapCache.instance.ensureLocalTemplate();
     if (mounted) {
       setState(() => _offlineTileTemplate = template);
@@ -57,21 +63,40 @@ class _HeritageHeatmapScreenState extends State<HeritageHeatmapScreen> {
 
     final alreadyReady = await SriLankaOfflineMapCache.instance.isTilesReady();
     if (alreadyReady && mounted) {
-      setState(() => _tilesReady = true);
+      setState(() {
+        _tilesReady = true;
+        _mapPreparing = false;
+      });
       return;
+    }
+
+    final estimatedTotal = SriLankaOfflineMapCache.instance.countTotalTiles();
+    if (mounted) {
+      setState(() {
+        _mapPreparing = false;
+        _tileProgress = OfflineTileProgress(
+          downloaded: 0,
+          total: estimatedTotal,
+        );
+      });
     }
 
     _progressSub = SriLankaOfflineMapCache.instance.progressStream.listen(
       (progress) {
         if (!mounted) return;
         setState(() {
+          _mapPreparing = false;
           _tileProgress = progress;
           if (progress.isComplete) _tilesReady = true;
         });
       },
     );
 
-    SriLankaOfflineMapCache.instance.warmSriLankaTiles();
+    unawaited(
+      SriLankaOfflineMapCache.instance.warmSriLankaTiles().catchError((e) {
+        debugPrint('Heatmap warm tiles error: $e');
+      }),
+    );
   }
 
   // Heatmap density points for Heritage Sites across Sri Lanka
@@ -112,95 +137,97 @@ class _HeritageHeatmapScreenState extends State<HeritageHeatmapScreen> {
       body: SafeArea(
         child: Stack(
           children: [
+            _mapLoadingBackdrop(),
             // Map Layer
-            FlutterMap(
-              mapController: _mapController,
-              options: const MapOptions(
-                initialCenter: LatLng(7.8731, 80.7718), // Central Sri Lanka
-                initialZoom: 7.8,
-                minZoom: 6.5,
-                maxZoom: 14.0,
-              ),
-              children: [
-                TileLayer(
-                  key: ValueKey<bool>(useOfflineTiles),
-                  urlTemplate: useOfflineTiles ? tileTemplate : _networkTileTemplate,
-                  subdomains: const [],
-                  fallbackUrl: _fallbackTileTemplate,
-                  tileProvider: useOfflineTiles
-                      ? FileTileProvider()
-                      : NetworkTileProvider(
-                          headers: const {
-                            'User-Agent': 'HeritageLK/1.0 (flutter_map; +https://github.com/fleaflet/flutter_map)',
-                            'Accept': 'image/png,image/*;q=0.8',
-                          },
-                        ),
-                  userAgentPackageName: 'com.heritage_lk.app',
-                  maxNativeZoom: 18,
-                  errorTileCallback: (tile, error, stackTrace) {
-                    debugPrint('Heatmap tile error at ${tile.coordinates}: $error');
-                  },
+            if (_shouldRenderMap)
+              FlutterMap(
+                mapController: _mapController,
+                options: const MapOptions(
+                  initialCenter: LatLng(7.8731, 80.7718), // Central Sri Lanka
+                  initialZoom: 7.8,
+                  minZoom: 6.5,
+                  maxZoom: 14.0,
                 ),
-                // Glowing Heatmap Circles
-                CircleLayer(
-                  circles: filtered.expand((pt) {
-                    final color = pt.status == 'Endangered'
-                        ? const Color(0xFFE76F51) // Red/Orange
-                        : pt.status == 'Moderate'
-                            ? const Color(0xFFE9C46A) // Yellow
-                            : const Color(0xFF52B788); // Green
+                children: [
+                  TileLayer(
+                    key: ValueKey<bool>(useOfflineTiles),
+                    urlTemplate: useOfflineTiles ? tileTemplate : _networkTileTemplate,
+                    subdomains: const [],
+                    fallbackUrl: _fallbackTileTemplate,
+                    tileProvider: useOfflineTiles
+                        ? FileTileProvider()
+                        : NetworkTileProvider(
+                            headers: const {
+                              'User-Agent': 'HeritageLK/1.0 (flutter_map; +https://github.com/fleaflet/flutter_map)',
+                              'Accept': 'image/png,image/*;q=0.8',
+                            },
+                          ),
+                    userAgentPackageName: 'com.heritage_lk.app',
+                    maxNativeZoom: 18,
+                    errorTileCallback: (tile, error, stackTrace) {
+                      debugPrint('Heatmap tile error at ${tile.coordinates}: $error');
+                    },
+                  ),
+                  // Glowing Heatmap Circles
+                  CircleLayer(
+                    circles: filtered.expand((pt) {
+                      final color = pt.status == 'Endangered'
+                          ? const Color(0xFFE76F51) // Red/Orange
+                          : pt.status == 'Moderate'
+                              ? const Color(0xFFE9C46A) // Yellow
+                              : const Color(0xFF52B788); // Green
 
-                    return [
-                      // Outer soft aura
-                      CircleMarker(
+                      return [
+                        // Outer soft aura
+                        CircleMarker(
+                          point: LatLng(pt.lat, pt.lon),
+                          radius: pt.intensity * 6.0,
+                          color: color.withValues(alpha: 0.2),
+                          borderStrokeWidth: 0,
+                        ),
+                        // Core bright glow
+                        CircleMarker(
+                          point: LatLng(pt.lat, pt.lon),
+                          radius: pt.intensity * 2.5,
+                          color: color.withValues(alpha: 0.55),
+                          borderStrokeWidth: 1.5,
+                          borderColor: Colors.white,
+                        ),
+                      ];
+                    }).toList(),
+                  ),
+                  // Text marker labels
+                  MarkerLayer(
+                    markers: filtered.map((pt) {
+                      return Marker(
                         point: LatLng(pt.lat, pt.lon),
-                        radius: pt.intensity * 6.0,
-                        color: color.withValues(alpha: 0.2),
-                        borderStrokeWidth: 0,
-                      ),
-                      // Core bright glow
-                      CircleMarker(
-                        point: LatLng(pt.lat, pt.lon),
-                        radius: pt.intensity * 2.5,
-                        color: color.withValues(alpha: 0.55),
-                        borderStrokeWidth: 1.5,
-                        borderColor: Colors.white,
-                      ),
-                    ];
-                  }).toList(),
-                ),
-                // Text marker labels
-                MarkerLayer(
-                  markers: filtered.map((pt) {
-                    return Marker(
-                      point: LatLng(pt.lat, pt.lon),
-                      width: 120,
-                      height: 40,
-                      child: Center(
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                          decoration: BoxDecoration(
-                            color: Colors.black.withValues(alpha: 0.7),
-                            borderRadius: BorderRadius.circular(8),
-                            border: Border.all(color: Colors.white24, width: 0.5),
-                          ),
-                          child: Text(
-                            pt.siteName,
-                            style: const TextStyle(
-                              color: HeritageColors.cream,
-                              fontSize: 9,
-                              fontWeight: FontWeight.bold,
+                        width: 120,
+                        height: 40,
+                        child: Center(
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                            decoration: BoxDecoration(
+                              color: Colors.black.withValues(alpha: 0.7),
+                              borderRadius: BorderRadius.circular(8),
+                              border: Border.all(color: Colors.white24, width: 0.5),
                             ),
-                            textAlign: TextAlign.center,
-                            overflow: TextOverflow.ellipsis,
+                            child: Text(
+                              pt.siteName,
+                              style: const TextStyle(
+                                color: HeritageColors.cream,
+                                fontSize: 9,
+                                fontWeight: FontWeight.bold,
+                              ),
+                              textAlign: TextAlign.center,
+                              overflow: TextOverflow.ellipsis,
+                            ),
                           ),
                         ),
-                      ),
-                    );
-                  }).toList(),
-                ),
-              ],
-            ),
+                      );
+                    }).toList(),
+                  ),
+                ],
+              ),
 
             // Top Header & Filter Controls
             Positioned(
@@ -279,8 +306,6 @@ class _HeritageHeatmapScreenState extends State<HeritageHeatmapScreen> {
               ),
             ),
 
-            _buildDownloadBanner(),
-
             // Bottom Legend Overlay
             Positioned(
               bottom: 110,
@@ -304,6 +329,9 @@ class _HeritageHeatmapScreenState extends State<HeritageHeatmapScreen> {
               ),
             ),
 
+            _buildMapLoadingOverlay(),
+            _buildDownloadBanner(),
+
             const Align(
               alignment: Alignment.bottomCenter,
               child: HeritageBottomNav(currentIndex: 0),
@@ -324,7 +352,7 @@ class _HeritageHeatmapScreenState extends State<HeritageHeatmapScreen> {
         : '📥 Downloading offline map… $pct%';
 
     return Positioned(
-      bottom: 165,
+      bottom: 185,
       left: 20,
       right: 20,
       child: AnimatedOpacity(
@@ -386,6 +414,125 @@ class _HeritageHeatmapScreenState extends State<HeritageHeatmapScreen> {
                 ),
               ),
             ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  bool get _shouldRenderMap => kIsWeb || _tilesReady;
+
+  Widget _mapLoadingBackdrop() {
+    return Positioned.fill(
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          color: HeritageColors.background,
+          gradient: RadialGradient(
+            center: const Alignment(-0.25, -0.55),
+            radius: 1.15,
+            colors: [
+              HeritageColors.orange.withValues(alpha: 0.16),
+              const Color(0xFF1A1311),
+              HeritageColors.background,
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildMapLoadingOverlay() {
+    final progress = _tileProgress;
+    final shouldShow = !kIsWeb && !_tilesReady;
+    if (!shouldShow) return const SizedBox.shrink();
+
+    final label = progress?.isFailed == true
+        ? 'Map download paused'
+        : _mapPreparing
+            ? 'Preparing heritage heatmap...'
+            : 'Downloading offline map...';
+    final detail = progress == null || _mapPreparing
+        ? 'Checking local map cache before opening the heatmap.'
+        : progress.isFailed
+            ? 'Downloaded ${progress.downloaded} of ${progress.total} tiles. The app will retry next launch.'
+            : 'Downloaded ${progress.downloaded} of ${progress.total} Sri Lanka map tiles.';
+
+    return Positioned.fill(
+      child: IgnorePointer(
+        child: AnimatedOpacity(
+          opacity: shouldShow ? 1 : 0,
+          duration: const Duration(milliseconds: 250),
+          child: Container(
+            color: HeritageColors.background.withValues(alpha: 0.92),
+            child: Center(
+              child: Container(
+                width: 260,
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  color: const Color(0xF2100E0A),
+                  borderRadius: BorderRadius.circular(24),
+                  border: Border.all(
+                    color: HeritageColors.orange.withValues(alpha: 0.25),
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.45),
+                      blurRadius: 24,
+                    ),
+                  ],
+                ),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const SizedBox(
+                      width: 34,
+                      height: 34,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 3,
+                        valueColor:
+                            AlwaysStoppedAnimation<Color>(HeritageColors.orange),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    Text(
+                      label,
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(
+                        color: HeritageColors.cream,
+                        fontSize: 15,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    Text(
+                      detail,
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        color: HeritageColors.cream.withValues(alpha: 0.62),
+                        fontSize: 12,
+                        height: 1.35,
+                      ),
+                    ),
+                    const SizedBox(height: 14),
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(4),
+                      child: LinearProgressIndicator(
+                        value: progress == null || progress.isFailed
+                            ? null
+                            : progress.fraction,
+                        minHeight: 4,
+                        backgroundColor: const Color(0x22FFFFFF),
+                        valueColor: AlwaysStoppedAnimation<Color>(
+                          progress?.isFailed == true
+                              ? Colors.orange.shade700
+                              : HeritageColors.orange,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
           ),
         ),
       ),

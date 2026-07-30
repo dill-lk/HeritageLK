@@ -76,7 +76,7 @@ class _ProfileScreenState extends State<ProfileScreen>
       List<DamageReport> reports = [];
       List<Profile> leaders = [];
       try {
-        reports = await DamageReportRepository(client).list();
+        reports = await DamageReportRepository(client).listMine();
         leaders = await profileRepo.leaderboard(limit: 5);
       } catch (_) {}
 

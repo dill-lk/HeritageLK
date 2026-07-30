@@ -1,46 +1,53 @@
-import 'dart:convert';
-import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:flutter_image_compress/flutter_image_compress.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:path/path.dart' as p;
 import 'package:supabase_flutter/supabase_flutter.dart';
 
-/// Converts a local image file to a compressed base64 data URL and returns it.
-/// The result is stored directly in the `photo_url` column of `damage_reports`.
-/// No Supabase Storage bucket is required.
-Future<String> uploadDamagePhoto(SupabaseClient client, String photoPath) async {
-  // Already a URL or data URL — return as-is
-  if (photoPath.startsWith('http://') ||
-      photoPath.startsWith('https://') ||
-      photoPath.startsWith('data:image')) {
-    return photoPath;
-  }
+const _damagePhotoBucket = 'damage-photos';
 
-  try {
-    final file = File(photoPath);
-    if (!await file.exists()) return photoPath;
+/// Uploads a picked damage-report image to Supabase Storage and returns its
+/// public URL for storage in `damage_reports.photos` and `photo_url`.
+Future<String> uploadDamagePhoto(SupabaseClient client, XFile photo) async {
+  final bytes = await _compressedBytes(photo);
+  final storagePath = _storagePath(client, photo);
 
-    // Compress to JPEG, max 800px wide, quality 75 — keeps base64 string small
-    Uint8List? compressed;
-    try {
-      compressed = await FlutterImageCompress.compressWithFile(
-        file.absolute.path,
-        minWidth: 800,
-        minHeight: 600,
-        quality: 75,
-        format: CompressFormat.jpeg,
+  await client.storage.from(_damagePhotoBucket).uploadBinary(
+        storagePath,
+        bytes,
+        fileOptions: const FileOptions(
+          contentType: 'image/jpeg',
+          upsert: false,
+        ),
       );
-    } catch (_) {
-      // Compression unavailable (e.g. web stub) — read raw bytes
-    }
 
-    final bytes = compressed ?? await file.readAsBytes();
-    final base64Str = base64Encode(bytes);
-    final dataUrl = 'data:image/jpeg;base64,$base64Str';
+  return client.storage.from(_damagePhotoBucket).getPublicUrl(storagePath);
+}
 
-    return dataUrl;
-  } catch (e) {
-    // Last resort — return the raw path (admin will show broken image)
-    return photoPath;
+Future<Uint8List> _compressedBytes(XFile photo) async {
+  try {
+    final compressed = await FlutterImageCompress.compressWithFile(
+      photo.path,
+      minWidth: 1200,
+      minHeight: 900,
+      quality: 82,
+      format: CompressFormat.jpeg,
+    );
+    if (compressed != null && compressed.isNotEmpty) return compressed;
+  } catch (_) {
+    // Some platform pickers expose paths that the native compressor cannot read.
   }
+
+  return photo.readAsBytes();
+}
+
+String _storagePath(SupabaseClient client, XFile photo) {
+  final userSegment = client.auth.currentUser?.id ?? 'anonymous';
+  final timestamp = DateTime.now().toUtc().microsecondsSinceEpoch;
+  final baseName = p.basenameWithoutExtension(photo.name.isNotEmpty ? photo.name : photo.path);
+  final safeName = baseName.replaceAll(RegExp(r'[^A-Za-z0-9_-]+'), '-').replaceAll(RegExp(r'^-+|-+$'), '');
+  final suffix = safeName.isEmpty ? 'photo' : safeName;
+
+  return '$userSegment/$timestamp-$suffix.jpg';
 }

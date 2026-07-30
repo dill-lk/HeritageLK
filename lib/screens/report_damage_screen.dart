@@ -31,7 +31,7 @@ class _ReportDamageScreenState extends State<ReportDamageScreen> {
     'Monument Degradation',
   ];
   final ImagePicker _picker = ImagePicker();
-  final List<String> _photos = [];
+  final List<_DamagePhoto> _photos = [];
 
   @override
   void initState() {
@@ -120,7 +120,7 @@ class _ReportDamageScreenState extends State<ReportDamageScreen> {
                 onTap: () {
                   Navigator.pop(ctx);
                   setState(() {
-                    _photos.add('https://images.unsplash.com/photo-1586224372551-7f91854580bf?q=80&w=400&auto=format&fit=crop');
+                    _photos.add(const _DamagePhoto.remote('https://images.unsplash.com/photo-1586224372551-7f91854580bf?q=80&w=400&auto=format&fit=crop'));
                   });
                 },
               ),
@@ -137,13 +137,13 @@ class _ReportDamageScreenState extends State<ReportDamageScreen> {
         final List<XFile> images = await _picker.pickMultiImage(imageQuality: 85);
         if (images.isNotEmpty && mounted) {
           setState(() {
-            _photos.addAll(images.map((img) => img.path));
+            _photos.addAll(images.map(_DamagePhoto.local));
           });
         }
       } else {
         final XFile? image = await _picker.pickImage(source: source, imageQuality: 85);
         if (image != null && mounted) {
-          setState(() => _photos.add(image.path));
+          setState(() => _photos.add(_DamagePhoto.local(image)));
         }
       }
     } catch (e) {
@@ -159,12 +159,12 @@ class _ReportDamageScreenState extends State<ReportDamageScreen> {
     if (_photos.isEmpty) return [];
     final client = Supabase.instance.client;
     final uploaded = <String>[];
-    for (final photoPath in _photos) {
-      try {
-        uploaded.add(await uploadDamagePhoto(client, photoPath));
-      } catch (_) {
-        uploaded.add(photoPath);
+    for (final photo in _photos) {
+      if (photo.file == null) {
+        uploaded.add(photo.previewPath);
+        continue;
       }
+      uploaded.add(await uploadDamagePhoto(client, photo.file!));
     }
     return uploaded;
   }
@@ -363,7 +363,7 @@ class _ReportDamageScreenState extends State<ReportDamageScreen> {
                     const SizedBox(width: 12),
                     ..._photos.asMap().entries.map((entry) {
                       final idx = entry.key;
-                      final path = entry.value;
+                      final photo = entry.value;
                       return Container(
                         margin: const EdgeInsets.only(right: 12),
                         child: Stack(
@@ -373,7 +373,7 @@ class _ReportDamageScreenState extends State<ReportDamageScreen> {
                               child: SizedBox(
                                 width: 100,
                                 height: 100,
-                                child: _buildImageWidget(path),
+                                child: _buildImageWidget(photo.previewPath),
                               ),
                             ),
                             Positioned(
@@ -439,4 +439,20 @@ class _ReportDamageScreenState extends State<ReportDamageScreen> {
   Widget _label(String text) => Padding(padding: const EdgeInsets.only(bottom: 10), child: Text(text, style: const TextStyle(color: Color(0x66FFFFFF), fontSize: 11, fontWeight: FontWeight.bold, letterSpacing: 1.5)));
   Widget _card(Widget child) => Container(padding: const EdgeInsets.all(16), decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.05), border: Border.all(color: Colors.white.withValues(alpha: 0.10)), borderRadius: BorderRadius.circular(20)), child: child);
   Widget _round(IconData icon, VoidCallback action) => InkWell(onTap: action, borderRadius: BorderRadius.circular(24), child: Container(width: 40, height: 40, decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.08), border: Border.all(color: Colors.white.withValues(alpha: 0.15)), shape: BoxShape.circle), child: Icon(icon, color: HeritageColors.orange, size: 20)));
+}
+
+class _DamagePhoto {
+  const _DamagePhoto._({required this.previewPath, this.file});
+
+  factory _DamagePhoto.local(XFile file) => _DamagePhoto._(
+        previewPath: file.path,
+        file: file,
+      );
+
+  const _DamagePhoto.remote(String url)
+      : previewPath = url,
+        file = null;
+
+  final String previewPath;
+  final XFile? file;
 }

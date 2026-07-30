@@ -230,7 +230,7 @@ function normalizeReport(raw) {
     created_at: raw.created_at || new Date().toISOString(),
     photos: photosList,
     photo_url: raw.photo_url || (photosList.length > 0 ? photosList[0] : null),
-    notes: raw.notes || ''
+    notes: raw.admin_notes || raw.notes || ''
   };
   report.priority = derivePriority(report);
   report.age_days = getAgeDays(report.created_at);
@@ -494,10 +494,10 @@ async function saveStatusChanges() {
 
   if (supabaseClient) {
     try {
-      // Try updating both status and notes
+      // Try updating both status and admin notes
       const { error } = await supabaseClient
         .from('damage_reports')
-        .update({ status: newStatus, notes: newNotes })
+        .update({ status: newStatus, admin_notes: newNotes })
         .eq('id', selectedReportId);
 
       if (error) {

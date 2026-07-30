@@ -15,7 +15,7 @@ class DamageReportRepository {
     final userId = _client.auth.currentUser?.id;
     final firstPhoto = photos.isNotEmpty ? photos.first : null;
 
-    // Only write photo_url when we have a real value (base64 data URL or http URL)
+    // Keep the first public Storage URL in photo_url for older admin clients.
     final validPhoto = (firstPhoto != null && firstPhoto.trim().isNotEmpty) ? firstPhoto : null;
 
     final payload = <String, dynamic>{
@@ -45,6 +45,19 @@ class DamageReportRepository {
     final rows = status != null && status != 'all'
         ? await _client.from('damage_reports').select().eq('status', status).order('created_at', ascending: false)
         : await _client.from('damage_reports').select().order('created_at', ascending: false);
+    return rows.map((row) => DamageReport.fromMap(row)).toList();
+  }
+
+  Future<List<DamageReport>> listMine({String? status}) async {
+    final userId = _client.auth.currentUser?.id;
+    if (userId == null) return [];
+
+    var query = _client.from('damage_reports').select().eq('user_id', userId);
+    if (status != null && status != 'all') {
+      query = query.eq('status', status);
+    }
+
+    final rows = await query.order('created_at', ascending: false);
     return rows.map((row) => DamageReport.fromMap(row)).toList();
   }
 

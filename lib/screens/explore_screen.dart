@@ -56,6 +56,7 @@ class _ExploreScreenState extends State<ExploreScreen> {
   final String _filterCategory = 'All';
   String? _offlineTileTemplate;
   bool _tilesReady = false; // true only when all tiles are confirmed on disk
+  bool _mapPreparing = true;
   OfflineTileProgress? _tileProgress; // null = not yet started or already done
   StreamSubscription<OfflineTileProgress>? _progressSub;
 
@@ -180,7 +181,10 @@ class _ExploreScreenState extends State<ExploreScreen> {
   }
 
   Future<void> _prepareOfflineTiles() async {
-    if (kIsWeb) return;
+    if (kIsWeb) {
+      if (mounted) setState(() => _mapPreparing = false);
+      return;
+    }
     try {
       final template = await SriLankaOfflineMapCache.instance.ensureLocalTemplate();
       if (mounted) setState(() => _offlineTileTemplate = template);
@@ -188,7 +192,10 @@ class _ExploreScreenState extends State<ExploreScreen> {
       // Fast path: tiles were fully downloaded in a previous session.
       final alreadyReady = await SriLankaOfflineMapCache.instance.isTilesReady();
       if (alreadyReady && mounted) {
-        setState(() => _tilesReady = true);
+        setState(() {
+          _tilesReady = true;
+          _mapPreparing = false;
+        });
         return;
       }
 
@@ -196,8 +203,13 @@ class _ExploreScreenState extends State<ExploreScreen> {
       // sees feedback before any tile actually finishes.
       final estimatedTotal = SriLankaOfflineMapCache.instance.countTotalTiles();
       if (mounted) {
-        setState(() => _tileProgress = OfflineTileProgress(
-            downloaded: 0, total: estimatedTotal));
+        setState(() {
+          _mapPreparing = false;
+          _tileProgress = OfflineTileProgress(
+            downloaded: 0,
+            total: estimatedTotal,
+          );
+        });
       }
 
       // Subscribe BEFORE starting the download so we never miss the first event.
@@ -205,6 +217,7 @@ class _ExploreScreenState extends State<ExploreScreen> {
         (progress) {
           if (!mounted) return;
           setState(() {
+            _mapPreparing = false;
             _tileProgress = progress;
             if (progress.isComplete) _tilesReady = true;
           });
@@ -213,14 +226,16 @@ class _ExploreScreenState extends State<ExploreScreen> {
       );
 
       // Kick off background download — errors are swallowed gracefully.
-      unawaited(SriLankaOfflineMapCache.instance.warmSriLankaTiles().catchError((e) {
-        debugPrint('Warm tiles error: $e');
-      }));
+      unawaited(
+        SriLankaOfflineMapCache.instance.warmSriLankaTiles().catchError((e) {
+          debugPrint('Warm tiles error: $e');
+        }),
+      );
     } catch (e) {
       debugPrint('Error preparing offline tiles: $e');
+      if (mounted) setState(() => _mapPreparing = false);
     }
   }
-
 
   Future<void> _select(_SiteData site) async {
     setState(() {
@@ -279,13 +294,18 @@ class _ExploreScreenState extends State<ExploreScreen> {
     final current = _selected != null ? _allSites.firstWhere((s) => s.name == _selected!.title, orElse: () => _allSites[0]) : (filtered.isNotEmpty ? filtered[0] : _allSites[0]);
 
     return Scaffold(
+      backgroundColor: HeritageColors.background,
       body: SafeArea(
         child: Stack(children: [
-          _mapBackground(filtered, current),
+          _mapLoadingBackdrop(),
+          if (_shouldRenderMap) _mapBackground(filtered, current),
           _topOverlay(q, filtered),
+          if (_shouldRenderMap) ...[
+            _bottomInfoCard(current),
+            _buildZoomControls(current),
+          ],
+          _buildMapLoadingOverlay(),
           _buildDownloadBanner(),
-          _bottomInfoCard(current),
-          _buildZoomControls(current),
           const Align(alignment: Alignment.bottomCenter, child: HeritageBottomNav(currentIndex: 1)),
         ]),
       ),
@@ -309,7 +329,7 @@ class _ExploreScreenState extends State<ExploreScreen> {
     String fmt(int n) => n >= 1000 ? '${(n / 1000).toStringAsFixed(1)}k' : '$n';
 
     return Positioned(
-      bottom: 115,
+      bottom: 262,
       left: 20,
       right: 20,
       child: Container(
@@ -380,6 +400,125 @@ class _ExploreScreenState extends State<ExploreScreen> {
               ),
             ),
           ],
+        ),
+      ),
+    );
+  }
+
+  Widget _mapLoadingBackdrop() {
+    return Positioned.fill(
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          color: HeritageColors.background,
+          gradient: RadialGradient(
+            center: const Alignment(-0.25, -0.55),
+            radius: 1.15,
+            colors: [
+              HeritageColors.orange.withValues(alpha: 0.16),
+              const Color(0xFF1A1311),
+              HeritageColors.background,
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  bool get _shouldRenderMap => kIsWeb || _tilesReady;
+
+  Widget _buildMapLoadingOverlay() {
+    final progress = _tileProgress;
+    final shouldShow = !kIsWeb && !_tilesReady;
+    if (!shouldShow) return const SizedBox.shrink();
+
+    final label = progress?.isFailed == true
+        ? 'Map download paused'
+        : _mapPreparing
+            ? 'Preparing heritage map...'
+            : 'Downloading offline map...';
+    final detail = progress == null || _mapPreparing
+        ? 'Checking local map cache before opening Explore.'
+        : progress.isFailed
+            ? 'Downloaded ${progress.downloaded} of ${progress.total} tiles. The app will retry next launch.'
+            : 'Downloaded ${progress.downloaded} of ${progress.total} Sri Lanka map tiles.';
+
+    return Positioned.fill(
+      child: IgnorePointer(
+        child: AnimatedOpacity(
+          opacity: shouldShow ? 1 : 0,
+          duration: const Duration(milliseconds: 250),
+          child: Container(
+            color: HeritageColors.background.withValues(alpha: 0.92),
+            child: Center(
+              child: Container(
+                width: 260,
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  color: const Color(0xF2100E0A),
+                  borderRadius: BorderRadius.circular(24),
+                  border: Border.all(
+                    color: HeritageColors.orange.withValues(alpha: 0.25),
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.45),
+                      blurRadius: 24,
+                    ),
+                  ],
+                ),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const SizedBox(
+                      width: 34,
+                      height: 34,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 3,
+                        valueColor:
+                            AlwaysStoppedAnimation<Color>(HeritageColors.orange),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    Text(
+                      label,
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(
+                        color: HeritageColors.cream,
+                        fontSize: 15,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    Text(
+                      detail,
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        color: HeritageColors.cream.withValues(alpha: 0.62),
+                        fontSize: 12,
+                        height: 1.35,
+                      ),
+                    ),
+                    const SizedBox(height: 14),
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(4),
+                      child: LinearProgressIndicator(
+                        value: progress == null || progress.isFailed
+                            ? null
+                            : progress.fraction,
+                        minHeight: 4,
+                        backgroundColor: const Color(0x22FFFFFF),
+                        valueColor: AlwaysStoppedAnimation<Color>(
+                          progress?.isFailed == true
+                              ? Colors.orange.shade700
+                              : HeritageColors.orange,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
         ),
       ),
     );
