@@ -1,3 +1,5 @@
+import 'dart:convert';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../models/archive_record.dart';
@@ -6,10 +8,33 @@ class ArchiveRepository {
   ArchiveRepository(this._client);
 
   final SupabaseClient _client;
+  static const String _cacheKey = 'permanently_cached_archives_v1';
 
-  Future<List<ArchiveRecord>> listArchives() async {
-    final rows = await _client.from('archives').select().order('created_at', ascending: false);
-    return rows.map((row) => ArchiveRecord.fromMap(row)).toList();
+  Future<List<ArchiveRecord>> listArchives({bool forceRefresh = false}) async {
+    final prefs = await SharedPreferences.getInstance();
+
+    // Read cached items first for instant display
+    final cachedString = prefs.getString(_cacheKey);
+    List<ArchiveRecord> cachedRecords = [];
+    if (cachedString != null && cachedString.isNotEmpty) {
+      try {
+        final List<dynamic> decoded = jsonDecode(cachedString);
+        cachedRecords = decoded.map((item) => ArchiveRecord.fromMap(Map<String, dynamic>.from(item))).toList();
+      } catch (_) {}
+    }
+
+    // Fetch from Supabase in background or if cache is empty / forceRefresh requested
+    try {
+      final rows = await _client.from('archives').select().order('created_at', ascending: false);
+      if (rows.isNotEmpty) {
+        final freshRecords = rows.map((row) => ArchiveRecord.fromMap(row)).toList();
+        // Save fresh records to permanent local storage
+        await prefs.setString(_cacheKey, jsonEncode(rows));
+        return freshRecords;
+      }
+    } catch (_) {}
+
+    return cachedRecords;
   }
 
   Future<ArchiveRecord?> getArchive(String id) async {
@@ -55,3 +80,4 @@ class ArchiveRepository {
     return row == null ? null : ArchiveRecord.fromMap(row);
   }
 }
+

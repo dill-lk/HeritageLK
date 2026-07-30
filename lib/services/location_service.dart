@@ -90,22 +90,23 @@ class LocationService {
       }
       if (permission == LocationPermission.deniedForever) return null;
 
-      // Try fast last known position first
-      Position? position = await Geolocator.getLastKnownPosition();
-      if (position != null) return position;
-
+      // Always request fresh current GPS position first to avoid stale mock / last known coords
       try {
         return await Geolocator.getCurrentPosition(
           locationSettings: const LocationSettings(
             accuracy: LocationAccuracy.high,
-            timeLimit: Duration(seconds: 15),
+            timeLimit: Duration(seconds: 8),
           ),
         );
       } catch (_) {
+        // Fallback to last known position if real-time GPS fix times out
+        Position? lastKnown = await Geolocator.getLastKnownPosition();
+        if (lastKnown != null) return lastKnown;
+
         return await Geolocator.getCurrentPosition(
           locationSettings: const LocationSettings(
-            accuracy: LocationAccuracy.low,
-            timeLimit: Duration(seconds: 20),
+            accuracy: LocationAccuracy.medium,
+            timeLimit: Duration(seconds: 10),
           ),
         );
       }
@@ -113,6 +114,7 @@ class LocationService {
       return null;
     }
   }
+
 
   static String formatDistance(double meters) {
     if (meters < 1000) {
@@ -147,13 +149,14 @@ class LocationService {
     final latStr = '${lat.toStringAsFixed(4)}° N';
     final lonStr = '${lon.toStringAsFixed(4)}° E';
 
-    if (nearest != null && minMeters < 15000) {
+    if (nearest != null && minMeters < 50000) {
       final distStr = formatDistance(minMeters);
-      return 'Near ${nearest.name} ($distStr) - $latStr, $lonStr';
+      return '${nearest.name} Area ($distStr) - $latStr, $lonStr';
     }
 
-    return 'Location: $latStr, $lonStr';
+    return 'Current GPS: $latStr, $lonStr';
   }
+
 
   static List<Map<String, String>> getPlacesToExplore(Position? userPos) {
     final list = knownSites.map((site) {

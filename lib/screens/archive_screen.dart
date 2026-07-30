@@ -43,20 +43,39 @@ class _ArchiveScreenState extends State<ArchiveScreen> {
   }
 
   Future<void> _loadArchives() async {
-    if (!AppConfig.hasSupabase) return;
-    setState(() {
-      _loading = true;
-      _error = null;
-    });
-    try {
-      final rows = await ArchiveRepository(Supabase.instance.client).listArchives();
-      if (mounted && rows.isNotEmpty) setState(() => _items = rows);
-    } catch (error) {
-      if (mounted) setState(() => _error = '$error');
-    } finally {
+    final repo = ArchiveRepository(AppConfig.hasSupabase ? Supabase.instance.client : SupabaseClient('', ''));
+    
+    // Step 1: Instant load from local cache
+    final cached = await repo.listArchives();
+    if (mounted && cached.isNotEmpty) {
+      setState(() {
+        _items = cached;
+        _loading = false;
+      });
+    } else {
+      if (mounted) setState(() => _loading = true);
+    }
+
+    // Step 2: Background refresh if network/Supabase available
+    if (AppConfig.hasSupabase) {
+      try {
+        final fresh = await repo.listArchives(forceRefresh: true);
+        if (mounted && fresh.isNotEmpty) {
+          setState(() {
+            _items = fresh;
+            _error = null;
+          });
+        }
+      } catch (error) {
+        if (mounted && _items.isEmpty) setState(() => _error = '$error');
+      } finally {
+        if (mounted) setState(() => _loading = false);
+      }
+    } else {
       if (mounted) setState(() => _loading = false);
     }
   }
+
 
   @override
   Widget build(BuildContext context) {
