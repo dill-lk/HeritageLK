@@ -533,8 +533,9 @@ class _ShingoScreenState extends State<ShingoScreen> {
                   ],
                 ),
                 child: Center(
-                  child: HeritageIcons.shingo(color: const Color(0xFFE9C46A), size: 20),
+                  child: HeritageIcons.shingo(color: const Color(0xFFE9C46A), size: 20, animate: true),
                 ),
+
               ),
               Positioned(
                 right: 0,
