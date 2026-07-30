@@ -125,11 +125,7 @@ class _HeritageLkAppState extends State<HeritageLkApp> {
       case '/settings/privacy':
         builder = (_) => const SettingsDetailScreen(title: 'Privacy & Data', description: 'Control how your heritage journey data is used.');
       case '/settings/help':
-        builder = (_) => const SettingsDetailScreen(title: 'Help Center', description: 'Find answers and get help with HeritageLK.');
-      case '/settings/feedback':
-        builder = (_) => const SettingsDetailScreen(title: 'Give Feedback', description: 'Share ideas, report issues, or tell us about your heritage journey.');
-      case '/settings/about':
-        builder = (_) => const SettingsDetailScreen(title: 'About HeritageLK', description: 'Learn about the mission behind HeritageLK.');
+        builder = (_) => const SettingsDetailScreen(title: 'Help & Support', description: 'Find answers and get help with HeritageLK.');
       case '/report-damage':
         builder = (_) => const ReportDamageScreen();
       case '/report-admin':

@@ -149,8 +149,11 @@ class _ReportDamageScreenState extends State<ReportDamageScreen> {
     final client = Supabase.instance.client;
     final uploaded = <String>[];
     for (final photoPath in _photos) {
-      final url = await uploadDamagePhoto(client, photoPath);
-      uploaded.add(url);
+      try {
+        uploaded.add(await uploadDamagePhoto(client, photoPath));
+      } catch (_) {
+        uploaded.add(photoPath);
+      }
     }
     return uploaded;
   }
