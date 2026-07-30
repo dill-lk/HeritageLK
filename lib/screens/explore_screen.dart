@@ -650,22 +650,66 @@ class _RidePickerSheet extends StatelessWidget {
     if (ctx.mounted) Navigator.pop(ctx);
   }
 
-  void _openPickMe(BuildContext ctx) {
-    // PickMe: try app deep link first, fall back to PickMe website (not Google Maps)
+  void _openPickMe(BuildContext ctx) async {
     final lat = site.lat.toStringAsFixed(6);
     final lon = site.lon.toStringAsFixed(6);
     final name = Uri.encodeComponent(site.name);
-    // PickMe website fallback — always opens PickMe, not Google Maps
-    final pickMeWeb = Uri.parse('https://pickme.lk/ride?destination_lat=$lat&destination_lng=$lon&destination_name=$name');
-    _launchPreferred(
-      ctx,
-      [
-        Uri.parse('pickme://ride?destination_lat=$lat&destination_lng=$lon&destination_name=$name'),
-        Uri.parse('intent://ride?destination_lat=$lat&destination_lng=$lon&destination_name=$name#Intent;scheme=pickme;package=com.pickme.passenger;end;'),
-      ],
-      pickMeWeb,
-    );
+
+    // PickMe passenger app — package: com.pickme.passenger
+    // Try multiple URI schemes in order of specificity.
+    final appUris = [
+      // Standard custom scheme (works if PickMe registered this in their manifest)
+      Uri.parse('pickme://open'),
+      // Alternative scheme the passenger app may register
+      Uri.parse('pickmepassenger://open'),
+      // Android intent:// syntax understood by url_launcher on Android
+      // This targets the package directly and falls through to the OS.
+      Uri.parse(
+        'intent://open'
+        '#Intent;'
+        'scheme=pickme;'
+        'package=com.pickme.passenger;'
+        'action=android.intent.action.VIEW;'
+        'category=android.intent.category.BROWSABLE;'
+        'end',
+      ),
+    ];
+
+    // Fallbacks in order: PickMe website → Play Store listing
+    final webFallback = Uri.parse(
+        'https://pickme.lk/ride?destination_lat=$lat&destination_lng=$lon&destination_name=$name');
+    final playStoreFallback = Uri.parse(
+        'https://play.google.com/store/apps/details?id=com.pickme.passenger');
+
+    for (final uri in appUris) {
+      try {
+        final canLaunch = await canLaunchUrl(uri);
+        if (canLaunch) {
+          final launched = await launchUrl(uri, mode: LaunchMode.externalApplication);
+          if (launched) {
+            if (ctx.mounted) Navigator.pop(ctx);
+            return;
+          }
+        }
+      } catch (_) {}
+    }
+
+    // App not installed — try PickMe website first, then Play Store
+    try {
+      final launched = await launchUrl(webFallback, mode: LaunchMode.externalApplication);
+      if (launched) {
+        if (ctx.mounted) Navigator.pop(ctx);
+        return;
+      }
+    } catch (_) {}
+
+    try {
+      await launchUrl(playStoreFallback, mode: LaunchMode.externalApplication);
+    } catch (_) {}
+
+    if (ctx.mounted) Navigator.pop(ctx);
   }
+
 
   void _openUber(BuildContext ctx) {
     final lat = site.lat.toStringAsFixed(6);
