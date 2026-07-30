@@ -1,37 +1,46 @@
 import 'dart:convert';
 import 'dart:io';
+import 'dart:typed_data';
 
+import 'package:flutter_image_compress/flutter_image_compress.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+/// Converts a local image file to a compressed base64 data URL and returns it.
+/// The result is stored directly in the `photo_url` column of `damage_reports`.
+/// No Supabase Storage bucket is required.
 Future<String> uploadDamagePhoto(SupabaseClient client, String photoPath) async {
-  if (photoPath.startsWith('http://') || photoPath.startsWith('https://') || photoPath.startsWith('data:image')) {
+  // Already a URL or data URL — return as-is
+  if (photoPath.startsWith('http://') ||
+      photoPath.startsWith('https://') ||
+      photoPath.startsWith('data:image')) {
     return photoPath;
   }
 
   try {
-    final bytes = await File(photoPath).readAsBytes();
-    final ext = _photoExt(photoPath);
-    final fileName = 'damage_reports/${DateTime.now().millisecondsSinceEpoch}$ext';
+    final file = File(photoPath);
+    if (!await file.exists()) return photoPath;
 
+    // Compress to JPEG, max 800px wide, quality 75 — keeps base64 string small
+    Uint8List? compressed;
     try {
-      await client.storage.from('heritage-media').uploadBinary(
-        fileName,
-        bytes,
-        fileOptions: const FileOptions(upsert: true),
+      compressed = await FlutterImageCompress.compressWithFile(
+        file.absolute.path,
+        minWidth: 800,
+        minHeight: 600,
+        quality: 75,
+        format: CompressFormat.jpeg,
       );
-      return client.storage.from('heritage-media').getPublicUrl(fileName);
     } catch (_) {
-      // Storage upload failed — encode to base64 data URL so photo_url column receives a valid viewable image
-      final mime = ext.contains('png') ? 'image/png' : 'image/jpeg';
-      final base64Str = base64Encode(bytes);
-      return 'data:$mime;base64,$base64Str';
+      // Compression unavailable (e.g. web stub) — read raw bytes
     }
+
+    final bytes = compressed ?? await file.readAsBytes();
+    final base64Str = base64Encode(bytes);
+    final dataUrl = 'data:image/jpeg;base64,$base64Str';
+
+    return dataUrl;
   } catch (e) {
+    // Last resort — return the raw path (admin will show broken image)
     return photoPath;
   }
-}
-
-String _photoExt(String path) {
-  final i = path.lastIndexOf('.');
-  return i >= 0 ? path.substring(i) : '.jpg';
 }
