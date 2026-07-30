@@ -78,7 +78,7 @@ class LocationService {
     HeritageLocation(name: 'Hummanaya Blowhole', lat: 5.9834, lon: 80.5479, emoji: '🌊', category: 'Nature'),
   ];
 
-  static Future<Position?> getCurrentPosition() async {
+  static Future<Position?> getCurrentPosition({bool allowLastKnown = true}) async {
     try {
       bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
       if (!serviceEnabled) return null;
@@ -99,9 +99,11 @@ class LocationService {
           ),
         );
       } catch (_) {
-        // Fallback to last known position if real-time GPS fix times out
-        Position? lastKnown = await Geolocator.getLastKnownPosition();
-        if (lastKnown != null) return lastKnown;
+        if (allowLastKnown) {
+          // Fallback to last known position if real-time GPS fix times out.
+          final lastKnown = await Geolocator.getLastKnownPosition();
+          if (lastKnown != null) return lastKnown;
+        }
 
         return await Geolocator.getCurrentPosition(
           locationSettings: const LocationSettings(

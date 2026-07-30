@@ -306,7 +306,7 @@ class _ExploreScreenState extends State<ExploreScreen> {
             : '📥 Downloading offline map… $pct%';
 
     // Format tile counts cleanly: show as-is up to 9999, then Xk
-    String _fmt(int n) => n >= 1000 ? '${(n / 1000).toStringAsFixed(1)}k' : '$n';
+    String fmt(int n) => n >= 1000 ? '${(n / 1000).toStringAsFixed(1)}k' : '$n';
 
     return Positioned(
       bottom: 115,
@@ -356,7 +356,7 @@ class _ExploreScreenState extends State<ExploreScreen> {
                   ),
                 ),
                 Text(
-                  '${_fmt(progress.downloaded)} / ${_fmt(progress.total)} tiles',
+                  '${fmt(progress.downloaded)} / ${fmt(progress.total)} tiles',
                   style: TextStyle(
                     color: HeritageColors.cream.withValues(alpha: 0.55),
                     fontSize: 10,

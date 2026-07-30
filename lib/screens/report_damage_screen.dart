@@ -51,7 +51,7 @@ class _ReportDamageScreenState extends State<ReportDamageScreen> {
     if (_fetchingGps) return;
     setState(() => _fetchingGps = true);
     try {
-      final position = await LocationService.getCurrentPosition();
+      final position = await LocationService.getCurrentPosition(allowLastKnown: false);
       if (mounted) {
         if (position != null) {
           final locStr = LocationService.getNearestSiteDescription(position.latitude, position.longitude);
@@ -61,23 +61,26 @@ class _ReportDamageScreenState extends State<ReportDamageScreen> {
             _fetchingGps = false;
           });
         } else {
-          // Fallback to Colombo location description default
-          const defaultLoc = 'Near Galle Face Green, Colombo - 6.9271° N, 79.8588° E';
           setState(() {
-            _location = defaultLoc;
-            _locationController.text = defaultLoc;
+            _location = '';
+            _locationController.clear();
             _fetchingGps = false;
           });
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Live GPS unavailable. Please enter the location manually.')),
+          );
         }
       }
     } catch (_) {
       if (mounted) {
-        const defaultLoc = 'Near Galle Fort, Southern Province - 6.0264° N, 80.2170° E';
         setState(() {
-          _location = defaultLoc;
-          _locationController.text = defaultLoc;
+          _location = '';
+          _locationController.clear();
           _fetchingGps = false;
         });
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Could not get live GPS. Please enter the location manually.')),
+        );
       }
     }
   }
@@ -179,6 +182,14 @@ class _ReportDamageScreenState extends State<ReportDamageScreen> {
       return;
     }
 
+    final location = _locationController.text.trim();
+    if (location.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please add a location or use live GPS before submitting.')),
+      );
+      return;
+    }
+
     setState(() => _submitting = true);
     try {
       if (AppConfig.hasSupabase) {
@@ -186,7 +197,7 @@ class _ReportDamageScreenState extends State<ReportDamageScreen> {
         await DamageReportRepository(Supabase.instance.client).submit(
           damageType: _type,
           details: text,
-          location: _locationController.text.trim().isEmpty ? _location : _locationController.text.trim(),
+          location: location,
           photos: uploadedPhotos,
         );
       }

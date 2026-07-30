@@ -135,20 +135,19 @@ class SriLankaOfflineMapCache {
       final iter = allTiles.iterator;
 
       // Wrap each download so we can identify which future finished.
-      Future<({Future<bool> self, bool result})> _wrap(int z, int x, int y) {
-        late Future<bool> f;
+      Future<({Future<dynamic> self, bool result})> wrap(int z, int x, int y) {
+        late Future<({Future<dynamic> self, bool result})> f;
         f = _downloadTile(client, directory, z, x, y)
             .then((r) => (self: f, result: r));
-        // ignore: return_of_invalid_type
-        return f as Future<({Future<bool> self, bool result})>;
+        return f;
       }
 
-      final active = <Future<({Future<bool> self, bool result})>>[];
+      final active = <Future<({Future<dynamic> self, bool result})>>[];
 
       void enqueue() {
         while (active.length < _concurrency && iter.moveNext()) {
           final (z, x, y) = iter.current;
-          active.add(_wrap(z, x, y));
+          active.add(wrap(z, x, y));
         }
       }
 
