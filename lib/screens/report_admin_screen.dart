@@ -34,19 +34,41 @@ class _ReportAdminScreenState extends State<ReportAdminScreen> {
     setState(() => _loading = true);
     try {
       final reports = await DamageReportRepository(Supabase.instance.client).list();
-      if (mounted && reports.isNotEmpty) setState(() => _reports = reports);
+      if (mounted) setState(() => _reports = reports);
     } finally {
       if (mounted) setState(() => _loading = false);
     }
   }
 
   Future<void> _updateStatus(DamageReport report, String status) async {
-    if (!AppConfig.hasSupabase) {
-      setState(() => _reports = _reports.map((item) => item.id == report.id ? DamageReport(id: item.id, location: item.location, damageType: item.damageType, details: item.details, status: status, createdAt: item.createdAt) : item).toList());
-      return;
+    // Optimistic local update — reflect change instantly in UI
+    setState(() {
+      _reports = _reports.map((item) => item.id == report.id
+          ? DamageReport(
+              id: item.id,
+              location: item.location,
+              damageType: item.damageType,
+              details: item.details,
+              status: status,
+              createdAt: item.createdAt,
+              photos: item.photos,
+            )
+          : item).toList();
+    });
+
+    if (!AppConfig.hasSupabase) return;
+
+    try {
+      await DamageReportRepository(Supabase.instance.client).updateStatus(report.id, status);
+      // Re-fetch to sync with server truth
+      await _loadReports();
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Status update failed: $e')),
+        );
+      }
     }
-    await DamageReportRepository(Supabase.instance.client).updateStatus(report.id, status);
-    await _loadReports();
   }
 
   @override

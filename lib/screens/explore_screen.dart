@@ -26,7 +26,11 @@ class ExploreScreen extends StatefulWidget {
 }
 
 class _ExploreScreenState extends State<ExploreScreen> {
-  static const _networkTileTemplate = 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png';
+  // OpenStreetMap is reliable and free — use it as the primary tile source.
+  // CartoBasemaps dark is used only as a fallback (it requires the {r} suffix
+  // stripped out and sometimes rate-limits anonymous requests).
+  static const _networkTileTemplate = 'https://tile.openstreetmap.org/{z}/{x}/{y}.png';
+  static const _fallbackTileTemplate = 'https://a.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png';
 
   // Persistent HTTP client with connection keep-alive for tile fetching.
   // Reusing the same client avoids TLS handshake overhead on every tile.
@@ -176,21 +180,27 @@ class _ExploreScreenState extends State<ExploreScreen> {
   }
 
   Future<void> _prepareOfflineTiles() async {
+    if (kIsWeb) return;
     try {
       final template = await SriLankaOfflineMapCache.instance.ensureLocalTemplate();
-      if (mounted) {
-        setState(() => _offlineTileTemplate = template);
-      }
+      if (mounted) setState(() => _offlineTileTemplate = template);
 
-      // Fast path: tiles already downloaded from a previous session.
+      // Fast path: tiles were fully downloaded in a previous session.
       final alreadyReady = await SriLankaOfflineMapCache.instance.isTilesReady();
       if (alreadyReady && mounted) {
         setState(() => _tilesReady = true);
         return;
       }
 
-      // Subscribe to progress events BEFORE starting the download so we never
-      // miss the first event.
+      // Show the banner immediately with a 0/total placeholder so the user
+      // sees feedback before any tile actually finishes.
+      final estimatedTotal = SriLankaOfflineMapCache.instance.countTotalTiles();
+      if (mounted) {
+        setState(() => _tileProgress = OfflineTileProgress(
+            downloaded: 0, total: estimatedTotal));
+      }
+
+      // Subscribe BEFORE starting the download so we never miss the first event.
       _progressSub = SriLankaOfflineMapCache.instance.progressStream.listen(
         (progress) {
           if (!mounted) return;
@@ -199,12 +209,10 @@ class _ExploreScreenState extends State<ExploreScreen> {
             if (progress.isComplete) _tilesReady = true;
           });
         },
-        onError: (err) {
-          debugPrint('Progress stream error: $err');
-        },
+        onError: (err) => debugPrint('Progress stream error: $err'),
       );
 
-      // Kick off background download safely.
+      // Kick off background download — errors are swallowed gracefully.
       unawaited(SriLankaOfflineMapCache.instance.warmSriLankaTiles().catchError((e) {
         debugPrint('Warm tiles error: $e');
       }));
@@ -284,85 +292,99 @@ class _ExploreScreenState extends State<ExploreScreen> {
     );
   }
 
-  /// Shows a non-intrusive pill banner while tiles are downloading.
+  /// Shows a persistent download banner while offline tiles are being fetched.
   Widget _buildDownloadBanner() {
     final progress = _tileProgress;
-    // Hide when not downloading, complete, or failed with 0 progress.
+    // Hide when not yet started or fully complete.
     if (progress == null || progress.isComplete) return const SizedBox.shrink();
 
     final pct = (progress.fraction * 100).toStringAsFixed(0);
     final label = progress.isFailed
-        ? '⚠️ Map download paused — will retry'
-        : '📥 Downloading offline map… $pct%';
+        ? '⚠️ Map download paused — will retry on next launch'
+        : progress.downloaded == 0
+            ? '📥 Preparing offline map tiles…'
+            : '📥 Downloading offline map… $pct%';
+
+    // Format tile counts cleanly: show as-is up to 9999, then Xk
+    String _fmt(int n) => n >= 1000 ? '${(n / 1000).toStringAsFixed(1)}k' : '$n';
 
     return Positioned(
       bottom: 115,
       left: 20,
       right: 20,
-      child: AnimatedOpacity(
-        opacity: progress.isComplete ? 0 : 1,
-        duration: const Duration(milliseconds: 600),
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-          decoration: BoxDecoration(
-            color: const Color(0xF0100E0A),
-            borderRadius: BorderRadius.circular(20),
-            border: Border.all(color: HeritageColors.orange.withValues(alpha: 0.25)),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.4),
-                blurRadius: 12,
-              ),
-            ],
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  const Icon(Icons.download_rounded,
-                      color: HeritageColors.orange, size: 14),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Text(
-                      label,
-                      style: const TextStyle(
-                        color: HeritageColors.cream,
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+        decoration: BoxDecoration(
+          color: const Color(0xF2100E0A),
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: HeritageColors.orange.withValues(alpha: 0.3)),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.5),
+              blurRadius: 14,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                progress.isFailed
+                    ? const Icon(Icons.warning_amber_rounded,
+                        color: Colors.orange, size: 14)
+                    : const SizedBox(
+                        width: 14,
+                        height: 14,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          valueColor: AlwaysStoppedAnimation<Color>(
+                              HeritageColors.orange),
+                        ),
                       ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    label,
+                    style: const TextStyle(
+                      color: HeritageColors.cream,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
                     ),
-                  ),
-                  Text(
-                    '${progress.downloaded ~/ 1000}k / ${progress.total ~/ 1000}k',
-                    style: TextStyle(
-                      color: HeritageColors.cream.withValues(alpha: 0.5),
-                      fontSize: 10,
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 8),
-              ClipRRect(
-                borderRadius: BorderRadius.circular(4),
-                child: LinearProgressIndicator(
-                  value: progress.isFailed ? null : progress.fraction,
-                  minHeight: 3,
-                  backgroundColor: Colors.white.withValues(alpha: 0.08),
-                  valueColor: AlwaysStoppedAnimation<Color>(
-                    progress.isFailed
-                        ? Colors.orange.shade700
-                        : HeritageColors.orange,
                   ),
                 ),
+                Text(
+                  '${_fmt(progress.downloaded)} / ${_fmt(progress.total)} tiles',
+                  style: TextStyle(
+                    color: HeritageColors.cream.withValues(alpha: 0.55),
+                    fontSize: 10,
+                    fontFamily: 'monospace',
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            ClipRRect(
+              borderRadius: BorderRadius.circular(4),
+              child: LinearProgressIndicator(
+                value: progress.isFailed ? null : progress.fraction,
+                minHeight: 4,
+                backgroundColor: Colors.white.withValues(alpha: 0.08),
+                valueColor: AlwaysStoppedAnimation<Color>(
+                  progress.isFailed
+                      ? Colors.orange.shade700
+                      : HeritageColors.orange,
+                ),
               ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );
   }
+
 
   Widget _buildZoomControls(_SiteData current) {
     return Positioned(
@@ -437,22 +459,22 @@ class _ExploreScreenState extends State<ExploreScreen> {
         children: [
           TileLayer(
             key: ValueKey<bool>(useOfflineTiles),
-            urlTemplate: tileTemplate,
-            subdomains: const ['a', 'b', 'c'],
-            fallbackUrl: _networkTileTemplate,
+            urlTemplate: useOfflineTiles ? tileTemplate : _networkTileTemplate,
+            // No {s} subdomain needed for OSM — subdomains list is empty
+            subdomains: const [],
+            fallbackUrl: _fallbackTileTemplate,
             tileProvider: useOfflineTiles
                 ? FileTileProvider()
                 : NetworkTileProvider(
-
                     headers: const {
-                      'User-Agent': 'HeritageLK/1.0 (Flutter; Android)',
-                      'Cache-Control': 'max-age=86400, stale-while-revalidate=3600',
+                      'User-Agent': 'HeritageLK/1.0 (flutter_map; +https://github.com/fleaflet/flutter_map)',
+                      'Accept': 'image/png,image/*;q=0.8',
                     },
                   ),
             userAgentPackageName: 'com.heritage_lk.app',
-            panBuffer: 2,
+            panBuffer: 1,
             keepBuffer: 2,
-            maxNativeZoom: 19,
+            maxNativeZoom: 18,
             errorTileCallback: (tile, error, stackTrace) {
               debugPrint('Tile error at ${tile.coordinates}: $error');
             },

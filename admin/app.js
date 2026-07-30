@@ -458,19 +458,36 @@ async function saveStatusChanges() {
   const newStatus = document.getElementById('updateStatusSelect').value;
   const newNotes = document.getElementById('updateNotesInput').value.trim();
 
-  // Optimistic UI update
+  // Optimistic UI update — reflect in local data immediately
   const reportIndex = currentReports.findIndex(r => r.id === selectedReportId);
   if (reportIndex !== -1) {
     currentReports[reportIndex].status = newStatus;
     currentReports[reportIndex].notes = newNotes;
   }
 
+  // Update the modal badge in real-time
+  const badge = document.getElementById('modalStatusBadge');
+  if (badge) {
+    badge.className = `badge badge-${newStatus}`;
+    badge.textContent = formatStatus(newStatus);
+  }
+
   if (supabaseClient) {
     try {
-      await supabaseClient
+      // Try updating both status and notes
+      const { error } = await supabaseClient
         .from('damage_reports')
         .update({ status: newStatus, notes: newNotes })
         .eq('id', selectedReportId);
+
+      if (error) {
+        // If notes column doesn't exist, retry with just status
+        console.warn('Full update failed, retrying with status only:', error.message);
+        await supabaseClient
+          .from('damage_reports')
+          .update({ status: newStatus })
+          .eq('id', selectedReportId);
+      }
     } catch (e) {
       console.warn('Supabase status update failed:', e);
     }
@@ -480,6 +497,7 @@ async function saveStatusChanges() {
   document.getElementById('detailModal').classList.add('hidden');
   applyFilters();
 }
+
 
 async function deleteReport() {
   if (!selectedReportId) return;

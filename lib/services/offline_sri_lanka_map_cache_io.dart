@@ -29,25 +29,29 @@ class SriLankaOfflineMapCache {
 
   static final SriLankaOfflineMapCache instance = SriLankaOfflineMapCache._();
 
-  static const _markerFileName = 'sri_lanka_tiles_ready_v2.marker';
+  // v3 marker = wider bounding box — forces re-download if user had v2 tiles.
+  static const _markerFileName = 'sri_lanka_tiles_ready_v3.marker';
   static const _minZoom = 6;
-  // Z6–Z13 covers Sri Lanka at interactive zoom depth.
-  // Approx tile counts per level for SL bounding box:
-  //   Z6 ~15, Z7 ~60, Z8 ~240, Z9 ~960, Z10 ~3.8k,
-  //   Z11 ~15k, Z12 ~60k, Z13 ~240k   → total ≈ 320k tiles ≈ ~95 MB
-  static const _maxZoom = 13;
 
-  static const double _north = 10.05;
-  static const double _south = 5.82;
-  static const double _west  = 79.45;
-  static const double _east  = 82.15;
+  // Z6–Z11: gives good interactive coverage without exploding storage.
+  // The wider bounding box below compensates for not having Z12/Z13 edges.
+  static const _maxZoom = 11;
+
+  // Expanded bounding box: SL proper + ~2° padding on every side.
+  // Prevents blank tiles when map is panned to coasts / borders.
+  static const double _north = 11.5; // was 10.05
+  static const double _south = 4.5;  // was  5.82
+  static const double _west  = 77.8; // was 79.45
+  static const double _east  = 83.8; // was 82.15
+
+  // Keep 4 OSM requests in-flight at a time (OSM ToS: reasonable use).
+  static const _concurrency = 4;
 
   Future<Directory?>? _rootDirectoryFuture;
   bool _warmupStarted = false;
 
-  // Stream controller so the UI can subscribe to download progress.
-  final _progressController =
-      StreamController<OfflineTileProgress>.broadcast();
+  // Broadcast so explore + heatmap screens can both subscribe.
+  final _progressController = StreamController<OfflineTileProgress>.broadcast();
 
   /// Live progress updates during tile download.
   Stream<OfflineTileProgress> get progressStream => _progressController.stream;
@@ -63,7 +67,7 @@ class SriLankaOfflineMapCache {
     return p.join(directory.path, 'offline_sri_lanka', '{z}', '{x}', '{y}.png');
   }
 
-  /// Returns true if tiles are fully downloaded and ready to serve offline.
+  /// Returns true when all tiles are on disk and ready to serve offline.
   Future<bool> isTilesReady() async {
     if (kIsWeb) return false;
     final directory = await ensureRootDirectory();
@@ -72,7 +76,7 @@ class SriLankaOfflineMapCache {
     return marker.exists();
   }
 
-  /// Pre-computes total tile count for SL bounding box across all zoom levels.
+  /// Total tile count across the expanded bounding box and all zoom levels.
   int countTotalTiles() {
     var total = 0;
     for (var z = _minZoom; z <= _maxZoom; z++) {
@@ -83,9 +87,10 @@ class SriLankaOfflineMapCache {
     return total;
   }
 
-  /// Downloads all Sri Lanka tiles.
-  /// Emits [OfflineTileProgress] events on [progressStream].
-  /// Safe to call multiple times — skips tiles already on disk.
+  /// Downloads all tiles for the expanded Sri Lanka bounding box.
+  /// Emits [OfflineTileProgress] on [progressStream] for every tile that
+  /// completes (including already-cached ones) so the UI always sees smooth
+  /// progress.  Safe to call multiple times — skips files already on disk.
   Future<void> warmSriLankaTiles() async {
     if (kIsWeb || _warmupStarted) return;
     _warmupStarted = true;
@@ -95,52 +100,71 @@ class SriLankaOfflineMapCache {
 
     final marker = File(p.join(directory.path, _markerFileName));
     if (await marker.exists()) {
-      // Already complete — report immediately.
       final total = countTotalTiles();
-      _progressController.add(OfflineTileProgress(
-          downloaded: total, total: total, isComplete: true));
+      if (!_progressController.isClosed) {
+        _progressController.add(
+            OfflineTileProgress(downloaded: total, total: total, isComplete: true));
+      }
       return;
     }
 
     final total = countTotalTiles();
     var downloaded = 0;
 
-    _progressController.add(OfflineTileProgress(downloaded: 0, total: total));
+    // Emit 0/total immediately so the banner appears before any tile finishes.
+    if (!_progressController.isClosed) {
+      _progressController.add(OfflineTileProgress(downloaded: 0, total: total));
+    }
+
+    // Build ordered tile list (low zoom first = fastest first paint).
+    final allTiles = <(int, int, int)>[];
+    for (var z = _minZoom; z <= _maxZoom; z++) {
+      final xRange = _tileRangeX(_west, _east, z);
+      final yRange = _tileRangeY(_north, _south, z);
+      for (var x = xRange.start; x <= xRange.end; x++) {
+        for (var y = yRange.start; y <= yRange.end; y++) {
+          allTiles.add((z, x, y));
+        }
+      }
+    }
 
     final client = http.Client();
     try {
-      for (var z = _minZoom; z <= _maxZoom; z++) {
-        final xRange = _tileRangeX(_west, _east, z);
-        final yRange = _tileRangeY(_north, _south, z);
+      // Sliding-window concurrency: _concurrency futures always in-flight.
+      // Progress fires after EVERY single tile (not per batch) → smooth bar.
+      final iter = allTiles.iterator;
 
-        // Smaller batch at high zoom to avoid exhausting memory/connections.
-        final batchSize = z <= 9 ? 64 : (z <= 11 ? 32 : 16);
-        final batch = <Future<bool>>[];
+      // Wrap each download so we can identify which future finished.
+      Future<({Future<bool> self, bool result})> _wrap(int z, int x, int y) {
+        late Future<bool> f;
+        f = _downloadTile(client, directory, z, x, y)
+            .then((r) => (self: f, result: r));
+        // ignore: return_of_invalid_type
+        return f as Future<({Future<bool> self, bool result})>;
+      }
 
-        for (var x = xRange.start; x <= xRange.end; x++) {
-          for (var y = yRange.start; y <= yRange.end; y++) {
-            batch.add(_downloadTile(client, directory, z, x, y));
-            if (batch.length >= batchSize) {
-              final results = await Future.wait(batch);
-              downloaded += results.where((ok) => ok).length +
-                  results.where((ok) => !ok).length; // count skipped too
-              batch.clear();
-              if (!_progressController.isClosed) {
-                _progressController.add(
-                    OfflineTileProgress(downloaded: downloaded, total: total));
-              }
-            }
-          }
+      final active = <Future<({Future<bool> self, bool result})>>[];
+
+      void enqueue() {
+        while (active.length < _concurrency && iter.moveNext()) {
+          final (z, x, y) = iter.current;
+          active.add(_wrap(z, x, y));
+        }
+      }
+
+      enqueue();
+
+      while (active.isNotEmpty) {
+        final finished = await Future.any(active);
+        active.removeWhere((f) => identical(f, finished.self as dynamic));
+        downloaded++;
+
+        if (!_progressController.isClosed) {
+          _progressController.add(
+              OfflineTileProgress(downloaded: downloaded, total: total));
         }
 
-        if (batch.isNotEmpty) {
-          final results = await Future.wait(batch);
-          downloaded += results.length;
-          if (!_progressController.isClosed) {
-            _progressController.add(
-                OfflineTileProgress(downloaded: downloaded, total: total));
-          }
-        }
+        enqueue();
       }
 
       await marker.writeAsString('ready');
@@ -154,8 +178,7 @@ class SriLankaOfflineMapCache {
         _progressController.add(OfflineTileProgress(
             downloaded: downloaded, total: total, isFailed: true));
       }
-      // Reset so the next app launch can retry.
-      _warmupStarted = false;
+      _warmupStarted = false; // allow retry on next app launch
     } finally {
       client.close();
     }
@@ -165,35 +188,30 @@ class SriLankaOfflineMapCache {
     final supportDir = await getApplicationSupportDirectory();
     final root = Directory(p.join(supportDir.path, 'offline_maps'));
     if (!await root.exists()) await root.create(recursive: true);
-    // Also ensure the tile subdirectory exists.
-    final tiles =
-        Directory(p.join(root.path, 'offline_sri_lanka'));
+    final tiles = Directory(p.join(root.path, 'offline_sri_lanka'));
     if (!await tiles.exists()) await tiles.create(recursive: true);
     return root;
   }
 
-  static const List<String> _subdomains = ['a', 'b', 'c'];
-
-  /// Downloads a single tile.
-  /// Returns true when the tile is available on disk (either freshly
-  /// downloaded or already existed).  Returns false only on unrecoverable error.
+  /// Downloads a single tile from OSM.
+  /// Returns true when the tile is on disk (freshly downloaded or pre-cached).
   Future<bool> _downloadTile(
       http.Client client, Directory root, int z, int x, int y) async {
     final filePath =
         p.join(root.path, 'offline_sri_lanka', '$z', '$x', '$y.png');
     final file = File(filePath);
-    if (await file.exists()) return true; // already cached
+    if (await file.exists()) return true; // already cached — count as done
 
     await file.parent.create(recursive: true);
-    final sub = _subdomains[(x + y) % _subdomains.length];
-    final url =
-        Uri.parse('https://$sub.basemaps.cartocdn.com/dark_all/$z/$x/$y.png');
+    final url = Uri.parse('https://tile.openstreetmap.org/$z/$x/$y.png');
 
     for (var attempt = 0; attempt < 3; attempt++) {
       try {
         final response = await client
-            .get(url,
-                headers: {'User-Agent': 'HeritageLK/1.0 (Flutter; Android)'})
+            .get(url, headers: {
+              'User-Agent':
+                  'HeritageLK/1.0 (flutter_map; +https://github.com/fleaflet/flutter_map)',
+            })
             .timeout(const Duration(seconds: 15));
         if (response.statusCode == 200 && response.bodyBytes.isNotEmpty) {
           await file.writeAsBytes(response.bodyBytes, flush: true);
@@ -201,7 +219,7 @@ class SriLankaOfflineMapCache {
         }
       } catch (_) {
         if (attempt < 2) {
-          await Future.delayed(Duration(milliseconds: 400 * (attempt + 1)));
+          await Future.delayed(Duration(milliseconds: 500 * (attempt + 1)));
         }
       }
     }
@@ -227,8 +245,6 @@ class SriLankaOfflineMapCache {
   int _latToTileY(double lat, int zoom) {
     final latRad = lat * pi / 180.0;
     final n = pow(2, zoom).toDouble();
-    final value =
-        (1 - log(tan(latRad) + (1 / cos(latRad))) / pi) / 2 * n;
-    return value.floor();
+    return ((1 - log(tan(latRad) + (1 / cos(latRad))) / pi) / 2 * n).floor();
   }
 }

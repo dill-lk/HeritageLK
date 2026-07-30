@@ -27,7 +27,8 @@ class HeritageHeatmapScreen extends StatefulWidget {
 }
 
 class _HeritageHeatmapScreenState extends State<HeritageHeatmapScreen> {
-  static const _networkTileTemplate = 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png';
+  static const _networkTileTemplate = 'https://tile.openstreetmap.org/{z}/{x}/{y}.png';
+  static const _fallbackTileTemplate = 'https://a.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png';
   final MapController _mapController = MapController();
   String _selectedFilter = 'All';
   String? _offlineTileTemplate;
@@ -123,18 +124,22 @@ class _HeritageHeatmapScreenState extends State<HeritageHeatmapScreen> {
               children: [
                 TileLayer(
                   key: ValueKey<bool>(useOfflineTiles),
-                  urlTemplate: tileTemplate,
-                  subdomains: const ['a', 'b', 'c', 'd'],
-                  fallbackUrl: useOfflineTiles ? _networkTileTemplate : null,
+                  urlTemplate: useOfflineTiles ? tileTemplate : _networkTileTemplate,
+                  subdomains: const [],
+                  fallbackUrl: _fallbackTileTemplate,
                   tileProvider: useOfflineTiles
                       ? FileTileProvider()
                       : NetworkTileProvider(
                           headers: const {
-                            'User-Agent': 'HeritageLK/1.0 (Flutter; Android)',
-                            'Cache-Control': 'max-age=86400, stale-while-revalidate=3600',
+                            'User-Agent': 'HeritageLK/1.0 (flutter_map; +https://github.com/fleaflet/flutter_map)',
+                            'Accept': 'image/png,image/*;q=0.8',
                           },
                         ),
                   userAgentPackageName: 'com.heritage_lk.app',
+                  maxNativeZoom: 18,
+                  errorTileCallback: (tile, error, stackTrace) {
+                    debugPrint('Heatmap tile error at ${tile.coordinates}: $error');
+                  },
                 ),
                 // Glowing Heatmap Circles
                 CircleLayer(
