@@ -170,10 +170,6 @@ class _ReportDamageScreenState extends State<ReportDamageScreen> {
     setState(() => _submitting = true);
     try {
       if (AppConfig.hasSupabase) {
-        if (Supabase.instance.client.auth.currentUser == null) {
-          if (mounted) Navigator.of(context).pushReplacementNamed('/login');
-          return;
-        }
         final uploadedPhotos = await _uploadPhotos();
         await DamageReportRepository(Supabase.instance.client).submit(
           damageType: _type,

@@ -37,6 +37,7 @@ class _ExploreScreenState extends State<ExploreScreen> {
   String? _weatherWind;
   final String _filterCategory = 'All';
   String? _offlineTileTemplate;
+  bool _tilesReady = false; // true only when all tiles are confirmed on disk
 
   static const _allSites = [
     // ── UNESCO & Major Heritage ─────────────────────────────────────────────
@@ -141,7 +142,17 @@ class _ExploreScreenState extends State<ExploreScreen> {
     if (mounted) {
       setState(() => _offlineTileTemplate = template);
     }
-    unawaited(SriLankaOfflineMapCache.instance.warmSriLankaTiles());
+    // Fast path: tiles already downloaded from a previous session
+    final alreadyReady = await SriLankaOfflineMapCache.instance.isTilesReady();
+    if (alreadyReady && mounted) {
+      setState(() => _tilesReady = true);
+      return; // no need to re-download
+    }
+    // First time: download tiles in background, then mark ready
+    await SriLankaOfflineMapCache.instance.warmSriLankaTiles();
+    if (mounted) {
+      setState(() => _tilesReady = true);
+    }
   }
 
   Future<void> _select(_SiteData site) async {
@@ -155,18 +166,6 @@ class _ExploreScreenState extends State<ExploreScreen> {
     _mapController.move(LatLng(site.lat, site.lon), 11.0);
     _loadWeather(site.lat, site.lon);
     _loadAiDetails(site.name);
-  }
-
-  void _openAudioGuide(_SiteData site) {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (ctx) => AudioGuideSheet(
-        siteId: site.name.toLowerCase().replaceAll(' ', '_'),
-        siteName: site.name,
-      ),
-    );
   }
 
   Future<void> _loadWeather(double lat, double lon) async {
@@ -275,8 +274,10 @@ class _ExploreScreenState extends State<ExploreScreen> {
   }
 
   Widget _mapBackground(List<_SiteData> filtered, _SiteData current) {
+    // Only use file tiles once warmup is confirmed complete — avoids the slow
+    // double-lookup (FileTileProvider miss → fallbackUrl network fetch).
     final localTileTemplate = _offlineTileTemplate;
-    final useOfflineTiles = localTileTemplate != null && !kIsWeb;
+    final useOfflineTiles = _tilesReady && localTileTemplate != null && !kIsWeb;
     final tileTemplate = useOfflineTiles ? localTileTemplate : _networkTileTemplate;
     return Positioned.fill(
       child: FlutterMap(
@@ -294,9 +295,11 @@ class _ExploreScreenState extends State<ExploreScreen> {
         children: [
           TileLayer(
             urlTemplate: tileTemplate,
+            subdomains: const ['a', 'b', 'c', 'd'],
             fallbackUrl: useOfflineTiles ? _networkTileTemplate : null,
             tileProvider: useOfflineTiles ? FileTileProvider() : NetworkTileProvider(),
             userAgentPackageName: 'com.heritage_lk.app',
+            panBuffer: 1,
           ),
           MarkerLayer(
             markers: filtered.map((site) {
@@ -390,10 +393,8 @@ class _ExploreScreenState extends State<ExploreScreen> {
           if (_detailsExpanded) ...[
             const SizedBox(height: 16),
             Row(children: [
-              Expanded(child: _actionButton('Listen Audio', HeritageColors.orange, Icons.headphones, () => _openAudioGuide(site))),
-              const SizedBox(width: 8),
-              Expanded(child: _actionButton('Scan Site', const Color(0xFF3B82F6), Icons.camera_alt, () => Navigator.of(context).pushNamed('/scanner'))),
-              const SizedBox(width: 8),
+              Expanded(child: _actionButton('Scan Site', HeritageColors.orange, Icons.camera_alt, () => Navigator.of(context).pushNamed('/scanner'))),
+              const SizedBox(width: 10),
               Expanded(child: _actionButton('Ride There', const Color(0xFF22C55E), Icons.local_taxi_rounded, () => _rideToSite(site))),
             ]),
             const SizedBox(height: 20),
@@ -472,18 +473,19 @@ class _RidePickerSheet extends StatelessWidget {
   }
 
   void _openPickMe(BuildContext ctx) {
-    // PickMe deep link: opens app directly to booking with destination lat/lon
+    // PickMe: try app deep link first, fall back to PickMe website (not Google Maps)
     final lat = site.lat.toStringAsFixed(6);
     final lon = site.lon.toStringAsFixed(6);
     final name = Uri.encodeComponent(site.name);
-    final mapsFallback = Uri.parse('https://www.google.com/maps/dir/?api=1&destination=$lat,$lon&travelmode=driving');
+    // PickMe website fallback — always opens PickMe, not Google Maps
+    final pickMeWeb = Uri.parse('https://pickme.lk/ride?destination_lat=$lat&destination_lng=$lon&destination_name=$name');
     _launchPreferred(
       ctx,
       [
         Uri.parse('pickme://ride?destination_lat=$lat&destination_lng=$lon&destination_name=$name'),
-        Uri.parse('intent://ride?destination_lat=$lat&destination_lng=$lon&destination_name=$name#Intent;scheme=pickme;end;'),
+        Uri.parse('intent://ride?destination_lat=$lat&destination_lng=$lon&destination_name=$name#Intent;scheme=pickme;package=com.pickme.passenger;end;'),
       ],
-      mapsFallback,
+      pickMeWeb,
     );
   }
 
@@ -491,14 +493,14 @@ class _RidePickerSheet extends StatelessWidget {
     final lat = site.lat.toStringAsFixed(6);
     final lon = site.lon.toStringAsFixed(6);
     final name = Uri.encodeComponent(site.name);
-    final mapsFallback = Uri.parse('https://www.google.com/maps/dir/?api=1&destination=$lat,$lon&travelmode=driving');
+    // Uber web fallback — always opens Uber, not Google Maps
+    final uberWeb = Uri.parse('https://m.uber.com/ul/?action=setPickup&pickup=my_location&dropoff%5Blatitude%5D=$lat&dropoff%5Blongitude%5D=$lon&dropoff%5Bnickname%5D=$name');
     _launchPreferred(
       ctx,
       [
         Uri.parse('uber://?action=setPickup&pickup=my_location&dropoff[latitude]=$lat&dropoff[longitude]=$lon&dropoff[nickname]=$name'),
-        Uri.parse('https://m.uber.com/ul/?action=setPickup&pickup=my_location&dropoff%5Blatitude%5D=$lat&dropoff%5Blongitude%5D=$lon&dropoff%5Bnickname%5D=$name'),
       ],
-      mapsFallback,
+      uberWeb,
     );
   }
 

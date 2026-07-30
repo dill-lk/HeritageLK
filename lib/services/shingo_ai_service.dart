@@ -1,5 +1,6 @@
 import 'dart:developer';
 import 'dart:io';
+import 'dart:typed_data';
 import 'package:google_generative_ai/google_generative_ai.dart';
 import '../config/app_config.dart';
 import 'wikipedia_service.dart';
@@ -30,6 +31,7 @@ KNOWLEDGE DOMAINS:
 - Know the HeritageLK app (quests, damage reports, XP system, digital archive)
 - If genuinely unsure about something, say so honestly but helpfully
 - You CAN access Wikipedia and our heritage database — use that knowledge naturally
+- When given an image, identify the monument, architecture, artifact, sculpture, or cultural aspect in detail and share fascinating historical facts!
 
 FORMATTING RULES:
 - Use markdown: **bold** for key names/prices/times, • bullet points for lists, emojis at section headings
@@ -48,17 +50,20 @@ FORMATTING RULES:
   // ─── Main chat entry point ──────────────────────────────────────────────────
   Future<String> chat(
     List<Map<String, String>> history,
-    String userMessage,
-  ) async {
-    if (_key.isEmpty) return _richFallback(userMessage);
+    String userMessage, {
+    Uint8List? imageBytes,
+    String? imageMimeType,
+  }) async {
+    final effectiveUserMsg = userMessage.trim().isEmpty && imageBytes != null
+        ? 'Please examine this image and tell me about the Sri Lankan heritage, landmark, or cultural element shown here!'
+        : userMessage;
+
+    if (_key.isEmpty) return _richFallback(effectiveUserMsg, hasImage: imageBytes != null);
 
     // 1. Fetch RAG context in parallel
-    final ragFuture = _buildContext(userMessage);
+    final ragFuture = _buildContext(effectiveUserMsg);
 
     // 2. Build CLEAN Gemini chat history
-    //    - Strip any leading assistant messages (Gemini requires user to go first)
-    //    - Enforce strict user→model→user→model alternation
-    //    - Inject system prompt into the very first user message
     final geminiHistory = <Content>[];
     final cleanHistory = _cleanHistory(history);
 
@@ -69,7 +74,6 @@ FORMATTING RULES:
       if (content.trim().isEmpty) continue;
 
       if (i == 0 && role == 'user') {
-        // Inject system prompt at the START of the very first user message
         geminiHistory.add(Content.text('$_systemPrompt\n\n$content'));
       } else {
         geminiHistory.add(
@@ -84,22 +88,19 @@ FORMATTING RULES:
     final context = await ragFuture;
 
     // 4. Build enriched final user message
-    // If this is the very first message (no history), inject system prompt here
     String enrichedMessage;
     if (geminiHistory.isEmpty) {
-      // First-ever message — system prompt goes here
       final ragNote = context.isNotEmpty
           ? '\n\n📚 REFERENCE DATA (weave this into your answer naturally):\n$context'
           : '';
-      enrichedMessage = '$_systemPrompt$ragNote\n\nUSER\'S FIRST MESSAGE: $userMessage';
+      enrichedMessage = '$_systemPrompt$ragNote\n\nUSER\'S FIRST MESSAGE: $effectiveUserMsg';
     } else {
-      // Subsequent messages — just add RAG context
       enrichedMessage = context.isNotEmpty
-          ? '📚 REFERENCE (use naturally, don\'t quote verbatim):\n$context\n\nUSER: $userMessage'
-          : userMessage;
+          ? '📚 REFERENCE (use naturally, don\'t quote verbatim):\n$context\n\nUSER: $effectiveUserMsg'
+          : effectiveUserMsg;
     }
 
-    // 5. Try models in order — gemini-2.0-flash first, then fallbacks
+    // 5. Try models in order
     final models = [
       'gemini-2.5-flash',
       'gemini-2.0-flash',
@@ -107,15 +108,22 @@ FORMATTING RULES:
       'gemini-1.5-flash',
     ];
 
+    final userParts = <Part>[];
+    if (imageBytes != null && imageBytes.isNotEmpty) {
+      final mime = imageMimeType ?? 'image/jpeg';
+      userParts.add(DataPart(mime, imageBytes));
+    }
+    userParts.add(TextPart(enrichedMessage));
+
+    final userContent = Content.multi(userParts);
+
     for (final modelName in models) {
-      // Retry up to 2 times on transient network errors (TCP resets, etc.)
       for (int attempt = 0; attempt < 3; attempt++) {
         try {
           log('Shingo: trying $modelName (attempt ${attempt + 1})');
           final model = GenerativeModel(
             model: modelName,
             apiKey: _key,
-            // systemInstruction as backup — some models honour it, some don't
             systemInstruction: Content.system(
               'You are Shingo, a passionate Sri Lankan heritage guide. Be warm, fun, and knowledgeable. NEVER mention AI, Gemini, or any tech.',
             ),
@@ -133,10 +141,9 @@ FORMATTING RULES:
             ],
           );
 
-          // Use multi-turn chat with proper history
           final chatSession = model.startChat(history: geminiHistory);
           final response = await chatSession
-              .sendMessage(Content.text(enrichedMessage))
+              .sendMessage(userContent)
               .timeout(const Duration(seconds: 30));
 
           final reply = response.text;
@@ -147,15 +154,13 @@ FORMATTING RULES:
           }
 
           log('Shingo: $modelName returned empty response');
-          break; // empty response — try next model, not retry
+          break;
         } on SocketException catch (e) {
           log('Shingo: network error on $modelName attempt ${attempt + 1}: $e');
           if (attempt < 2) {
-            // Back off before retrying: 1s, 2s
             await Future.delayed(Duration(seconds: attempt + 1));
             continue;
           }
-          // Exhausted retries — try next model
         } on WebSocketException catch (e) {
           log('Shingo: websocket error on $modelName attempt ${attempt + 1}: $e');
           if (attempt < 2) {
@@ -164,13 +169,13 @@ FORMATTING RULES:
           }
         } catch (e) {
           log('Shingo: $modelName failed — $e');
-          break; // Non-network error — try next model immediately
+          break;
         }
       }
     }
 
     log('Shingo: all models failed, using rich fallback');
-    return _richFallback(userMessage);
+    return _richFallback(effectiveUserMsg, hasImage: imageBytes != null);
   }
 
   // ─── History cleaner ────────────────────────────────────────────────────────
@@ -220,7 +225,24 @@ FORMATTING RULES:
   }
 
   // ─── Rich offline fallback ──────────────────────────────────────────────────
-  String _richFallback(String query) {
+  String _richFallback(String query, {bool hasImage = false}) {
+    if (hasImage) {
+      return '''📸 **I've received your image!**
+
+Ayubowan! I can see the photo you uploaded. 
+
+**Quick Sri Lankan Heritage Visual Guide:**
+• 🏰 **Ancient Rock / Fortress**: If this is a massive monolith with ruins or stairs, it looks like **Sigiriya** or **Pidurangala Rock**!
+• 🛕 **Stupa / Dagoba**: If it's a giant whitewashed or brick bell dome, you're looking at **Ruwanwelisaya**, **Jetavanaramaya**, or **Rankoth Vehera**.
+• 🗿 **Granite Buddha Sculpture**: If it's an intricate stone carving, it resembles the famous figures at **Gal Vihara (Polonnaruwa)** or **Aukana Buddha**.
+• 🏛️ **Colonial Fort / Rampart**: High stone walls overlooking the ocean? That's **Galle Dutch Fort** or **Jaffna Fort**.
+• 🍛 **Sri Lankan Dish**: Looks delicious! String hoppers, rice & curry, or kottu are culinary national treasures!
+
+> 💡 **Tip:** Add a Gemini API Key in app Settings to unlock instant real-time AI visual identification!
+
+What specific questions do you have about this site or photo? I'd love to help! 🙏''';
+    }
+
     final q = query.toLowerCase();
 
     if (q.contains('sigiriya') || q.contains('lion rock')) {

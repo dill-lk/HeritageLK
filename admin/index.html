@@ -1,0 +1,411 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>HeritageLK Admin — Damage Reports Management Portal</title>
+  
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:wght@600;700;800&display=swap" rel="stylesheet">
+  
+  <!-- FontAwesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  
+  <!-- Stylesheet -->
+  <link rel="stylesheet" href="styles.css">
+  
+  <!-- Supabase JS Client & Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+  <div class="app-container">
+    
+    <!-- TOP NAVIGATION BAR -->
+    <header class="navbar">
+      <div class="nav-brand">
+        <div class="brand-icon">
+          <i class="fa-solid fa-shield-halved"></i>
+        </div>
+        <div class="brand-text">
+          <h1>HeritageLK <span>Admin</span></h1>
+          <p>Sri Lanka Heritage Damage Reports Management Portal</p>
+        </div>
+      </div>
+      
+      <div class="nav-actions">
+        <div class="connection-status" id="connectionBadge" title="Supabase Database Status">
+          <span class="status-dot"></span>
+          <span id="connectionText">Checking Supabase...</span>
+        </div>
+        
+        <button class="btn btn-secondary" id="btnToggleCharts" title="Toggle Analytics Charts">
+          <i class="fa-solid fa-chart-pie"></i> <span class="hide-mobile">Analytics</span>
+        </button>
+        
+        <button class="btn btn-secondary" id="btnConfig" title="Configure Supabase API Keys">
+          <i class="fa-solid fa-gear"></i> <span class="hide-mobile">Settings</span>
+        </button>
+
+        <button class="btn btn-secondary" id="btnRefresh" title="Refresh Reports Data">
+          <i class="fa-solid fa-rotate"></i>
+        </button>
+
+        <button class="btn btn-primary" id="btnNewReport">
+          <i class="fa-solid fa-plus"></i> <span>Log Damage Report</span>
+        </button>
+      </div>
+    </header>
+
+    <!-- MAIN CONTENT AREA -->
+    <main class="main-content">
+      
+      <!-- ANALYTICS CARDS -->
+      <section class="stats-grid">
+        <div class="stat-card" data-filter="all">
+          <div class="stat-icon icon-total">
+            <i class="fa-solid fa-folder-open"></i>
+          </div>
+          <div class="stat-info">
+            <span class="stat-label">Total Reports</span>
+            <h2 class="stat-value" id="statTotal">0</h2>
+            <span class="stat-sub">Across Sri Lanka</span>
+          </div>
+        </div>
+
+        <div class="stat-card" data-filter="pending">
+          <div class="stat-icon icon-pending">
+            <i class="fa-solid fa-clock"></i>
+          </div>
+          <div class="stat-info">
+            <span class="stat-label">Pending Action</span>
+            <h2 class="stat-value" id="statPending">0</h2>
+            <span class="stat-sub text-warning">Requires Inspection</span>
+          </div>
+        </div>
+
+        <div class="stat-card" data-filter="in_review">
+          <div class="stat-icon icon-review">
+            <i class="fa-solid fa-magnifying-glass-location"></i>
+          </div>
+          <div class="stat-info">
+            <span class="stat-label">Under Review</span>
+            <h2 class="stat-value" id="statReview">0</h2>
+            <span class="stat-sub text-info">Investigation Active</span>
+          </div>
+        </div>
+
+        <div class="stat-card" data-filter="resolved">
+          <div class="stat-icon icon-resolved">
+            <i class="fa-solid fa-circle-check"></i>
+          </div>
+          <div class="stat-info">
+            <span class="stat-label">Resolved & Restored</span>
+            <h2 class="stat-value" id="statResolved">0</h2>
+            <span class="stat-sub text-success">Conservation Complete</span>
+          </div>
+        </div>
+      </section>
+
+      <!-- ANALYTICS CHARTS DRAWER (Collapsible) -->
+      <section class="charts-section hidden" id="chartsDrawer">
+        <div class="charts-grid">
+          <div class="chart-card">
+            <h3><i class="fa-solid fa-chart-donut"></i> Report Status Distribution</h3>
+            <div class="chart-container">
+              <canvas id="statusChart"></canvas>
+            </div>
+          </div>
+          <div class="chart-card">
+            <h3><i class="fa-solid fa-chart-column"></i> Damage Types Breakdown</h3>
+            <div class="chart-container">
+              <canvas id="typeChart"></canvas>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- CONTROLS & FILTER BAR -->
+      <section class="toolbar">
+        <div class="search-box">
+          <i class="fa-solid fa-magnifying-glass"></i>
+          <input type="text" id="searchInput" placeholder="Search site name, damage type, details, ID...">
+          <button id="btnClearSearch" class="btn-clear hidden">&times;</button>
+        </div>
+
+        <div class="filter-group">
+          <div class="filter-chips">
+            <button class="chip active" data-status="all">All</button>
+            <button class="chip" data-status="pending">Pending</button>
+            <button class="chip" data-status="in_review">In Review</button>
+            <button class="chip" data-status="resolved">Resolved</button>
+            <button class="chip" data-status="rejected">Rejected</button>
+          </div>
+
+          <div class="select-wrapper">
+            <select id="severitySelect">
+              <option value="all">All Types</option>
+              <option value="Vandalism">Vandalism</option>
+              <option value="Structural Crack">Structural Crack</option>
+              <option value="Weathering & Erosion">Weathering / Erosion</option>
+              <option value="Vegetation Overgrowth">Vegetation Overgrowth</option>
+              <option value="Water Leakage">Water Leakage</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="toolbar-actions">
+          <div class="view-toggle">
+            <button class="toggle-btn active" id="btnViewTable" title="Table View">
+              <i class="fa-solid fa-table-list"></i>
+            </button>
+            <button class="toggle-btn" id="btnViewGrid" title="Card Grid View">
+              <i class="fa-solid fa-border-all"></i>
+            </button>
+          </div>
+
+          <div class="dropdown">
+            <button class="btn btn-outline dropdown-toggle">
+              <i class="fa-solid fa-download"></i> <span>Export</span>
+            </button>
+            <div class="dropdown-menu">
+              <a href="#" id="btnExportCSV"><i class="fa-solid fa-file-csv"></i> Export CSV</a>
+              <a href="#" id="btnExportJSON"><i class="fa-solid fa-file-code"></i> Export JSON</a>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- REPORTS DATA CONTAINER -->
+      <section class="reports-container">
+        <!-- Table View -->
+        <div class="table-responsive" id="tableView">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Site Location</th>
+                <th>Damage Type</th>
+                <th>Details Preview</th>
+                <th>Date Reported</th>
+                <th>Status</th>
+                <th>Photos</th>
+                <th class="text-right">Actions</th>
+              </tr>
+            </thead>
+            <tbody id="reportsTableBody">
+              <!-- Rendered dynamically -->
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Grid View -->
+        <div class="cards-grid hidden" id="gridView">
+          <!-- Rendered dynamically -->
+        </div>
+
+        <!-- Empty / Loading State -->
+        <div class="state-container hidden" id="stateContainer">
+          <div class="state-icon" id="stateIcon"><i class="fa-solid fa-spinner fa-spin"></i></div>
+          <h3 id="stateTitle">Loading Damage Reports...</h3>
+          <p id="stateDesc">Connecting to Supabase database.</p>
+        </div>
+      </section>
+
+    </main>
+
+    <!-- FOOTER -->
+    <footer class="footer">
+      <p>&copy; 2026 HeritageLK Conservation Authority &bull; Central Cultural Fund Sri Lanka</p>
+      <p class="footer-note">Independent Supabase Realtime Admin Client &bull; v2.4</p>
+    </footer>
+
+  </div>
+
+  <!-- MODAL: REPORT DETAIL & EDIT STATUS -->
+  <div class="modal-backdrop hidden" id="detailModal">
+    <div class="modal-card">
+      <div class="modal-header">
+        <div>
+          <span class="badge" id="modalStatusBadge">PENDING</span>
+          <h2 id="modalSiteTitle">Sigiriya Lion Staircase</h2>
+        </div>
+        <button class="modal-close" id="btnCloseDetail">&times;</button>
+      </div>
+
+      <div class="modal-body">
+        <div class="detail-section grid-2">
+          <div>
+            <label class="field-label">Damage Type</label>
+            <div class="field-value" id="modalDamageType">Structural Crack</div>
+          </div>
+          <div>
+            <label class="field-label">Report ID & Date</label>
+            <div class="field-value" id="modalReportMeta">#DR-109 &bull; Jul 24, 2026</div>
+          </div>
+        </div>
+
+        <div class="detail-section">
+          <label class="field-label">Site Location & Coordinates</label>
+          <div class="location-box">
+            <span id="modalLocationText">Sigiriya Rock Fortress, Central Province</span>
+            <a id="modalMapLink" href="#" target="_blank" class="map-link">
+              <i class="fa-solid fa-map-location-dot"></i> View Map
+            </a>
+          </div>
+        </div>
+
+        <div class="detail-section">
+          <label class="field-label">Reported Description & Observations</label>
+          <div class="description-box" id="modalDetailsText">
+            Deep vertical crack observed near the ancient lion paw brick foundation.
+          </div>
+        </div>
+
+        <div class="detail-section">
+          <label class="field-label">Photos & Evidence</label>
+          <div class="photo-gallery" id="modalPhotosGallery">
+            <!-- Photos appended here -->
+          </div>
+        </div>
+
+        <hr class="divider">
+
+        <!-- STATUS MANAGEMENT FORM -->
+        <div class="detail-section">
+          <label class="field-label">Manage & Update Status</label>
+          <div class="status-update-box">
+            <div class="form-group">
+              <label for="updateStatusSelect">New Status</label>
+              <select id="updateStatusSelect" class="form-control">
+                <option value="pending">⏳ Pending — Awaiting Initial Assessment</option>
+                <option value="in_review">🔍 In Review — Investigation Team Assigned</option>
+                <option value="resolved">✅ Resolved — Restoration Completed</option>
+                <option value="rejected">❌ Rejected — Invalid or Duplicate Report</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label for="updateNotesInput">Action / Resolution Notes</label>
+              <textarea id="updateNotesInput" class="form-control" rows="3" placeholder="Add inspector notes, dispatch details, or restoration summary..."></textarea>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn btn-danger" id="btnDeleteReport">
+          <i class="fa-solid fa-trash"></i> Delete
+        </button>
+        <div class="right-actions">
+          <button class="btn btn-secondary" id="btnCancelDetail">Cancel</button>
+          <button class="btn btn-primary" id="btnSaveStatus">
+            <i class="fa-solid fa-floppy-disk"></i> Save Changes
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: CREATE NEW REPORT -->
+  <div class="modal-backdrop hidden" id="createModal">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h2><i class="fa-solid fa-plus-circle"></i> File New Damage Report</h2>
+        <button class="modal-close" id="btnCloseCreate">&times;</button>
+      </div>
+
+      <form id="createReportForm" class="modal-body">
+        <div class="form-group">
+          <label for="newLocation">Site Name / Location *</label>
+          <input type="text" id="newLocation" class="form-control" placeholder="e.g. Galle Fort Rampart Wall, Galle" required>
+        </div>
+
+        <div class="form-group grid-2">
+          <div>
+            <label for="newDamageType">Damage Type *</label>
+            <select id="newDamageType" class="form-control" required>
+              <option value="Vandalism">Vandalism / Graffiti</option>
+              <option value="Structural Crack">Structural Crack</option>
+              <option value="Weathering & Erosion">Weathering / Erosion</option>
+              <option value="Vegetation Overgrowth">Vegetation Overgrowth</option>
+              <option value="Water Leakage">Water Leakage / Flooding</option>
+              <option value="Other">Other Damage</option>
+            </select>
+          </div>
+          <div>
+            <label for="newInitialStatus">Initial Status</label>
+            <select id="newInitialStatus" class="form-control">
+              <option value="pending">Pending</option>
+              <option value="in_review">In Review</option>
+              <option value="resolved">Resolved</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="newDetails">Damage Description & Details *</label>
+          <textarea id="newDetails" class="form-control" rows="3" placeholder="Provide detailed observation of the condition, size of damage, urgency..." required></textarea>
+        </div>
+
+        <div class="form-group">
+          <label for="newPhotoUrl">Photo Image URL (Optional)</label>
+          <input type="url" id="newPhotoUrl" class="form-control" placeholder="https://images.unsplash.com/photo-...">
+        </div>
+      </form>
+
+      <div class="modal-footer">
+        <button class="btn btn-secondary" id="btnCancelCreate">Cancel</button>
+        <button class="btn btn-primary" id="btnSubmitCreate">
+          <i class="fa-solid fa-paper-plane"></i> Submit Report
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: SUPABASE CONFIGURATION -->
+  <div class="modal-backdrop hidden" id="configModal">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h2><i class="fa-solid fa-plug"></i> Supabase Connection Settings</h2>
+        <button class="modal-close" id="btnCloseConfig">&times;</button>
+      </div>
+
+      <div class="modal-body">
+        <p class="text-muted">This admin web app connects independently to your Supabase project. Enter your credentials below or use local offline demo mode.</p>
+        
+        <div class="form-group">
+          <label for="cfgSupabaseUrl">Supabase Project URL</label>
+          <input type="text" id="cfgSupabaseUrl" class="form-control" value="https://emeqmaqmmaohkeecyvjq.supabase.co">
+        </div>
+
+        <div class="form-group">
+          <label for="cfgSupabaseKey">Supabase Anon / Service Key</label>
+          <input type="password" id="cfgSupabaseKey" class="form-control" value="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVtZXFtYXFtbWFvaGtlZWN5dmpxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg5ODk3MDUsImV4cCI6MjA5NDU2NTcwNX0.-SmCu_5kd_cDs2NYbzNN33hlxXbyRln4Cd5cgQJ3lGI" placeholder="sb_publishable_... or anon key">
+          <small class="text-muted">Saved securely in browser local storage.</small>
+        </div>
+
+        <div class="info-banner">
+          <i class="fa-solid fa-circle-info"></i>
+          <div>
+            <strong>Offline Demo Mode Active</strong>
+            <p>If your Supabase table is empty or credentials are not yet entered, sample Sri Lanka heritage reports are automatically loaded.</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn btn-secondary" id="btnResetConfig">Use Demo Mode</button>
+        <button class="btn btn-primary" id="btnSaveConfig">
+          <i class="fa-solid fa-check"></i> Connect & Save
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- App Logic -->
+  <script src="app.js"></script>
+</body>
+</html>

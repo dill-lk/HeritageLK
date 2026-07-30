@@ -1,6 +1,12 @@
 abstract class AppConfig {
-  static const supabaseUrl = String.fromEnvironment('SUPABASE_URL');
-  static const supabaseAnonKey = String.fromEnvironment('SUPABASE_ANON_KEY');
+  static const supabaseUrl = String.fromEnvironment(
+    'SUPABASE_URL',
+    defaultValue: 'https://emeqmaqmmaohkeecyvjq.supabase.co',
+  );
+  static const supabaseAnonKey = String.fromEnvironment(
+    'SUPABASE_ANON_KEY',
+    defaultValue: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVtZXFtYXFtbWFvaGtlZWN5dmpxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg5ODk3MDUsImV4cCI6MjA5NDU2NTcwNX0.-SmCu_5kd_cDs2NYbzNN33hlxXbyRln4Cd5cgQJ3lGI',
+  );
   static const apiBaseUrl = String.fromEnvironment('API_BASE_URL', defaultValue: 'http://localhost:3000');
   static const geminiApiKey = String.fromEnvironment('GEMINI_API_KEY');
 

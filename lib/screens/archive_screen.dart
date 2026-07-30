@@ -153,22 +153,82 @@ class _ArchiveScreenState extends State<ArchiveScreen> {
     ])),
   ])));
 
-  Widget _archiveTile(ArchiveRecord item) => InkWell(onTap: () => Navigator.of(context).pushNamed('/archive/${item.id}', arguments: item), borderRadius: BorderRadius.circular(20), child: Container(margin: const EdgeInsets.only(bottom: 16), padding: const EdgeInsets.all(16), decoration: BoxDecoration(color: Colors.white.withValues(alpha:0.05), border: Border.all(color: Colors.white.withValues(alpha:0.05)), borderRadius: BorderRadius.circular(20)), child: Row(children: [
-    ClipRRect(borderRadius: BorderRadius.circular(16), child: SizedBox(width: 88, height: 88, child: _recordImage(item.image, small: true))),
-    const SizedBox(width: 16),
-    Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-    Row(children: [const Icon(Icons.location_on, color: HeritageColors.orange, size: 10), const SizedBox(width: 4), Text(item.location, style: const TextStyle(color: HeritageColors.orange, fontSize: 9, fontWeight: FontWeight.bold, letterSpacing: 1))]),
-      const SizedBox(height: 6),
-      Text(item.title, style: const TextStyle(color: Colors.white, fontFamily: 'Playfair Display', fontSize: 16)),
-      if ((item.subtitle ?? '').isNotEmpty) ...[
-        const SizedBox(height: 4),
-        Text(item.subtitle!, style: const TextStyle(color: Color(0xCCF4A261), fontSize: 10, fontWeight: FontWeight.bold, letterSpacing: 0.8)),
-      ],
-      const SizedBox(height: 6),
-      Text(_clean(item.content), maxLines: 2, overflow: TextOverflow.ellipsis, style: const TextStyle(color: Color(0x80FFFFFF), fontSize: 12, height: 1.4)),
-    ])),
-    Container(width: 32, height: 32, decoration: BoxDecoration(color: Colors.white.withValues(alpha:0.05), border: Border.all(color: Colors.white.withValues(alpha:0.10)), shape: BoxShape.circle), child: const Icon(Icons.chevron_right, color: Color(0x99FFFFFF), size: 16)),
-  ])));
+  Widget _archiveTile(ArchiveRecord item) => InkWell(
+    onTap: () => Navigator.of(context).pushNamed('/archive/${item.id}', arguments: item),
+    borderRadius: BorderRadius.circular(20),
+    child: Container(
+      margin: const EdgeInsets.only(bottom: 16),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.05),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.05)),
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          ClipRRect(
+            borderRadius: BorderRadius.circular(16),
+            child: SizedBox(width: 88, height: 88, child: _recordImage(item.image, small: true)),
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    const Icon(Icons.location_on, color: HeritageColors.orange, size: 10),
+                    const SizedBox(width: 4),
+                    Flexible(
+                      child: Text(
+                        item.location,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(color: HeritageColors.orange, fontSize: 9, fontWeight: FontWeight.bold, letterSpacing: 1),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  item.title,
+                  overflow: TextOverflow.ellipsis,
+                  maxLines: 2,
+                  style: const TextStyle(color: Colors.white, fontFamily: 'Playfair Display', fontSize: 16),
+                ),
+                if ((item.subtitle ?? '').isNotEmpty) ...[
+                  const SizedBox(height: 4),
+                  Text(
+                    item.subtitle!,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(color: Color(0xCCF4A261), fontSize: 10, fontWeight: FontWeight.bold, letterSpacing: 0.8),
+                  ),
+                ],
+                const SizedBox(height: 6),
+                Text(
+                  _clean(item.content),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(color: Color(0x80FFFFFF), fontSize: 12, height: 1.4),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 8),
+          Container(
+            width: 32,
+            height: 32,
+            decoration: BoxDecoration(
+              color: Colors.white.withValues(alpha: 0.05),
+              border: Border.all(color: Colors.white.withValues(alpha: 0.10)),
+              shape: BoxShape.circle,
+            ),
+            child: const Icon(Icons.chevron_right, color: Color(0x99FFFFFF), size: 16),
+          ),
+        ],
+      ),
+    ),
+  );
 
   Widget _recordImage(String? image, {bool small = false}) => image == null || image.isEmpty
       ? Container(color: const Color(0xFF342116), child: Icon(Icons.account_balance, color: HeritageColors.orange, size: small ? 30 : 52))

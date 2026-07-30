@@ -35,6 +35,16 @@ class SriLankaOfflineMapCache {
     return p.join(directory.path, 'offline_sri_lanka', '{z}', '{x}', '{y}.png');
   }
 
+  /// Returns true if tiles are fully downloaded and ready to serve offline.
+  /// Fast path on subsequent launches — no network call needed.
+  Future<bool> isTilesReady() async {
+    if (kIsWeb) return false;
+    final directory = await ensureRootDirectory();
+    if (directory == null) return false;
+    final marker = File(p.join(directory.path, _markerFileName));
+    return marker.exists();
+  }
+
   Future<void> warmSriLankaTiles() async {
     if (kIsWeb || _warmupStarted) return;
     _warmupStarted = true;
@@ -55,7 +65,7 @@ class SriLankaOfflineMapCache {
         for (var x = xRange.start; x <= xRange.end; x++) {
           for (var y = yRange.start; y <= yRange.end; y++) {
             downloads.add(_downloadTile(client, directory, z, x, y));
-            if (downloads.length >= 16) {
+            if (downloads.length >= 48) {
               await Future.wait(downloads);
               downloads.clear();
             }
@@ -88,18 +98,23 @@ class SriLankaOfflineMapCache {
     return root;
   }
 
+  static const List<String> _subdomains = ['a', 'b', 'c'];
+
   Future<void> _downloadTile(http.Client client, Directory root, int z, int x, int y) async {
     final filePath = p.join(root.path, 'sri_lanka', '$z', '$x', '$y.png');
     final file = File(filePath);
     if (await file.exists()) return;
 
     await file.parent.create(recursive: true);
-    final url = Uri.parse('https://a.basemaps.cartocdn.com/dark_all/$z/$x/$y.png');
+    final sub = _subdomains[(x + y) % _subdomains.length];
+    final url = Uri.parse('https://$sub.basemaps.cartocdn.com/dark_all/$z/$x/$y.png');
 
-    final response = await client.get(url);
-    if (response.statusCode == 200 && response.bodyBytes.isNotEmpty) {
-      await file.writeAsBytes(response.bodyBytes, flush: true);
-    }
+    try {
+      final response = await client.get(url);
+      if (response.statusCode == 200 && response.bodyBytes.isNotEmpty) {
+        await file.writeAsBytes(response.bodyBytes, flush: true);
+      }
+    } catch (_) {}
   }
 
   ({int start, int end}) _tileRangeX(double west, double east, int zoom) {
@@ -123,3 +138,4 @@ class SriLankaOfflineMapCache {
     return value.floor();
   }
 }
+

@@ -13,16 +13,17 @@ class DamageReportRepository {
     List<String> photos = const [],
   }) async {
     final userId = _client.auth.currentUser?.id;
+    final firstPhoto = photos.isNotEmpty ? photos.first : null;
     final payload = <String, dynamic>{
       'location': location,
       'damage_type': damageType,
       'details': details,
       'user_id': userId,
       'status': 'pending',
-      'photos': photos,
+      'photo_url': firstPhoto,
     };
     if (photos.isNotEmpty) {
-      payload['photo_url'] = photos.first;
+      payload['photos'] = photos;
     }
     await _client.from('damage_reports').insert(payload);
 
