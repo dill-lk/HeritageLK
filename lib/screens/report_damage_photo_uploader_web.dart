@@ -6,27 +6,41 @@ import 'dart:typed_data';
 
 import 'package:supabase_flutter/supabase_flutter.dart';
 
-const _bucket = 'damage-photos';
+const _bucket = 'heritage-media';
 
+/// Uploads a photo on web. Tries Supabase Storage first, falls back to
+/// a compressed base64 data URL if the bucket is missing or upload fails.
 Future<String> uploadDamagePhoto(SupabaseClient client, String photoPath) async {
   if (photoPath.startsWith('http://') || photoPath.startsWith('https://')) {
     return photoPath;
   }
 
   try {
-    final bytes = await _readBytes(photoPath);
-    final compressed = await _compressJpeg(bytes);
-    final fileName = 'damage-reports/${DateTime.now().millisecondsSinceEpoch}-${_randomId()}.jpg';
+    final rawBytes = await _readBytes(photoPath);
+    final bytes = await _compressJpeg(rawBytes);
 
-    await client.storage.from(_bucket).uploadBinary(
-          fileName,
-          compressed,
-          fileOptions: const FileOptions(contentType: 'image/jpeg'),
-        );
+    // --- Try Supabase Storage first ---
+    try {
+      final fileName =
+          'damage-reports/${DateTime.now().millisecondsSinceEpoch}-${_randomId()}.jpg';
+      await client.storage.from(_bucket).uploadBinary(
+            fileName,
+            bytes,
+            fileOptions: const FileOptions(
+              upsert: true,
+              contentType: 'image/jpeg',
+            ),
+          );
+      return client.storage.from(_bucket).getPublicUrl(fileName);
+    } catch (_) {
+      // Storage failed — fall back to base64 data URL
+    }
 
-    return client.storage.from(_bucket).getPublicUrl(fileName);
+    // --- Fallback: base64 data URL ---
+    final base64Str = base64Encode(bytes);
+    return 'data:image/jpeg;base64,$base64Str';
   } catch (e) {
-    throw Exception('Failed to upload photo to Supabase Storage: $e');
+    return photoPath;
   }
 }
 
@@ -74,7 +88,7 @@ Future<Uint8List> _compressJpeg(Uint8List bytes) async {
 
   img.onLoad.listen((_) {
     try {
-      final maxWidth = 800;
+      const maxWidth = 800;
       final width = img.width!;
       final height = img.height!;
       var newWidth = width;
