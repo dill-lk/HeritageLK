@@ -1,4 +1,3 @@
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -104,7 +103,7 @@ class _ReportAdminScreenState extends State<ReportAdminScreen> {
               child: SizedBox(
                 width: 60,
                 height: 60,
-                child: ReportDamageImageWidget(imagePath: p),
+                child: ReportDamageImageWidget(path: p),
               ),
             );
           },

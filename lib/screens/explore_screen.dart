@@ -433,27 +433,15 @@ class _ExploreScreenState extends State<ExploreScreen> {
             tileProvider: useOfflineTiles
                 ? FileTileProvider()
                 : NetworkTileProvider(
-                    // Reuse a single persistent HTTP client — avoids per-tile
-                    // TLS handshakes on Android (the main cause of slow tiles).
-                    httpClient: _tileHttpClient,
                     headers: const {
                       'User-Agent': 'HeritageLK/1.0 (Flutter; Android)',
-                      // Ask the CDN to cache tiles aggressively on the device
                       'Cache-Control': 'max-age=86400, stale-while-revalidate=3600',
                     },
                   ),
             userAgentPackageName: 'com.heritage_lk.app',
-            // panBuffer 2 = pre-fetch one tile row/col beyond viewport.
-            // Higher values increase memory pressure on Android and can
-            // paradoxically slow rendering (more tiles competing for RAM).
             panBuffer: 2,
             keepBuffer: 2,
-            // Limit concurrent tile downloads to avoid saturating the
-            // mobile network adapter and causing all tiles to be slow.
-            maxParallelFetches: 4,
             maxNativeZoom: 19,
-            tileFadeInDuration: const Duration(milliseconds: 150),
-            tileFadeInStartWhenOverride: 0.4,
             errorTileCallback: (tile, error, stackTrace) {
               debugPrint('Tile error at ${tile.coordinates}: $error');
             },
