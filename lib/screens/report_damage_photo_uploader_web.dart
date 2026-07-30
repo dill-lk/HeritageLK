@@ -90,12 +90,20 @@ Future<Uint8List> _compressJpeg(Uint8List bytes) async {
       final ctx = canvas.context2D;
       ctx.drawImageScaled(img, 0, 0, newWidth, newHeight);
 
-      final dataUrl = canvas.toDataURL('image/jpeg', 0.75);
-      final base64Str = dataUrl.split(',').last;
-      final compressed = base64Decode(base64Str);
-
-      html.Url.revokeObjectUrl(url);
-      completer.complete(compressed);
+      canvas.toBlob((jpegBlob) {
+        if (jpegBlob != null) {
+          _readBlob(jpegBlob).then((compressed) {
+            html.Url.revokeObjectUrl(url);
+            completer.complete(compressed);
+          }).catchError((_) {
+            html.Url.revokeObjectUrl(url);
+            completer.complete(bytes);
+          });
+        } else {
+          html.Url.revokeObjectUrl(url);
+          completer.complete(bytes);
+        }
+      }, 'image/jpeg');
     } catch (e) {
       html.Url.revokeObjectUrl(url);
       completer.complete(bytes);
