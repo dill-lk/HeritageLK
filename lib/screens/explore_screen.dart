@@ -176,33 +176,43 @@ class _ExploreScreenState extends State<ExploreScreen> {
   }
 
   Future<void> _prepareOfflineTiles() async {
-    final template = await SriLankaOfflineMapCache.instance.ensureLocalTemplate();
-    if (mounted) {
-      setState(() => _offlineTileTemplate = template);
+    try {
+      final template = await SriLankaOfflineMapCache.instance.ensureLocalTemplate();
+      if (mounted) {
+        setState(() => _offlineTileTemplate = template);
+      }
+
+      // Fast path: tiles already downloaded from a previous session.
+      final alreadyReady = await SriLankaOfflineMapCache.instance.isTilesReady();
+      if (alreadyReady && mounted) {
+        setState(() => _tilesReady = true);
+        return;
+      }
+
+      // Subscribe to progress events BEFORE starting the download so we never
+      // miss the first event.
+      _progressSub = SriLankaOfflineMapCache.instance.progressStream.listen(
+        (progress) {
+          if (!mounted) return;
+          setState(() {
+            _tileProgress = progress;
+            if (progress.isComplete) _tilesReady = true;
+          });
+        },
+        onError: (err) {
+          debugPrint('Progress stream error: $err');
+        },
+      );
+
+      // Kick off background download safely.
+      unawaited(SriLankaOfflineMapCache.instance.warmSriLankaTiles().catchError((e) {
+        debugPrint('Warm tiles error: $e');
+      }));
+    } catch (e) {
+      debugPrint('Error preparing offline tiles: $e');
     }
-
-    // Fast path: tiles already downloaded from a previous session.
-    final alreadyReady = await SriLankaOfflineMapCache.instance.isTilesReady();
-    if (alreadyReady && mounted) {
-      setState(() => _tilesReady = true);
-      return;
-    }
-
-    // Subscribe to progress events BEFORE starting the download so we never
-    // miss the first event.
-    _progressSub = SriLankaOfflineMapCache.instance.progressStream.listen(
-      (progress) {
-        if (!mounted) return;
-        setState(() {
-          _tileProgress = progress;
-          if (progress.isComplete) _tilesReady = true;
-        });
-      },
-    );
-
-    // Kick off background download.
-    SriLankaOfflineMapCache.instance.warmSriLankaTiles();
   }
+
 
   Future<void> _select(_SiteData site) async {
     setState(() {
@@ -428,11 +438,12 @@ class _ExploreScreenState extends State<ExploreScreen> {
           TileLayer(
             key: ValueKey<bool>(useOfflineTiles),
             urlTemplate: tileTemplate,
-            subdomains: const ['a', 'b', 'c', 'd'],
-            fallbackUrl: useOfflineTiles ? _networkTileTemplate : null,
+            subdomains: const ['a', 'b', 'c'],
+            fallbackUrl: _networkTileTemplate,
             tileProvider: useOfflineTiles
                 ? FileTileProvider()
                 : NetworkTileProvider(
+
                     headers: const {
                       'User-Agent': 'HeritageLK/1.0 (Flutter; Android)',
                       'Cache-Control': 'max-age=86400, stale-while-revalidate=3600',
