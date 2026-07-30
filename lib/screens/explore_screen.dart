@@ -14,7 +14,6 @@ import '../services/heritage_api.dart';
 import '../services/heritage_site_repository.dart';
 import '../services/offline_sri_lanka_map_cache.dart';
 import '../theme/heritage_colors.dart';
-import '../widgets/audio_guide_sheet.dart';
 import '../widgets/bottom_nav.dart';
 
 class ExploreScreen extends StatefulWidget {
