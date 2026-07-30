@@ -20,7 +20,6 @@ class _ReportDamageScreenState extends State<ReportDamageScreen> {
   String _type = 'Structural Cracks';
   bool _submitting = false;
   bool _fetchingGps = false;
-  String _location = '';
   final _locationController = TextEditingController();
   final _details = TextEditingController();
   final _types = const [
@@ -56,13 +55,11 @@ class _ReportDamageScreenState extends State<ReportDamageScreen> {
         if (position != null) {
           final locStr = LocationService.getNearestSiteDescription(position.latitude, position.longitude);
           setState(() {
-            _location = locStr;
             _locationController.text = locStr;
             _fetchingGps = false;
           });
         } else {
           setState(() {
-            _location = '';
             _locationController.clear();
             _fetchingGps = false;
           });
@@ -74,7 +71,6 @@ class _ReportDamageScreenState extends State<ReportDamageScreen> {
     } catch (_) {
       if (mounted) {
         setState(() {
-          _location = '';
           _locationController.clear();
           _fetchingGps = false;
         });
@@ -299,7 +295,6 @@ class _ReportDamageScreenState extends State<ReportDamageScreen> {
                           hintStyle: TextStyle(color: Color(0x4DFFFFFF)),
                         ),
                         style: const TextStyle(color: HeritageColors.cream, fontSize: 14),
-                        onChanged: (v) => _location = v,
                       ),
                     ),
                     IconButton(

@@ -650,66 +650,80 @@ class _RidePickerSheet extends StatelessWidget {
     if (ctx.mounted) Navigator.pop(ctx);
   }
 
-  void _openPickMe(BuildContext ctx) async {
+  Future<void> _openPickMe(BuildContext ctx) async {
     final lat = site.lat.toStringAsFixed(6);
     final lon = site.lon.toStringAsFixed(6);
     final name = Uri.encodeComponent(site.name);
 
-    // PickMe passenger app — package: com.pickme.passenger
-    // Try multiple URI schemes in order of specificity.
-    final appUris = [
-      // Standard custom scheme (works if PickMe registered this in their manifest)
-      Uri.parse('pickme://open'),
-      // Alternative scheme the passenger app may register
-      Uri.parse('pickmepassenger://open'),
-      // Android intent:// syntax understood by url_launcher on Android
-      // This targets the package directly and falls through to the OS.
-      Uri.parse(
-        'intent://open'
-        '#Intent;'
-        'scheme=pickme;'
-        'package=com.pickme.passenger;'
-        'action=android.intent.action.VIEW;'
-        'category=android.intent.category.BROWSABLE;'
-        'end',
-      ),
-    ];
+    // --- APPROACH 1 (most reliable per PickMe docs) ---
+    // Explicit Android Intent URI targeting com.pickme.passenger via the geo
+    // scheme — this forces the OS to open PickMe directly without a chooser.
+    // Format: intent://<lat>,<lon>?q=<lat>,<lon>(<name>)#Intent;scheme=geo;
+    //           package=com.pickme.passenger;action=VIEW;end
+    final geoIntentUri = Uri.parse(
+      'intent://$lat,$lon?q=$lat,$lon($name)'
+      '#Intent;'
+      'scheme=geo;'
+      'package=com.pickme.passenger;'
+      'action=android.intent.action.VIEW;'
+      'end',
+    );
 
-    // Fallbacks in order: PickMe website → Play Store listing
+    // --- APPROACH 2 ---
+    // Plain geo: URI — lets Android route to PickMe if it's the default
+    // geo handler, or shows the app picker if multiple apps handle geo.
+    final geoUri = Uri.parse('geo:$lat,$lon?q=$lat,$lon($name)');
+
+    final playStore = Uri.parse(
+        'https://play.google.com/store/apps/details?id=com.pickme.passenger');
     final webFallback = Uri.parse(
         'https://pickme.lk/ride?destination_lat=$lat&destination_lng=$lon&destination_name=$name');
-    final playStoreFallback = Uri.parse(
-        'https://play.google.com/store/apps/details?id=com.pickme.passenger');
 
-    for (final uri in appUris) {
-      try {
-        final canLaunch = await canLaunchUrl(uri);
-        if (canLaunch) {
-          final launched = await launchUrl(uri, mode: LaunchMode.externalApplication);
-          if (launched) {
-            if (ctx.mounted) Navigator.pop(ctx);
-            return;
-          }
-        }
-      } catch (_) {}
-    }
-
-    // App not installed — try PickMe website first, then Play Store
+    // Try the explicit package intent first (bypasses chooser dialog).
     try {
-      final launched = await launchUrl(webFallback, mode: LaunchMode.externalApplication);
+      if (await canLaunchUrl(geoIntentUri)) {
+        final launched = await launchUrl(
+          geoIntentUri,
+          mode: LaunchMode.externalNonBrowserApplication,
+        );
+        if (launched) {
+          if (ctx.mounted) Navigator.pop(ctx);
+          return;
+        }
+      }
+    } catch (_) {}
+
+    // Try plain geo: URI (works if PickMe is the default geo handler).
+    try {
+      if (await canLaunchUrl(geoUri)) {
+        final launched = await launchUrl(
+          geoUri,
+          mode: LaunchMode.externalApplication,
+        );
+        if (launched) {
+          if (ctx.mounted) Navigator.pop(ctx);
+          return;
+        }
+      }
+    } catch (_) {}
+
+    // PickMe app not installed — send to Play Store.
+    try {
+      final launched =
+          await launchUrl(playStore, mode: LaunchMode.externalApplication);
       if (launched) {
         if (ctx.mounted) Navigator.pop(ctx);
         return;
       }
     } catch (_) {}
 
+    // Last resort: PickMe website.
     try {
-      await launchUrl(playStoreFallback, mode: LaunchMode.externalApplication);
+      await launchUrl(webFallback, mode: LaunchMode.externalApplication);
     } catch (_) {}
 
     if (ctx.mounted) Navigator.pop(ctx);
   }
-
 
   void _openUber(BuildContext ctx) {
     final lat = site.lat.toStringAsFixed(6);
