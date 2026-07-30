@@ -5,9 +5,9 @@ import 'package:url_launcher/url_launcher.dart';
 
 import '../models/hotel_data.dart';
 import '../theme/heritage_colors.dart';
-import 'hotels_screen.dart';
 
 class HotelDetailScreen extends StatelessWidget {
+
   final HotelData hotel;
 
 
