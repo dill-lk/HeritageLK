@@ -1,8 +1,10 @@
 // ignore_for_file: prefer_const_constructors, prefer_const_literals_to_create_immutables
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../config/app_config.dart';
+import '../services/profile_repository.dart';
 import '../theme/heritage_colors.dart';
 
 class SettingsScreen extends StatefulWidget {
@@ -13,6 +15,57 @@ class SettingsScreen extends StatefulWidget {
 }
 
 class _SettingsScreenState extends State<SettingsScreen> {
+  String _userName = 'Explorer';
+  String _userLevel = 'Curator Level 1';
+
+  @override
+  void initState() {
+    super.initState();
+    _loadUserPreview();
+  }
+
+  Future<void> _loadUserPreview() async {
+    if (!AppConfig.hasSupabase) return;
+    try {
+      final session = Supabase.instance.client.auth.currentSession;
+      final user = session?.user;
+      if (user == null) return;
+
+      var name = user.userMetadata?['full_name'] as String? ??
+          user.email?.split('@').first ??
+          'Explorer';
+      var level = 'Curator Level 1';
+
+      final data = await Supabase.instance.client
+          .from('profiles')
+          .select('full_name, points')
+          .eq('id', user.id)
+          .maybeSingle();
+
+      if (data?['full_name'] != null) {
+        name = data!['full_name'] as String;
+      }
+      final points = data?['points'];
+      if (points is num) {
+        final lvl = (points / 100).floor().clamp(1, 99);
+        level = 'Curator Level $lvl';
+      }
+
+      if (mounted) {
+        setState(() {
+          _userName = name.split(' ').first;
+          _userLevel = level;
+        });
+      }
+    } catch (_) {}
+  }
+
+  Future<void> _logOut() async {
+    if (AppConfig.hasSupabase) {
+      await ProfileRepository(Supabase.instance.client).signOut();
+    }
+    if (mounted) Navigator.of(context).pushReplacementNamed('/login');
+  }
   void _showGeminiConfigDialog() {
     final keyController = TextEditingController(text: AppConfig.userGeminiApiKey);
     showDialog(
@@ -146,12 +199,37 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 () => Navigator.of(context).pushReplacementNamed('/profile'),
               ),
             ),
+            actions: [
+              Padding(
+                padding: const EdgeInsets.only(right: 12.0, top: 8.0, bottom: 8.0),
+                child: _round(Icons.info_outline, () {
+                  Navigator.of(context).pushNamed('/settings/about');
+                }),
+              ),
+            ],
           ),
           SliverPadding(
             padding: const EdgeInsets.fromLTRB(24, 16, 24, 40),
             sliver: SliverList(
               delegate: SliverChildListDelegate(
                 [
+                  const Text(
+                    'HeritageLK',
+                    style: TextStyle(color: HeritageColors.orange, fontSize: 18, fontWeight: FontWeight.bold),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    'EDIT PROFILE',
+                    style: TextStyle(
+                      color: HeritageColors.orange.withValues(alpha: 0.8),
+                      fontSize: 11,
+                      fontWeight: FontWeight.bold,
+                      letterSpacing: 1.2,
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  _buildUserPreview(),
+                  const SizedBox(height: 24),
                   _sectionHeader('AI & EXPLORATION ENGINE'),
                   _buildGeminiCard(isKeyActive),
                   const SizedBox(height: 32),
@@ -193,7 +271,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     _CustomNavItem(
                       label: 'Give Feedback',
                       icon: Icons.message_outlined,
-                      onTap: () => Navigator.of(context).pushNamed('/settings/help'),
+                      onTap: () => Navigator.of(context).pushNamed('/settings/feedback'),
+                    ),
+                    _CustomNavItem(
+                      label: 'About HeritageLK',
+                      icon: Icons.info_outline,
+                      onTap: () => Navigator.of(context).pushNamed('/settings/about'),
                     ),
                   ]),
                   const SizedBox(height: 48),
@@ -206,6 +289,45 @@ class _SettingsScreenState extends State<SettingsScreen> {
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildUserPreview() {
+    return Row(
+      children: [
+        ClipRRect(
+          borderRadius: BorderRadius.circular(999),
+          child: Image.network(
+            'https://images.unsplash.com/photo-1518531933037-91b2f5f229cc?q=80&w=200&auto=format&fit=crop',
+            width: 56,
+            height: 56,
+            fit: BoxFit.cover,
+            errorBuilder: (_, __, ___) => Container(
+              width: 56,
+              height: 56,
+              color: HeritageColors.brown.withValues(alpha: 0.3),
+              child: const Icon(Icons.person, color: HeritageColors.orange),
+            ),
+          ),
+        ),
+        const SizedBox(width: 16),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                _userName,
+                style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 2),
+              Text(
+                _userLevel,
+                style: TextStyle(color: HeritageColors.orange.withValues(alpha: 0.8), fontSize: 14),
+              ),
+            ],
+          ),
+        ),
+      ],
     );
   }
 
@@ -371,7 +493,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     return Material(
       color: Colors.transparent,
       child: InkWell(
-        onTap: () => Navigator.of(context).pushReplacementNamed('/login'),
+        onTap: _logOut,
         borderRadius: BorderRadius.circular(16),
         child: Container(
           width: double.infinity,
@@ -432,7 +554,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           ),
           const SizedBox(height: 8),
           Text(
-            'Version 2.4.1 (Pro Build)',
+            'Version 2.4.1 (Stable Build)',
             style: TextStyle(
               color: Colors.white.withValues(alpha:0.4),
               fontSize: 11,
