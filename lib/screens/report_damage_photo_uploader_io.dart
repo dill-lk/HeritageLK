@@ -1,46 +1,60 @@
 import 'dart:convert';
 import 'dart:io';
+import 'dart:math';
 import 'dart:typed_data';
 
 import 'package:flutter_image_compress/flutter_image_compress.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
-/// Converts a local image file to a compressed base64 data URL and returns it.
-/// The result is stored directly in the `photo_url` column of `damage_reports`.
-/// No Supabase Storage bucket is required.
+const _bucket = 'damage-photos';
+
+/// Uploads a local image file to Supabase Storage and returns the public URL.
 Future<String> uploadDamagePhoto(SupabaseClient client, String photoPath) async {
-  // Already a URL or data URL — return as-is
-  if (photoPath.startsWith('http://') ||
-      photoPath.startsWith('https://') ||
-      photoPath.startsWith('data:image')) {
+  // Already a public URL — return as-is
+  if (photoPath.startsWith('http://') || photoPath.startsWith('https://')) {
     return photoPath;
   }
 
   try {
-    final file = File(photoPath);
-    if (!await file.exists()) return photoPath;
+    Uint8List bytes;
 
-    // Compress to JPEG, max 800px wide, quality 75 — keeps base64 string small
-    Uint8List? compressed;
-    try {
-      compressed = await FlutterImageCompress.compressWithFile(
-        file.absolute.path,
-        minWidth: 800,
-        minHeight: 600,
-        quality: 75,
-        format: CompressFormat.jpeg,
-      );
-    } catch (_) {
-      // Compression unavailable (e.g. web stub) — read raw bytes
+    if (photoPath.startsWith('data:image')) {
+      bytes = base64Decode(photoPath.split(',').last);
+    } else {
+      final file = File(photoPath);
+      if (!await file.exists()) throw Exception('Photo file not found: $photoPath');
+
+      // Compress to JPEG, max 800px wide, quality 75
+      Uint8List? compressed;
+      try {
+        compressed = await FlutterImageCompress.compressWithFile(
+          file.absolute.path,
+          minWidth: 800,
+          minHeight: 600,
+          quality: 75,
+          format: CompressFormat.jpeg,
+        );
+      } catch (_) {
+        // Compression unavailable — read raw bytes
+      }
+      bytes = compressed ?? await file.readAsBytes();
     }
+    final fileName = 'damage-reports/${DateTime.now().millisecondsSinceEpoch}-${_randomId()}.jpg';
 
-    final bytes = compressed ?? await file.readAsBytes();
-    final base64Str = base64Encode(bytes);
-    final dataUrl = 'data:image/jpeg;base64,$base64Str';
+    await client.storage.from(_bucket).uploadBinary(
+          fileName,
+          bytes,
+          fileOptions: const FileOptions(contentType: 'image/jpeg'),
+        );
 
-    return dataUrl;
+    return client.storage.from(_bucket).getPublicUrl(fileName);
   } catch (e) {
-    // Last resort — return the raw path (admin will show broken image)
-    return photoPath;
+    throw Exception('Failed to upload photo to Supabase Storage: $e');
   }
+}
+
+String _randomId() {
+  const chars = 'abcdefghijklmnopqrstuvwxyz0123456789';
+  final rng = Random();
+  return List.generate(6, (_) => chars[rng.nextInt(chars.length)]).join();
 }

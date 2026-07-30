@@ -5,6 +5,7 @@
 // ─── CONFIGURATION & INITIAL STATE ──────────────────────────────────────────
 const DEFAULT_SUPABASE_URL = 'https://emeqmaqmmaohkeecyvjq.supabase.co';
 const DEFAULT_SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVtZXFtYXFtbWFvaGtlZWN5dmpxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg5ODk3MDUsImV4cCI6MjA5NDU2NTcwNX0.-SmCu_5kd_cDs2NYbzNN33hlxXbyRln4Cd5cgQJ3lGI';
+const STORAGE_BUCKET = 'damage-photos';
 const STORAGE_KEY_URL = 'heritagelk_admin_supabase_url';
 const STORAGE_KEY_ANON = 'heritagelk_admin_supabase_key';
 const STORAGE_KEY_REPORTS = 'heritagelk_admin_offline_reports_v1';
@@ -96,6 +97,91 @@ function getActiveUrl() {
 
 function getActiveKey() {
   return localStorage.getItem(STORAGE_KEY_ANON) || DEFAULT_SUPABASE_KEY;
+}
+
+/** Resolve a photo value to a displayable URL */
+function resolvePhotoUrl(photo) {
+  if (!photo || !String(photo).trim()) return null;
+  const p = String(photo).trim();
+
+  // Already a full URL or base64 data URL
+  if (p.startsWith('http://') || p.startsWith('https://') || p.startsWith('data:image')) {
+    return p;
+  }
+
+  // Supabase storage path (e.g. damage-reports/1234-abc.jpg)
+  if (p.startsWith('damage-reports/') || p.startsWith('damage-photos/')) {
+    const url = getActiveUrl().replace(/\/$/, '');
+    const path = p.startsWith('damage-photos/') ? p.replace('damage-photos/', '') : p;
+    return `${url}/storage/v1/object/public/${STORAGE_BUCKET}/${path}`;
+  }
+
+  // Local file paths and blob URLs cannot be displayed
+  if (p.startsWith('/') || p.startsWith('blob:') || p.startsWith('file:')) {
+    return null;
+  }
+
+  return p;
+}
+
+/** Get all displayable photo URLs from a report */
+function getReportPhotos(report) {
+  const raw = [];
+  if (Array.isArray(report.photos)) raw.push(...report.photos);
+  if (report.photo_url && !raw.includes(report.photo_url)) raw.unshift(report.photo_url);
+  return raw.map(resolvePhotoUrl).filter(Boolean);
+}
+
+/** Update the settings modal with current Supabase connection info */
+function updateConfigModalStatus() {
+  const url = getActiveUrl();
+  const key = getActiveKey();
+  const savedUrl = localStorage.getItem(STORAGE_KEY_URL);
+  const savedKey = localStorage.getItem(STORAGE_KEY_ANON);
+  const statusEl = document.getElementById('cfgConnectionStatus');
+  const infoEl = document.getElementById('cfgSupabaseInfo');
+
+  if (!statusEl) return;
+
+  const isConnected = !!supabaseClient;
+  statusEl.className = isConnected ? 'connection-status connected' : 'connection-status offline';
+  statusEl.querySelector('.status-dot');
+  const textEl = statusEl.querySelector('#cfgStatusText');
+  if (textEl) {
+    textEl.textContent = isConnected ? 'Connected to Supabase' : 'Not Connected';
+  }
+
+  if (infoEl) {
+    infoEl.innerHTML = `
+      <div class="info-row"><strong>Project URL:</strong> <code>${escapeHtml(url)}</code></div>
+      <div class="info-row"><strong>Storage Bucket:</strong> <code>${STORAGE_BUCKET}</code></div>
+      <div class="info-row"><strong>Credentials:</strong> ${savedUrl || savedKey ? 'Custom (saved in browser)' : 'Using built-in defaults'}</div>
+      <div class="info-row"><strong>Key:</strong> <code>${key ? key.slice(0, 20) + '…' : 'Not set'}</code></div>
+      <div class="info-row" id="cfgPhotoCountRow"><strong>Photos in bucket:</strong> <span id="cfgPhotoCount">Checking...</span></div>
+    `;
+  }
+}
+
+async function checkStorageStatus() {
+  const countEl = document.getElementById('cfgPhotoCount');
+  if (!countEl) return;
+
+  if (!supabaseClient) {
+    countEl.textContent = 'Offline';
+    return;
+  }
+
+  try {
+    const { data, error } = await supabaseClient.storage
+      .from(STORAGE_BUCKET)
+      .list('damage-reports', { limit: 100 });
+
+    if (error) throw error;
+    const photoCount = (data || []).filter(f => !f.name.startsWith('test-')).length;
+    countEl.textContent = photoCount;
+  } catch (_) {
+    countEl.textContent = 'Error';
+  }
 }
 
 // Initialize Supabase Client
@@ -310,9 +396,9 @@ function renderReports() {
           <span class="badge badge-${r.status}">${formatStatus(r.status)}</span>
         </td>
         <td>
-          ${r.photos && r.photos.length > 0 
-            ? `<img src="${r.photos[0]}" class="photo-thumb" alt="Damage photo" onerror="this.src='https://images.unsplash.com/photo-1546708973-b339540b5162?w=100'">`
-            : `<div class="photo-placeholder"><i class="fa-solid fa-camera"></i></div>`}
+          ${(() => { const photos = getReportPhotos(r); return photos.length > 0
+            ? `<img src="${photos[0]}" class="photo-thumb" alt="Damage photo" onerror="this.parentElement.innerHTML='<div class=\\'photo-placeholder\\'><i class=\\'fa-solid fa-camera\\'></i></div>'">`
+            : `<div class="photo-placeholder"><i class="fa-solid fa-camera"></i></div>`; })()}
         </td>
         <td class="text-right">
           <button class="btn btn-secondary btn-sm" onclick="openDetailModal('${r.id}')">
@@ -334,9 +420,9 @@ function renderReports() {
           <span class="damage-tag"><i class="fa-solid fa-triangle-exclamation"></i> ${escapeHtml(r.damage_type)}</span>
         </div>
 
-        ${r.photos && r.photos.length > 0 
-          ? `<img src="${r.photos[0]}" style="width:100%; height:140px; object-fit:cover; border-radius:12px;" onerror="this.style.display='none'">`
-          : ''}
+        ${(() => { const photos = getReportPhotos(r); return photos.length > 0
+          ? `<img src="${photos[0]}" style="width:100%; height:140px; object-fit:cover; border-radius:12px;" onerror="this.style.display='none'">`
+          : ''; })()}
 
         <div class="report-card-body">
           <p style="margin-bottom:8px;">${escapeHtml(r.details)}</p>
@@ -435,14 +521,15 @@ window.openDetailModal = function(id) {
 
   // Photos
   const gallery = document.getElementById('modalPhotosGallery');
-  if (report.photos && report.photos.length > 0) {
-    gallery.innerHTML = report.photos.map(p => `
+  const photos = getReportPhotos(report);
+  if (photos.length > 0) {
+    gallery.innerHTML = photos.map(p => `
       <a href="${p}" target="_blank">
-        <img src="${p}" class="gallery-img" alt="Evidence" onerror="this.style.display='none'">
+        <img src="${p}" class="gallery-img" alt="Evidence" onerror="this.parentElement.innerHTML='<span class=\\'text-muted\\'>Photo unavailable</span>'">
       </a>
     `).join('');
   } else {
-    gallery.innerHTML = '<span class="text-muted">No photo attached.</span>';
+    gallery.innerHTML = '<span class="text-muted">No photo attached to this report.</span>';
   }
 
   // Update inputs
@@ -511,6 +598,25 @@ async function createNewReport(e) {
   const status = document.getElementById('newInitialStatus').value;
   const details = document.getElementById('newDetails').value.trim();
   const photoUrl = document.getElementById('newPhotoUrl').value.trim();
+  const photoFile = document.getElementById('newPhotoFile')?.files?.[0];
+
+  let finalPhotoUrl = photoUrl;
+
+  // Upload file to Supabase Storage if provided
+  if (photoFile && supabaseClient) {
+    try {
+      const ext = photoFile.name.split('.').pop() || 'jpg';
+      const fileName = `damage-reports/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
+      const { error: uploadError } = await supabaseClient.storage
+        .from(STORAGE_BUCKET)
+        .upload(fileName, photoFile, { contentType: photoFile.type || 'image/jpeg' });
+      if (uploadError) throw uploadError;
+      finalPhotoUrl = `${getActiveUrl().replace(/\/$/, '')}/storage/v1/object/public/${STORAGE_BUCKET}/${fileName}`;
+    } catch (err) {
+      console.warn('Photo upload failed:', err);
+      alert('Photo upload failed: ' + (err.message || err) + '. Report will be saved without photo.');
+    }
+  }
 
   const newReport = {
     id: `DR-${Math.floor(10000 + Math.random() * 90000)}`,
@@ -519,7 +625,8 @@ async function createNewReport(e) {
     status,
     details,
     created_at: new Date().toISOString(),
-    photos: photoUrl ? [photoUrl] : [],
+    photos: finalPhotoUrl ? [finalPhotoUrl] : [],
+    photo_url: finalPhotoUrl || null,
     notes: 'Manually logged by CCF Admin'
   };
 
@@ -527,13 +634,19 @@ async function createNewReport(e) {
 
   if (supabaseClient) {
     try {
-      await supabaseClient.from('damage_reports').insert([{
+      const payload = {
         location,
         damage_type,
         status,
         details,
-        photo_url: photoUrl
-      }]);
+        notes: newReport.notes,
+        created_at: newReport.created_at,
+      };
+      if (finalPhotoUrl) {
+        payload.photo_url = finalPhotoUrl;
+        payload.photos = [finalPhotoUrl];
+      }
+      await supabaseClient.from('damage_reports').insert([payload]);
     } catch (err) {
       console.warn('Supabase insert error:', err);
     }
@@ -667,20 +780,49 @@ function bindEvents() {
   // Config Modal Actions
   document.getElementById('btnConfig').addEventListener('click', () => {
     document.getElementById('cfgSupabaseUrl').value = localStorage.getItem(STORAGE_KEY_URL) || DEFAULT_SUPABASE_URL;
-    document.getElementById('cfgSupabaseKey').value = localStorage.getItem(STORAGE_KEY_ANON) || '';
+    document.getElementById('cfgSupabaseKey').value = localStorage.getItem(STORAGE_KEY_ANON) || DEFAULT_SUPABASE_KEY;
+    updateConfigModalStatus();
     document.getElementById('configModal').classList.remove('hidden');
+
+    if (supabaseClient) {
+      checkStorageStatus();
+    }
   });
 
   document.getElementById('btnCloseConfig').addEventListener('click', () => document.getElementById('configModal').classList.add('hidden'));
-  document.getElementById('btnSaveConfig').addEventListener('click', () => {
+  document.getElementById('btnSaveConfig').addEventListener('click', async () => {
     const url = document.getElementById('cfgSupabaseUrl').value.trim();
     const key = document.getElementById('cfgSupabaseKey').value.trim();
+
+    if (!url || !key) {
+      alert('Please enter both Supabase URL and Anon Key.');
+      return;
+    }
 
     localStorage.setItem(STORAGE_KEY_URL, url);
     localStorage.setItem(STORAGE_KEY_ANON, key);
     initSupabase();
-    document.getElementById('configModal').classList.add('hidden');
-    loadReports();
+    updateConfigModalStatus();
+
+    // Test connection
+    const testBtn = document.getElementById('btnSaveConfig');
+    const origText = testBtn.innerHTML;
+    testBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Testing...';
+    testBtn.disabled = true;
+
+    try {
+      if (supabaseClient) {
+        const { error } = await supabaseClient.from('damage_reports').select('id').limit(1);
+        if (error) throw error;
+      }
+      document.getElementById('configModal').classList.add('hidden');
+      loadReports();
+    } catch (e) {
+      alert('Connection test failed: ' + (e.message || e));
+    } finally {
+      testBtn.innerHTML = origText;
+      testBtn.disabled = false;
+    }
   });
 
   document.getElementById('btnResetConfig').addEventListener('click', () => {
@@ -689,6 +831,48 @@ function bindEvents() {
     initSupabase();
     document.getElementById('configModal').classList.add('hidden');
     loadReports();
+  });
+
+  document.getElementById('btnTestStorage').addEventListener('click', async () => {
+    const statusEl = document.getElementById('cfgStorageStatus');
+    if (!statusEl) return;
+
+    if (!supabaseClient) {
+      statusEl.textContent = 'No Supabase connection. Save credentials first.';
+      statusEl.style.color = '#E76F51';
+      return;
+    }
+
+    statusEl.textContent = 'Testing upload...';
+    statusEl.style.color = '#E9C46A';
+
+    try {
+      const testFileName = `damage-reports/test-${Date.now()}.txt`;
+      const testContent = 'HeritageLK storage test';
+      const blob = new Blob([testContent], { type: 'text/plain' });
+
+      const { error: uploadError } = await supabaseClient.storage
+        .from(STORAGE_BUCKET)
+        .upload(testFileName, blob, { contentType: 'text/plain' });
+
+      if (uploadError) throw uploadError;
+
+      const { data: listData, error: listError } = await supabaseClient.storage
+        .from(STORAGE_BUCKET)
+        .list('damage-reports', { limit: 100 });
+
+      if (listError) throw listError;
+
+      const photoCount = (listData || []).filter(f => !f.name.startsWith('test-')).length;
+      statusEl.textContent = `Upload successful! ${photoCount} photo(s) in damage-reports/ folder.`;
+      statusEl.style.color = '#52B788';
+
+      const countEl = document.getElementById('cfgPhotoCount');
+      if (countEl) countEl.textContent = photoCount;
+    } catch (err) {
+      statusEl.textContent = 'Storage test failed: ' + (err.message || err);
+      statusEl.style.color = '#E76F51';
+    }
   });
 }
 

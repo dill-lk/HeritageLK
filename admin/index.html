@@ -351,8 +351,14 @@
         </div>
 
         <div class="form-group">
-          <label for="newPhotoUrl">Photo Image URL (Optional)</label>
-          <input type="url" id="newPhotoUrl" class="form-control" placeholder="https://images.unsplash.com/photo-...">
+          <label for="newPhotoFile">Upload Photo (Optional)</label>
+          <input type="file" id="newPhotoFile" class="form-control" accept="image/*">
+          <small class="text-muted">Uploads to Supabase Storage (<code>damage-photos</code> bucket)</small>
+        </div>
+
+        <div class="form-group">
+          <label for="newPhotoUrl">Or Photo Image URL (Optional)</label>
+          <input type="url" id="newPhotoUrl" class="form-control" placeholder="https://...supabase.co/storage/v1/object/public/damage-photos/...">
         </div>
       </form>
 
@@ -375,6 +381,27 @@
 
       <div class="modal-body">
         <p class="text-muted">This admin web app connects independently to your Supabase project. Enter your credentials below or use local offline demo mode.</p>
+
+        <!-- Live connection status -->
+        <div class="connection-status" id="cfgConnectionStatus" style="margin-bottom: 20px;">
+          <span class="status-dot"></span>
+          <span id="cfgStatusText">Checking connection...</span>
+        </div>
+
+        <!-- Current Supabase info -->
+        <div class="info-banner" id="cfgSupabaseInfo" style="margin-bottom: 20px;">
+          <i class="fa-solid fa-database"></i>
+          <div>Loading Supabase info...</div>
+        </div>
+
+        <div class="info-banner" id="cfgStorageInfo" style="margin-bottom: 20px;">
+          <i class="fa-solid fa-images"></i>
+          <div>
+            <strong>Photo Storage</strong>
+            <p>Damage report photos are stored in the <code>damage-photos</code> Supabase Storage bucket. The Flutter app uploads images there automatically on submit.</p>
+            <p id="cfgStorageStatus" style="margin-top:8px; font-size:13px;"></p>
+          </div>
+        </div>
         
         <div class="form-group">
           <label for="cfgSupabaseUrl">Supabase Project URL</label>
@@ -382,18 +409,14 @@
         </div>
 
         <div class="form-group">
-          <label for="cfgSupabaseKey">Supabase Anon / Service Key</label>
+          <label for="cfgSupabaseKey">Supabase Anon / Publishable Key</label>
           <input type="password" id="cfgSupabaseKey" class="form-control" value="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVtZXFtYXFtbWFvaGtlZWN5dmpxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg5ODk3MDUsImV4cCI6MjA5NDU2NTcwNX0.-SmCu_5kd_cDs2NYbzNN33hlxXbyRln4Cd5cgQJ3lGI" placeholder="sb_publishable_... or anon key">
-          <small class="text-muted">Saved securely in browser local storage.</small>
+          <small class="text-muted">Saved securely in browser local storage. Storage bucket: <code>damage-photos</code></small>
         </div>
 
-        <div class="info-banner">
-          <i class="fa-solid fa-circle-info"></i>
-          <div>
-            <strong>Offline Demo Mode Active</strong>
-            <p>If your Supabase table is empty or credentials are not yet entered, sample Sri Lanka heritage reports are automatically loaded.</p>
-          </div>
-        </div>
+        <button class="btn btn-secondary" id="btnTestStorage" style="width:100%; margin-top:12px;">
+          <i class="fa-solid fa-vial"></i> Test Photo Storage Upload
+        </button>
       </div>
 
       <div class="modal-footer">
