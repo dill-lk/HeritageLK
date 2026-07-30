@@ -1,4 +1,5 @@
 // ignore_for_file: prefer_const_constructors, prefer_const_literals_to_create_immutables
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
@@ -117,12 +118,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
               background: Stack(
                 fit: StackFit.expand,
                 children: [
-                  Image.network(
-                    'https://images.unsplash.com/photo-1586224372551-7f91854580bf?q=80&w=800&auto=format&fit=crop',
+                  CachedNetworkImage(
+                    imageUrl: 'https://images.unsplash.com/photo-1586224372551-7f91854580bf?q=80&w=800&auto=format&fit=crop',
                     fit: BoxFit.cover,
                     color: const Color(0xFF100E0A).withValues(alpha:0.7),
                     colorBlendMode: BlendMode.darken,
-                    errorBuilder: (_, __, ___) => const ColoredBox(color: HeritageColors.brown),
+                    errorWidget: (_, __, ___) => const ColoredBox(color: HeritageColors.brown),
                   ),
                   DecoratedBox(
                     decoration: BoxDecoration(
@@ -152,9 +153,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
             sliver: SliverList(
               delegate: SliverChildListDelegate(
                 [
-                  _sectionHeader('AI & EXPLORATION ENGINE'),
-                  _buildGeminiCard(isKeyActive),
-                  const SizedBox(height: 32),
                   _sectionHeader('ACCOUNT'),
                   _buildSettingsGroup([
                     _CustomNavItem(

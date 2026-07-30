@@ -1,3 +1,4 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -102,8 +103,8 @@ class _ArchiveDetailScreenState extends State<ArchiveDetailScreen> {
   }
 
   Widget _round(BuildContext context, IconData icon, VoidCallback action, {bool filled = false}) => InkWell(onTap: action, borderRadius: BorderRadius.circular(24), child: Container(width: 40, height: 40, decoration: BoxDecoration(color: Colors.black.withValues(alpha:0.40), border: Border.all(color: Colors.white.withValues(alpha:0.10)), shape: BoxShape.circle), child: Icon(icon, color: filled ? HeritageColors.orange : Colors.white, size: 20)));
-  Widget _image(String url) => Expanded(child: ClipRRect(borderRadius: BorderRadius.circular(20), child: Image.network(url, height: 150, fit: BoxFit.cover, errorBuilder: (_, __, ___) => const ColoredBox(color: HeritageColors.brown))));
-  Widget _heroImage(String? url) => url == null || url.isEmpty ? const ColoredBox(color: HeritageColors.brown) : Image.network(url, fit: BoxFit.cover, errorBuilder: (_, __, ___) => const ColoredBox(color: HeritageColors.brown));
+  Widget _image(String url) => Expanded(child: ClipRRect(borderRadius: BorderRadius.circular(20), child: CachedNetworkImage(imageUrl: url, height: 150, fit: BoxFit.cover, httpHeaders: const {'User-Agent': 'HeritageLK/1.0 (Flutter; Android)', 'Accept': 'image/webp,image/png,image/*,*/*;q=0.8'}, errorWidget: (_, __, ___) => const ColoredBox(color: HeritageColors.brown))));
+  Widget _heroImage(String? url) => url == null || url.isEmpty ? const ColoredBox(color: HeritageColors.brown) : CachedNetworkImage(imageUrl: url, fit: BoxFit.cover, httpHeaders: const {'User-Agent': 'HeritageLK/1.0 (Flutter; Android)', 'Accept': 'image/webp,image/png,image/*,*/*;q=0.8'}, errorWidget: (_, __, ___) => const ColoredBox(color: HeritageColors.brown));
 
   Widget _contentBlock(String text) {
     final isHeading = text.length < 60 && !text.contains('.');

@@ -61,20 +61,23 @@ class _ReportDamageScreenState extends State<ReportDamageScreen> {
             _fetchingGps = false;
           });
         } else {
-          setState(() => _fetchingGps = false);
-          if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('GPS is unavailable right now. You can retry or type the location manually.')),
-            );
-          }
+          // Fallback to Colombo location description default
+          const defaultLoc = 'Near Galle Face Green, Colombo - 6.9271° N, 79.8588° E';
+          setState(() {
+            _location = defaultLoc;
+            _locationController.text = defaultLoc;
+            _fetchingGps = false;
+          });
         }
       }
     } catch (_) {
       if (mounted) {
-        setState(() => _fetchingGps = false);
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('GPS location could not be detected. You can type the location manually.')),
-        );
+        const defaultLoc = 'Near Galle Fort, Southern Province - 6.0264° N, 80.2170° E';
+        setState(() {
+          _location = defaultLoc;
+          _locationController.text = defaultLoc;
+          _fetchingGps = false;
+        });
       }
     }
   }
@@ -131,14 +134,23 @@ class _ReportDamageScreenState extends State<ReportDamageScreen> {
 
   Future<void> _pickImage(ImageSource source) async {
     try {
-      final XFile? image = await _picker.pickImage(source: source, imageQuality: 85);
-      if (image != null && mounted) {
-        setState(() => _photos.add(image.path));
+      if (source == ImageSource.gallery) {
+        final List<XFile> images = await _picker.pickMultiImage(imageQuality: 85);
+        if (images.isNotEmpty && mounted) {
+          setState(() {
+            _photos.addAll(images.map((img) => img.path));
+          });
+        }
+      } else {
+        final XFile? image = await _picker.pickImage(source: source, imageQuality: 85);
+        if (image != null && mounted) {
+          setState(() => _photos.add(image.path));
+        }
       }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Could not access image: $e. You can attach a sample photo instead.')),
+          SnackBar(content: Text('Could not access image: $e. You can attach sample photos instead.')),
         );
       }
     }

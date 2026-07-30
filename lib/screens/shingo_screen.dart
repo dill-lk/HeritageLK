@@ -568,21 +568,6 @@ class _ShingoScreenState extends State<ShingoScreen> {
                         letterSpacing: 0.3,
                       ),
                     ),
-                    const SizedBox(width: 6),
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                      decoration: BoxDecoration(
-                        color: const Color(0x26E9C46A),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: const Row(
-                        children: [
-                          Icon(Icons.auto_awesome, color: Color(0xFFE9C46A), size: 10),
-                          SizedBox(width: 3),
-                          Text('RAG + Vision', style: TextStyle(color: Color(0xFFE9C46A), fontSize: 9, fontWeight: FontWeight.bold)),
-                        ],
-                      ),
-                    ),
                   ],
                 ),
                 const Text(

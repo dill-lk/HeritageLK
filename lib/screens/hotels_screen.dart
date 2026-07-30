@@ -1,8 +1,23 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_cache_manager/flutter_cache_manager.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../theme/heritage_colors.dart';
 import '../widgets/bottom_nav.dart';
+
+/// A dedicated cache manager for hotel images.
+/// 7-day TTL + 60-image cap keeps the disk footprint small while making
+/// repeated visits to this screen completely instant on Android.
+class _HotelCacheManager {
+  static const _key = 'heritage_hotels_v1';
+  static final CacheManager _instance = CacheManager(Config(
+    _key,
+    stalePeriod: const Duration(days: 7),
+    maxNrOfCacheObjects: 60,
+  ));
+  static CacheManager get cache => _instance;
+}
 
 class _HotelData {
   final String name;
@@ -528,16 +543,44 @@ class _HotelsScreenState extends State<HotelsScreen> {
           // Full-width tall image banner
           Stack(
             children: [
-              Image.network(
-                hotel.imageUrl,
+              CachedNetworkImage(
+                imageUrl: hotel.imageUrl.replaceAll('w=800', 'w=600'),
+                cacheManager: _HotelCacheManager.cache,
                 height: 220,
                 width: double.infinity,
                 fit: BoxFit.cover,
-                errorBuilder: (_, __, ___) => Container(
+                httpHeaders: const {
+                  'User-Agent': 'HeritageLK/1.0 (Flutter; Android)',
+                  'Accept': 'image/webp,image/png,image/*,*/*;q=0.8',
+                },
+                memCacheWidth: 600,
+                memCacheHeight: 360,
+                fadeInDuration: const Duration(milliseconds: 200),
+                placeholder: (context, url) => Container(
                   height: 220,
                   color: const Color(0xFF2A221C),
                   child: const Center(
-                    child: Icon(Icons.hotel_rounded, color: HeritageColors.orange, size: 48),
+                    child: CircularProgressIndicator(
+                      color: HeritageColors.orange,
+                      strokeWidth: 2,
+                    ),
+                  ),
+                ),
+                errorWidget: (_, __, ___) => Container(
+                  height: 220,
+                  color: const Color(0xFF2A221C),
+                  child: const Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(Icons.hotel_rounded, color: HeritageColors.orange, size: 48),
+                        SizedBox(height: 8),
+                        Text(
+                          'Image unavailable',
+                          style: TextStyle(color: HeritageColors.cream, fontSize: 12),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
               ),

@@ -1,9 +1,11 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../config/app_config.dart';
 import '../models/damage_report.dart';
 import '../services/damage_report_repository.dart';
+import 'report_damage_image_widget.dart';
 import '../theme/heritage_colors.dart';
 
 class ReportAdminScreen extends StatefulWidget {
@@ -102,9 +104,7 @@ class _ReportAdminScreenState extends State<ReportAdminScreen> {
               child: SizedBox(
                 width: 60,
                 height: 60,
-                child: p.startsWith('http')
-                    ? Image.network(p, fit: BoxFit.cover)
-                    : Container(color: Colors.white10, child: const Icon(Icons.image, color: Colors.white54, size: 20)),
+                child: ReportDamageImageWidget(imagePath: p),
               ),
             );
           },

@@ -1,9 +1,11 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:http/http.dart' as http;
+import 'package:http/io_client.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -26,6 +28,19 @@ class ExploreScreen extends StatefulWidget {
 class _ExploreScreenState extends State<ExploreScreen> {
   static const _networkTileTemplate = 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png';
 
+  // Persistent HTTP client with connection keep-alive for tile fetching.
+  // Reusing the same client avoids TLS handshake overhead on every tile.
+  late final http.Client _tileHttpClient = _buildTileClient();
+
+  static http.Client _buildTileClient() {
+    if (kIsWeb) return http.Client();
+    final httpClient = HttpClient()
+      ..maxConnectionsPerHost = 8   // parallel tile fetches
+      ..connectionTimeout = const Duration(seconds: 10)
+      ..idleTimeout = const Duration(seconds: 30);
+    return IOClient(httpClient);
+  }
+
   final _search = TextEditingController();
   final _api = HeritageApi();
   final _mapController = MapController();
@@ -37,6 +52,8 @@ class _ExploreScreenState extends State<ExploreScreen> {
   final String _filterCategory = 'All';
   String? _offlineTileTemplate;
   bool _tilesReady = false; // true only when all tiles are confirmed on disk
+  OfflineTileProgress? _tileProgress; // null = not yet started or already done
+  StreamSubscription<OfflineTileProgress>? _progressSub;
 
   static const _allSites = [
     // ── UNESCO & Major Heritage ─────────────────────────────────────────────
@@ -105,6 +122,26 @@ class _ExploreScreenState extends State<ExploreScreen> {
     _SiteData('Arugam Bay', 6.8427, 81.8266, 'Nature', 'FREE', 'Ranked one of the top 10 surf breaks in the world. The laid-back east coast village comes alive May–October with surfers from around the globe. Lagoon safaris too!'),
     _SiteData('Passikudah Bay', 7.9311, 81.5583, 'Nature', 'FREE', 'A sheltered bay with the calmest, clearest water in Sri Lanka — so shallow you can wade out 500m. Perfect for swimming year-round.'),
     _SiteData('Ampara', 7.2993, 81.6723, 'History', 'FREE', 'The gateway to the east, with nearby ancient Buddhist archaeological sites, crocodile-filled lagoons, and the stunning Deegawapi stupa.'),
+    // ── Additional Major Sri Lanka Heritage Sites ───────────────────────────
+    _SiteData('Buduruwagala Rock Carvings', 6.6835, 81.0549, 'History', '1000 LKR', 'Ancient 10th-century Buddhist complex featuring 7 massive rock-carved statues, including a 16-meter tall standing Buddha.'),
+    _SiteData('Lankatilaka Vihara Kandy', 7.2694, 80.5638, 'History', '500 LKR', '14th-century architectural marvel built on a rock outcrop by King Bhuvanekabahu IV, blending Sinhala, Dravidian and Gampola styles.'),
+    _SiteData('Gadaladeniya Temple', 7.2575, 80.5594, 'History', '300 LKR', 'Built in 1344 AD with South Indian influence, featuring a unique stone shrine and ancient frescoes from the Gampola Era.'),
+    _SiteData('Embekke Devalaya', 7.2181, 80.5681, 'History', '300 LKR', 'Famous for its intricately carved wooden pillars in the Audience Hall, depicting mythical creatures, dancers, and wrestlers.'),
+    _SiteData('Dambadeniya Ancient Kingdom', 7.3639, 80.1458, 'History', 'FREE', '13th-century capital city built on a fortified rock, home to ruins of the Royal Palace and Tooth Relic temple.'),
+    _SiteData('Panduwasnuwara Kingdom', 7.6681, 80.1772, 'History', '500 LKR', 'An ancient 12th-century city featuring preserved moat walls, royal palace foundations, and legendary round tower ruins.'),
+    _SiteData('Kurunegala Elephant Rock (Ethagala)', 7.4864, 80.3647, 'History', 'FREE', 'Dominating the city skyline, Ethagala features a giant 27-meter tall white Buddha statue with panoramic city views.'),
+    _SiteData('Ritigala Strict Nature Reserve', 8.1186, 80.6583, 'Nature', '1000 LKR', 'Ancient 1st-century BC monastic cave complex hidden inside a misty mountain reserve with paved stone paths.'),
+    _SiteData('Seruwila Mangala Raja Maha Vihara', 8.3756, 81.3175, 'History', 'FREE', 'Ancient 2nd-century BC stupa containing the sacred Lalata Dathu (frontal bone relic) of Lord Buddha.'),
+    _SiteData('Kataragama Sacred City', 6.4133, 81.3325, 'History', 'FREE', 'One of Sri Lanka\'s most holy pilgrimage sites, venerated by Buddhists, Hindus, Muslims, and indigenous Vedda people.'),
+    _SiteData('Tissamaharama Raja Maha Vihara', 6.2792, 81.2869, 'History', 'FREE', 'Massive ancient stupa built by King Kavantissa in the 3rd century BC in the historic kingdom of Ruhuna.'),
+    _SiteData('Kirinda Raja Maha Vihara', 6.2139, 81.3364, 'History', 'FREE', 'Coastal cliff temple linked to Queen Viharamahadevi\'s legendary sea journey landing spot in ancient Sri Lanka.'),
+    _SiteData('Mulkirigala Rock Temple', 6.1611, 80.7719, 'History', '500 LKR', 'Dramatic 205-meter high isolated rock temple featuring seven cave shrines and ancient murals spanning back 2000 years.'),
+    _SiteData('Kevitiyagala Ancient Stupa', 6.7210, 80.0890, 'History', 'FREE', 'Secluded ancient monastic complex surrounded by lush rubber plantations in the Western Province.'),
+    _SiteData('Kalutara Bodhiya', 6.5861, 79.9592, 'History', 'FREE', 'Famous hollow stupa built right next to the Kalu Ganga river, featuring a sacred Bodhi tree venerated for centuries.'),
+    _SiteData('Richmond Castle Kalutara', 6.5744, 79.9764, 'Knowledge', '500 LKR', 'Edwardian mansion built in 1910 featuring 99 doors, Indian teak carvings, and stained glass imported from Scotland.'),
+    _SiteData('Resvehera (Sasseruwa) Buddha', 8.0267, 80.3444, 'History', '500 LKR', 'Giant 12-meter tall unfinished standing Buddha statue carved out of a sheer rock wall in the 1st century BC.'),
+    _SiteData('Nillakgama Bodhigara', 7.9250, 80.2520, 'History', 'FREE', 'The most complete and best-preserved ancient stone Bodhigara (shrine surrounding a Bodhi tree) structure in Sri Lanka.'),
+    _SiteData('Aukana Buddha Statue', 8.0167, 80.5175, 'History', '1000 LKR', 'Magnificent 12-meter tall freestanding standing Buddha statue carved out of a single granite rock face in 5th century AD.'),
   ];
 
   @override
@@ -119,6 +156,8 @@ class _ExploreScreenState extends State<ExploreScreen> {
     _search.dispose();
     _api.dispose();
     _mapController.dispose();
+    _tileHttpClient.close();
+    _progressSub?.cancel();
     super.dispose();
   }
 
@@ -141,17 +180,28 @@ class _ExploreScreenState extends State<ExploreScreen> {
     if (mounted) {
       setState(() => _offlineTileTemplate = template);
     }
-    // Fast path: tiles already downloaded from a previous session
+
+    // Fast path: tiles already downloaded from a previous session.
     final alreadyReady = await SriLankaOfflineMapCache.instance.isTilesReady();
     if (alreadyReady && mounted) {
       setState(() => _tilesReady = true);
-      return; // no need to re-download
+      return;
     }
-    // First time: download tiles in background, then mark ready
-    await SriLankaOfflineMapCache.instance.warmSriLankaTiles();
-    if (mounted) {
-      setState(() => _tilesReady = true);
-    }
+
+    // Subscribe to progress events BEFORE starting the download so we never
+    // miss the first event.
+    _progressSub = SriLankaOfflineMapCache.instance.progressStream.listen(
+      (progress) {
+        if (!mounted) return;
+        setState(() {
+          _tileProgress = progress;
+          if (progress.isComplete) _tilesReady = true;
+        });
+      },
+    );
+
+    // Kick off background download.
+    SriLankaOfflineMapCache.instance.warmSriLankaTiles();
   }
 
   Future<void> _select(_SiteData site) async {
@@ -215,10 +265,91 @@ class _ExploreScreenState extends State<ExploreScreen> {
         child: Stack(children: [
           _mapBackground(filtered, current),
           _topOverlay(q, filtered),
+          _buildDownloadBanner(),
           _bottomInfoCard(current),
           _buildZoomControls(current),
           const Align(alignment: Alignment.bottomCenter, child: HeritageBottomNav(currentIndex: 1)),
         ]),
+      ),
+    );
+  }
+
+  /// Shows a non-intrusive pill banner while tiles are downloading.
+  Widget _buildDownloadBanner() {
+    final progress = _tileProgress;
+    // Hide when not downloading, complete, or failed with 0 progress.
+    if (progress == null || progress.isComplete) return const SizedBox.shrink();
+
+    final pct = (progress.fraction * 100).toStringAsFixed(0);
+    final label = progress.isFailed
+        ? '⚠️ Map download paused — will retry'
+        : '📥 Downloading offline map… $pct%';
+
+    return Positioned(
+      bottom: 115,
+      left: 20,
+      right: 20,
+      child: AnimatedOpacity(
+        opacity: progress.isComplete ? 0 : 1,
+        duration: const Duration(milliseconds: 600),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+          decoration: BoxDecoration(
+            color: const Color(0xF0100E0A),
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(color: HeritageColors.orange.withValues(alpha: 0.25)),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.4),
+                blurRadius: 12,
+              ),
+            ],
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  const Icon(Icons.download_rounded,
+                      color: HeritageColors.orange, size: 14),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      label,
+                      style: const TextStyle(
+                        color: HeritageColors.cream,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                  Text(
+                    '${progress.downloaded ~/ 1000}k / ${progress.total ~/ 1000}k',
+                    style: TextStyle(
+                      color: HeritageColors.cream.withValues(alpha: 0.5),
+                      fontSize: 10,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8),
+              ClipRRect(
+                borderRadius: BorderRadius.circular(4),
+                child: LinearProgressIndicator(
+                  value: progress.isFailed ? null : progress.fraction,
+                  minHeight: 3,
+                  backgroundColor: Colors.white.withValues(alpha: 0.08),
+                  valueColor: AlwaysStoppedAnimation<Color>(
+                    progress.isFailed
+                        ? Colors.orange.shade700
+                        : HeritageColors.orange,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
@@ -229,13 +360,15 @@ class _ExploreScreenState extends State<ExploreScreen> {
       top: 130,
       child: Column(children: [
         _zoomButton(Icons.add, () {
-          final currentZoom = _mapController.camera.zoom;
-          _mapController.move(_mapController.camera.center, (currentZoom + 1.2).clamp(6.0, 18.0));
+          // Use a small step so the tile engine fetches ONE zoom level at a
+          // time instead of jumping two — prevents blank white screens.
+          final z = (_mapController.camera.zoom + 1.0).clamp(6.0, 18.0);
+          _mapController.moveAndRotate(_mapController.camera.center, z, 0);
         }),
         const SizedBox(height: 8),
         _zoomButton(Icons.remove, () {
-          final currentZoom = _mapController.camera.zoom;
-          _mapController.move(_mapController.camera.center, (currentZoom - 1.2).clamp(6.0, 18.0));
+          final z = (_mapController.camera.zoom - 1.0).clamp(6.0, 18.0);
+          _mapController.moveAndRotate(_mapController.camera.center, z, 0);
         }),
         const SizedBox(height: 8),
         _zoomButton(Icons.my_location, () {
@@ -293,12 +426,37 @@ class _ExploreScreenState extends State<ExploreScreen> {
         ),
         children: [
           TileLayer(
+            key: ValueKey<bool>(useOfflineTiles),
             urlTemplate: tileTemplate,
             subdomains: const ['a', 'b', 'c', 'd'],
             fallbackUrl: useOfflineTiles ? _networkTileTemplate : null,
-            tileProvider: useOfflineTiles ? FileTileProvider() : NetworkTileProvider(),
+            tileProvider: useOfflineTiles
+                ? FileTileProvider()
+                : NetworkTileProvider(
+                    // Reuse a single persistent HTTP client — avoids per-tile
+                    // TLS handshakes on Android (the main cause of slow tiles).
+                    httpClient: _tileHttpClient,
+                    headers: const {
+                      'User-Agent': 'HeritageLK/1.0 (Flutter; Android)',
+                      // Ask the CDN to cache tiles aggressively on the device
+                      'Cache-Control': 'max-age=86400, stale-while-revalidate=3600',
+                    },
+                  ),
             userAgentPackageName: 'com.heritage_lk.app',
-            panBuffer: 1,
+            // panBuffer 2 = pre-fetch one tile row/col beyond viewport.
+            // Higher values increase memory pressure on Android and can
+            // paradoxically slow rendering (more tiles competing for RAM).
+            panBuffer: 2,
+            keepBuffer: 2,
+            // Limit concurrent tile downloads to avoid saturating the
+            // mobile network adapter and causing all tiles to be slow.
+            maxParallelFetches: 4,
+            maxNativeZoom: 19,
+            tileFadeInDuration: const Duration(milliseconds: 150),
+            tileFadeInStartWhenOverride: 0.4,
+            errorTileCallback: (tile, error, stackTrace) {
+              debugPrint('Tile error at ${tile.coordinates}: $error');
+            },
           ),
           MarkerLayer(
             markers: filtered.map((site) {

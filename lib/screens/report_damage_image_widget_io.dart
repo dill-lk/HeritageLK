@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 
 class ReportDamageImageWidget extends StatelessWidget {
@@ -10,7 +11,7 @@ class ReportDamageImageWidget extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (path.startsWith('http://') || path.startsWith('https://')) {
-      return Image.network(path, fit: BoxFit.cover);
+      return CachedNetworkImage(imageUrl: path, fit: BoxFit.cover);
     }
 
     return Image.file(

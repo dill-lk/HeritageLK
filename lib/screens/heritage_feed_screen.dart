@@ -1,3 +1,4 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../services/heritage_feed_service.dart';
@@ -161,12 +162,12 @@ class _HeritageFeedScreenState extends State<HeritageFeedScreen> {
             const SizedBox(height: 14),
             ClipRRect(
               borderRadius: BorderRadius.circular(14),
-              child: Image.network(
-                item.imageUrl!,
+              child: CachedNetworkImage(
+                imageUrl: item.imageUrl!,
                 height: 180,
                 width: double.infinity,
                 fit: BoxFit.cover,
-                errorBuilder: (context, error, stackTrace) => Container(
+                errorWidget: (context, error, stackTrace) => Container(
                   height: 120,
                   color: Colors.white10,
                   child: const Center(

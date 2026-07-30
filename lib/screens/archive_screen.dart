@@ -1,3 +1,4 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -232,7 +233,12 @@ class _ArchiveScreenState extends State<ArchiveScreen> {
 
   Widget _recordImage(String? image, {bool small = false}) => image == null || image.isEmpty
       ? Container(color: const Color(0xFF342116), child: Icon(Icons.account_balance, color: HeritageColors.orange, size: small ? 30 : 52))
-      : Image.network(image, fit: BoxFit.cover, errorBuilder: (_, __, ___) => Container(color: const Color(0xFF342116), child: Icon(Icons.account_balance, color: HeritageColors.orange, size: small ? 30 : 52)));
+      : CachedNetworkImage(imageUrl: image, fit: BoxFit.cover,
+          httpHeaders: const {
+            'User-Agent': 'HeritageLK/1.0 (Flutter; Android)',
+            'Accept': 'image/webp,image/png,image/*,*/*;q=0.8',
+          },
+          errorWidget: (_, __, ___) => Container(color: const Color(0xFF342116), child: Icon(Icons.account_balance, color: HeritageColors.orange, size: small ? 30 : 52)));
 
   Widget _emptyState() => Container(padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 44), decoration: BoxDecoration(color: Colors.white.withValues(alpha:0.05), border: Border.all(color: Colors.white.withValues(alpha:0.05)), borderRadius: BorderRadius.circular(24)), child: const Column(children: [Icon(Icons.menu_book_outlined, color: Color(0x33FFFFFF), size: 40), SizedBox(height: 16), Text('Record Not Found', style: TextStyle(color: Colors.white, fontFamily: 'Playfair Display', fontSize: 18)), SizedBox(height: 8), Text('There are no records matching your search in the chronicles.', textAlign: TextAlign.center, style: TextStyle(color: Color(0x80FFFFFF), fontSize: 13, height: 1.5))]));
 

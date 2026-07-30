@@ -352,6 +352,8 @@ class _ProfileScreenState extends State<ProfileScreen>
         ),
         Row(
           children: [
+            _round(Icons.map_rounded, () => Navigator.pushNamed(context, '/heatmap')),
+            const SizedBox(width: 8),
             _round(Icons.badge_outlined, () => Navigator.pushNamed(context, '/passport')),
             const SizedBox(width: 8),
             _round(Icons.picture_as_pdf_outlined, () => PhotojournalExportService.exportJourneyPdf()),
@@ -374,19 +376,15 @@ class _ProfileScreenState extends State<ProfileScreen>
     return Container(
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          colors: [Color(0xFF2A1F15), Color(0xFF1A1410)],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
+        color: const Color(0xFF1A1714),
         borderRadius: BorderRadius.circular(28),
         border: Border.all(
-            color: HeritageColors.orange.withValues(alpha: 0.25), width: 1.5),
+            color: HeritageColors.orange.withValues(alpha: 0.30), width: 1.5),
         boxShadow: [
           BoxShadow(
-            color: HeritageColors.orange.withValues(alpha: 0.08),
-            blurRadius: 32,
-            spreadRadius: 2,
+            color: Colors.black.withValues(alpha: 0.40),
+            blurRadius: 24,
+            offset: const Offset(0, 6),
           ),
         ],
       ),
@@ -1212,10 +1210,11 @@ class _ProfileScreenState extends State<ProfileScreen>
             children: [
               Expanded(
                   child: _QuickAction(
-                      icon: Icons.person_outline_rounded,
-                      color: const Color(0xFF52B788),
-                      label: 'Edit Profile',
-                      onTap: _showEditProfileDialog)),
+                      icon: Icons.map_rounded,
+                      color: const Color(0xFFE76F51),
+                      label: 'Heatmap',
+                      onTap: () => Navigator.of(context)
+                          .pushNamed('/heatmap'))),
               Expanded(
                   child: _QuickAction(
                       icon: Icons.hotel_rounded,
@@ -1251,11 +1250,11 @@ class _ProfileScreenState extends State<ProfileScreen>
                           Navigator.of(context).pushNamed('/settings'))),
               Expanded(
                   child: _QuickAction(
-                      icon: Icons.menu_book_rounded,
+                      icon: Icons.park_rounded,
                       color: const Color(0xFF52B788),
-                      label: 'Archives',
+                      label: 'Eco Garden',
                       onTap: () =>
-                          Navigator.of(context).pushNamed('/archive'))),
+                          Navigator.of(context).pushNamed('/garden'))),
             ],
           ),
         ],

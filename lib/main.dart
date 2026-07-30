@@ -22,6 +22,8 @@ import 'screens/report_admin_screen.dart';
 import 'screens/heritage_feed_screen.dart';
 import 'screens/passport_screen.dart';
 import 'screens/profile_screen.dart';
+import 'screens/heritage_heatmap_screen.dart';
+import 'screens/digital_garden_screen.dart';
 import 'screens/auth_callback_screen.dart';
 import 'theme/heritage_theme.dart';
 
@@ -114,6 +116,10 @@ class _HeritageLkAppState extends State<HeritageLkApp> {
         builder = (_) => const GenerateArchiveScreen();
       case '/profile':
         builder = (_) => const ProfileScreen();
+      case '/heatmap':
+        builder = (_) => const HeritageHeatmapScreen();
+      case '/garden':
+        builder = (_) => const DigitalGardenScreen();
       case '/settings':
         builder = (_) => const SettingsScreen();
       case '/settings/personal':

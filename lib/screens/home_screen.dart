@@ -1,3 +1,4 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -92,12 +93,16 @@ class _HomeScreenState extends State<HomeScreen> {
                     GestureDetector(
                       onTap: () => Navigator.of(context).pushNamed('/profile'),
                       child: ClipOval(
-                        child: Image.network(
-                          'https://api.builder.io/api/v1/image/assets/TEMP/8ac6e4f2918cb1ade2b53e903533707e4b93794a?width=88',
+                        child: CachedNetworkImage(
+                          imageUrl: 'https://api.builder.io/api/v1/image/assets/TEMP/8ac6e4f2918cb1ade2b53e903533707e4b93794a?width=88',
                           width: 44,
                           height: 44,
                           fit: BoxFit.cover,
-                          errorBuilder: (_, __, ___) => const CircleAvatar(
+                          httpHeaders: const {
+                            'User-Agent': 'HeritageLK/1.0 (Flutter; Android)',
+                            'Accept': 'image/webp,image/png,image/*,*/*;q=0.8',
+                          },
+                          errorWidget: (_, __, ___) => const CircleAvatar(
                             backgroundColor: HeritageColors.brown,
                             child: Icon(Icons.person, color: HeritageColors.cream),
                           ),
