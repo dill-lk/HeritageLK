@@ -46,6 +46,7 @@ FORMATTING RULES:
   final WikipediaService _wiki = WikipediaService();
 
   String get _key => AppConfig.effectiveGeminiApiKey;
+  String get _secondaryKey => AppConfig.secondaryGeminiApiKey;
 
   // ─── Main chat entry point ──────────────────────────────────────────────────
   Future<String> chat(
@@ -100,13 +101,15 @@ FORMATTING RULES:
           : effectiveUserMsg;
     }
 
-    // 5. Try models in order
+    // 5. Try models in order, with key fallback
     final models = [
       'gemini-2.5-flash',
       'gemini-2.0-flash',
       'gemini-2.0-flash-lite',
       'gemini-1.5-flash',
     ];
+
+    final keysToTry = [_key, if (_secondaryKey.isNotEmpty && _secondaryKey != _key) _secondaryKey];
 
     final userParts = <Part>[];
     if (imageBytes != null && imageBytes.isNotEmpty) {
@@ -117,64 +120,72 @@ FORMATTING RULES:
 
     final userContent = Content.multi(userParts);
 
-    for (final modelName in models) {
-      for (int attempt = 0; attempt < 3; attempt++) {
-        try {
-          log('Shingo: trying $modelName (attempt ${attempt + 1})');
-          final model = GenerativeModel(
-            model: modelName,
-            apiKey: _key,
-            systemInstruction: Content.system(
-              'You are Shingo, a passionate Sri Lankan heritage guide. Be warm, fun, and knowledgeable. NEVER mention AI, Gemini, or any tech.',
-            ),
-            generationConfig: GenerationConfig(
-              temperature: 0.88,
-              maxOutputTokens: 900,
-              topP: 0.95,
-              topK: 40,
-            ),
-            safetySettings: [
-              SafetySetting(HarmCategory.harassment, HarmBlockThreshold.none),
-              SafetySetting(HarmCategory.hateSpeech, HarmBlockThreshold.none),
-              SafetySetting(HarmCategory.dangerousContent, HarmBlockThreshold.none),
-              SafetySetting(HarmCategory.sexuallyExplicit, HarmBlockThreshold.none),
-            ],
-          );
+    for (final apiKey in keysToTry) {
+      for (final modelName in models) {
+        for (int attempt = 0; attempt < 3; attempt++) {
+          try {
+            log('Shingo: trying $modelName with key=${apiKey.substring(0, 8)}... (attempt ${attempt + 1})');
+            final model = GenerativeModel(
+              model: modelName,
+              apiKey: apiKey,
+              systemInstruction: Content.system(
+                'You are Shingo, a passionate Sri Lankan heritage guide. Be warm, fun, and knowledgeable. NEVER mention AI, Gemini, or any tech.',
+              ),
+              generationConfig: GenerationConfig(
+                temperature: 0.88,
+                maxOutputTokens: 900,
+                topP: 0.95,
+                topK: 40,
+              ),
+              safetySettings: [
+                SafetySetting(HarmCategory.harassment, HarmBlockThreshold.none),
+                SafetySetting(HarmCategory.hateSpeech, HarmBlockThreshold.none),
+                SafetySetting(HarmCategory.dangerousContent, HarmBlockThreshold.none),
+                SafetySetting(HarmCategory.sexuallyExplicit, HarmBlockThreshold.none),
+              ],
+            );
 
-          final chatSession = model.startChat(history: geminiHistory);
-          final response = await chatSession
-              .sendMessage(userContent)
-              .timeout(const Duration(seconds: 30));
+            final chatSession = model.startChat(history: geminiHistory);
+            final response = await chatSession
+                .sendMessage(userContent)
+                .timeout(const Duration(seconds: 30));
 
-          final reply = response.text;
+            final reply = response.text;
 
-          if (reply != null && reply.trim().isNotEmpty) {
-            log('Shingo: ✅ success with $modelName (${reply.length} chars)');
-            return reply.trim();
+            if (reply != null && reply.trim().isNotEmpty) {
+              log('Shingo: ✅ success with $modelName (${reply.length} chars)');
+              return reply.trim();
+            }
+
+            log('Shingo: $modelName returned empty response');
+            break;
+          } on SocketException catch (e) {
+            log('Shingo: network error on $modelName attempt ${attempt + 1}: $e');
+            if (attempt < 2) {
+              await Future.delayed(Duration(seconds: attempt + 1));
+              continue;
+            }
+          } on WebSocketException catch (e) {
+            log('Shingo: websocket error on $modelName attempt ${attempt + 1}: $e');
+            if (attempt < 2) {
+              await Future.delayed(Duration(seconds: attempt + 1));
+              continue;
+            }
+          } catch (e) {
+            final errStr = e.toString().toLowerCase();
+            // Quota / auth errors — skip to next key immediately
+            if (errStr.contains('quota') || errStr.contains('429') || errStr.contains('api_key') || errStr.contains('permission')) {
+              log('Shingo: $modelName quota/auth error with current key, skipping to next key — $e');
+              break;
+            }
+            log('Shingo: $modelName failed — $e');
+            break;
           }
-
-          log('Shingo: $modelName returned empty response');
-          break;
-        } on SocketException catch (e) {
-          log('Shingo: network error on $modelName attempt ${attempt + 1}: $e');
-          if (attempt < 2) {
-            await Future.delayed(Duration(seconds: attempt + 1));
-            continue;
-          }
-        } on WebSocketException catch (e) {
-          log('Shingo: websocket error on $modelName attempt ${attempt + 1}: $e');
-          if (attempt < 2) {
-            await Future.delayed(Duration(seconds: attempt + 1));
-            continue;
-          }
-        } catch (e) {
-          log('Shingo: $modelName failed — $e');
-          break;
         }
       }
     }
 
-    log('Shingo: all models failed, using rich fallback');
+    log('Shingo: all models & keys failed, using rich fallback');
     return _richFallback(effectiveUserMsg, hasImage: imageBytes != null);
   }
 

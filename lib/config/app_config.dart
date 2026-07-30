@@ -15,8 +15,8 @@ abstract class AppConfig {
   // hits quota limits. Get a free key at: https://aistudio.google.com/apikey
   static const String _primaryKey = 'AIzaSyBI6mNhWme4EsYoUgYhnNioWkzFw1Ew0VI';
 
-  // Secondary embedded key as backup (set to empty string if not needed)
-  static const String _secondaryKey = '';
+  // Secondary embedded key as backup — used if primary hits quota
+  static const String _secondaryKey = 'AIzaSyBkHCxNxHE6kja1yGvOhJl1IFLbCRRn_vc';
 
   static String _userGeminiApiKey = '';
 
@@ -35,6 +35,9 @@ abstract class AppConfig {
     if (_secondaryKey.isNotEmpty) return _secondaryKey;
     return '';
   }
+
+  /// Returns the secondary embedded key (used as fallback when primary is quota-limited)
+  static String get secondaryGeminiApiKey => _secondaryKey;
 
   /// Whether a Gemini key is available at all
   static bool get hasGeminiKey => effectiveGeminiApiKey.isNotEmpty;
