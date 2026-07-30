@@ -14,23 +14,18 @@ class DamageReportRepository {
   }) async {
     final userId = _client.auth.currentUser?.id;
     final firstPhoto = photos.isNotEmpty ? photos.first : null;
-
-    // Only write photo_url when we have a real value (base64 data URL or http URL)
-    final validPhoto = (firstPhoto != null && firstPhoto.trim().isNotEmpty) ? firstPhoto : null;
-
     final payload = <String, dynamic>{
       'location': location,
       'damage_type': damageType,
       'details': details,
       'user_id': userId,
       'status': 'pending',
-      if (validPhoto != null) 'photo_url': validPhoto,
+      'photo_url': firstPhoto,
     };
     if (photos.isNotEmpty) {
       payload['photos'] = photos;
     }
     await _client.from('damage_reports').insert(payload);
-
 
     if (userId != null) {
       try {
