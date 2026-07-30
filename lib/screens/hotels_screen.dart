@@ -4,9 +4,21 @@ import 'package:flutter_cache_manager/flutter_cache_manager.dart' show CacheMana
 import 'package:google_fonts/google_fonts.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import '../models/hotel_data.dart';
 import '../theme/heritage_colors.dart';
 import '../widgets/bottom_nav.dart';
 import 'hotel_detail_screen.dart';
+
+class _HotelCacheManager {
+  static final CacheManager cache = CacheManager(
+    Config(
+      'heritageHotelsCacheKey',
+      stalePeriod: const Duration(days: 14),
+      maxNrOfCacheObjects: 200,
+    ),
+  );
+}
+
 
 const List<HotelData> _kHotels = [
   HotelData(
@@ -376,19 +388,12 @@ class _HotelsScreenState extends State<HotelsScreen> {
     }
   }
 
-  Future<void> _launchMaps(String name, String region) async {
-    final query = '$name, $region, Sri Lanka';
-    final uri = Uri.parse('https://www.google.com/maps/search/?api=1&query=${Uri.encodeComponent(query)}');
-    if (!await launchUrl(uri, mode: LaunchMode.externalApplication)) {
-      debugPrint('Could not launch maps');
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
-    final List<_HotelData> filteredHotels = _selectedRegion == 'All'
+    final List<HotelData> filteredHotels = _selectedRegion == 'All'
         ? _kHotels
         : _kHotels.where((h) => h.region == _selectedRegion).toList();
+
 
     return Scaffold(
       backgroundColor: HeritageColors.background,

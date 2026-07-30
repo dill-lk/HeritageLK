@@ -3,11 +3,13 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import '../models/hotel_data.dart';
 import '../theme/heritage_colors.dart';
 import 'hotels_screen.dart';
 
 class HotelDetailScreen extends StatelessWidget {
   final HotelData hotel;
+
 
   const HotelDetailScreen({super.key, required this.hotel});
 
