@@ -197,6 +197,7 @@ class _MainHomeScreenState extends State<MainHomeScreen>
       ('🏰', 'UNESCO Sites'),
       ('🐆', 'Wildlife'),
       ('🛡️', 'Report Damage'),
+      ('🔥', 'Heritage Heatmap'),
       ('🤖', 'Shingo AI'),
       ('📸', 'Heritage Cam'),
       ('🗺️', 'Quests'),

@@ -241,6 +241,15 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
                 const SizedBox(height: 16),
                 _BannerCard(
+                  emoji: '🔥',
+                  title: 'Heritage Heatmap',
+                  subtitle: 'Live visitor density & endangered site alert map across Sri Lanka.',
+                  borderColor: const Color(0xFFE76F51),
+                  bgColor: const Color(0xFFE76F51),
+                  onTap: () => Navigator.of(context).pushNamed('/heatmap'),
+                ),
+                const SizedBox(height: 16),
+                _BannerCard(
                   emoji: '✨',
                   title: 'Shingo AI',
                   subtitle: 'Your personal AI guide to Sri Lankan heritage. Ask anything about history, culture, or sites.',

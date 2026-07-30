@@ -1,8 +1,11 @@
+import 'dart:async';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:latlong2/latlong.dart';
 
+import '../services/offline_sri_lanka_map_cache.dart';
 import '../theme/heritage_colors.dart';
 import '../widgets/bottom_nav.dart';
 
@@ -24,8 +27,51 @@ class HeritageHeatmapScreen extends StatefulWidget {
 }
 
 class _HeritageHeatmapScreenState extends State<HeritageHeatmapScreen> {
+  static const _networkTileTemplate = 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png';
   final MapController _mapController = MapController();
   String _selectedFilter = 'All';
+  String? _offlineTileTemplate;
+  bool _tilesReady = false;
+  OfflineTileProgress? _tileProgress;
+  StreamSubscription<OfflineTileProgress>? _progressSub;
+
+  @override
+  void initState() {
+    super.initState();
+    _prepareOfflineTiles();
+  }
+
+  @override
+  void dispose() {
+    _progressSub?.cancel();
+    _mapController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _prepareOfflineTiles() async {
+    final template = await SriLankaOfflineMapCache.instance.ensureLocalTemplate();
+    if (mounted) {
+      setState(() => _offlineTileTemplate = template);
+    }
+
+    final alreadyReady = await SriLankaOfflineMapCache.instance.isTilesReady();
+    if (alreadyReady && mounted) {
+      setState(() => _tilesReady = true);
+      return;
+    }
+
+    _progressSub = SriLankaOfflineMapCache.instance.progressStream.listen(
+      (progress) {
+        if (!mounted) return;
+        setState(() {
+          _tileProgress = progress;
+          if (progress.isComplete) _tilesReady = true;
+        });
+      },
+    );
+
+    SriLankaOfflineMapCache.instance.warmSriLankaTiles();
+  }
 
   // Heatmap density points for Heritage Sites across Sri Lanka
   static const List<HeritageHeatmapPoint> _points = [
@@ -56,6 +102,10 @@ class _HeritageHeatmapScreenState extends State<HeritageHeatmapScreen> {
         ? _points
         : _points.where((p) => p.status == _selectedFilter).toList();
 
+    final localTileTemplate = _offlineTileTemplate;
+    final useOfflineTiles = _tilesReady && localTileTemplate != null && !kIsWeb;
+    final tileTemplate = useOfflineTiles ? localTileTemplate : _networkTileTemplate;
+
     return Scaffold(
       backgroundColor: HeritageColors.background,
       body: SafeArea(
@@ -72,8 +122,19 @@ class _HeritageHeatmapScreenState extends State<HeritageHeatmapScreen> {
               ),
               children: [
                 TileLayer(
-                  urlTemplate: 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',
+                  key: ValueKey<bool>(useOfflineTiles),
+                  urlTemplate: tileTemplate,
                   subdomains: const ['a', 'b', 'c', 'd'],
+                  fallbackUrl: useOfflineTiles ? _networkTileTemplate : null,
+                  tileProvider: useOfflineTiles
+                      ? FileTileProvider()
+                      : NetworkTileProvider(
+                          headers: const {
+                            'User-Agent': 'HeritageLK/1.0 (Flutter; Android)',
+                            'Cache-Control': 'max-age=86400, stale-while-revalidate=3600',
+                          },
+                        ),
+                  userAgentPackageName: 'com.heritage_lk.app',
                 ),
                 // Glowing Heatmap Circles
                 CircleLayer(
@@ -213,6 +274,8 @@ class _HeritageHeatmapScreenState extends State<HeritageHeatmapScreen> {
               ),
             ),
 
+            _buildDownloadBanner(),
+
             // Bottom Legend Overlay
             Positioned(
               bottom: 110,
@@ -241,6 +304,84 @@ class _HeritageHeatmapScreenState extends State<HeritageHeatmapScreen> {
               child: HeritageBottomNav(currentIndex: 0),
             ),
           ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildDownloadBanner() {
+    final progress = _tileProgress;
+    if (progress == null || progress.isComplete) return const SizedBox.shrink();
+
+    final pct = (progress.fraction * 100).toStringAsFixed(0);
+    final label = progress.isFailed
+        ? '⚠️ Map download paused — will retry'
+        : '📥 Downloading offline map… $pct%';
+
+    return Positioned(
+      bottom: 165,
+      left: 20,
+      right: 20,
+      child: AnimatedOpacity(
+        opacity: progress.isComplete ? 0 : 1,
+        duration: const Duration(milliseconds: 600),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+          decoration: BoxDecoration(
+            color: const Color(0xF0100E0A),
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(color: HeritageColors.orange.withValues(alpha: 0.25)),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.4),
+                blurRadius: 12,
+              ),
+            ],
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  const Icon(Icons.download_rounded,
+                      color: HeritageColors.orange, size: 14),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      label,
+                      style: const TextStyle(
+                        color: HeritageColors.cream,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                  Text(
+                    '${progress.downloaded ~/ 1000}k / ${progress.total ~/ 1000}k',
+                    style: TextStyle(
+                      color: HeritageColors.cream.withValues(alpha: 0.5),
+                      fontSize: 10,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8),
+              ClipRRect(
+                borderRadius: BorderRadius.circular(4),
+                child: LinearProgressIndicator(
+                  value: progress.isFailed ? null : progress.fraction,
+                  minHeight: 3,
+                  backgroundColor: Colors.white.withValues(alpha: 0.08),
+                  valueColor: AlwaysStoppedAnimation<Color>(
+                    progress.isFailed
+                        ? Colors.orange.shade700
+                        : HeritageColors.orange,
+                  ),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
